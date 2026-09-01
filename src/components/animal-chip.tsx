@@ -7,7 +7,7 @@ import { colors, speciesEmoji, ui } from '@/theme';
 import { Draggable } from './draggable';
 
 /** トレイのミニプレビューの1マス分の単位px。 */
-const CHIP_UNIT = 24;
+const CHIP_UNIT = 26;
 
 type Props = {
   species: Species;
@@ -21,16 +21,18 @@ type Props = {
 export function AnimalChip({ species, hidden, onDragStart, onDragMove, onDragEnd }: Props) {
   const { w, h } = boundingBox(species);
   const art = speciesArt[species];
+  const width = w * CHIP_UNIT;
+  const height = h * CHIP_UNIT;
   return (
     <View style={[styles.wrapper, hidden && styles.hidden]}>
       <Draggable onDragStart={onDragStart} onDragMove={onDragMove} onDragEnd={onDragEnd}>
-        <View style={[styles.chip, { width: w * CHIP_UNIT, height: h * CHIP_UNIT }]}>
-          {art ? (
-            <Image source={art} style={{ width: w * CHIP_UNIT - 4, height: h * CHIP_UNIT - 4 }} resizeMode="contain" />
-          ) : (
+        {art ? (
+          <Image source={art} resizeMode="stretch" style={[{ width, height }, styles.art, ui.shadow]} />
+        ) : (
+          <View style={[styles.chip, { width, height }]}>
             <Text style={styles.icon}>{speciesEmoji[species]}</Text>
-          )}
-        </View>
+          </View>
+        )}
       </Draggable>
     </View>
   );
@@ -42,6 +44,9 @@ const styles = StyleSheet.create({
   },
   hidden: {
     opacity: 0,
+  },
+  art: {
+    borderRadius: 6,
   },
   chip: {
     alignItems: 'center',

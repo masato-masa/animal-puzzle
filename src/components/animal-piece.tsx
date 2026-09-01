@@ -14,12 +14,30 @@ type Props = {
 };
 
 /**
- * 盤面上に配置されたピースの見た目。親（board.tsx）が footprint 分の
- * 絶対配置ボックスを用意し、その中いっぱいに描画される想定。
- * イラストを持つ種はその画像を、持たない種（ワニ・ウシツツキ等）は絵文字を表示する。
+ * 盤面上に配置されたピースの見た目。イラストを持つ種は、カードで囲わず
+ * 画像そのものをピースとして footprint いっぱいに表示する（縦横比が合わない
+ * 場合は引き伸ばして埋める）。違反中はふちを赤くする。
+ * イラストの無い種（ワニ・ウシツツキ等）は従来どおり絵文字カードで表示する。
  */
 export function AnimalPiece({ species, violating, hidden, size }: Props) {
   const art = speciesArt[species];
+
+  if (art) {
+    return (
+      <View style={[styles.artWrap, hidden && styles.hidden]}>
+        <Image
+          source={art}
+          resizeMode="stretch"
+          style={[
+            { width: size.w, height: size.h },
+            styles.artImage,
+            violating && styles.artViolating,
+          ]}
+        />
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -31,16 +49,23 @@ export function AnimalPiece({ species, violating, hidden, size }: Props) {
         },
         hidden && styles.hidden,
       ]}>
-      {art ? (
-        <Image source={art} style={{ width: size.w - 4, height: size.h - 4 }} resizeMode="contain" />
-      ) : (
-        <Text style={styles.icon}>{speciesEmoji[species]}</Text>
-      )}
+      <Text style={styles.icon}>{speciesEmoji[species]}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  artWrap: {
+    ...ui.shadow,
+  },
+  artImage: {
+    borderRadius: 8,
+    borderWidth: 0,
+  },
+  artViolating: {
+    borderWidth: 3,
+    borderColor: colors.violationEdge,
+  },
   piece: {
     flex: 1,
     margin: 2,

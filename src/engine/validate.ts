@@ -4,8 +4,8 @@ import { SHAPES } from './shapes';
 
 const TERRAINS: Terrain[] = ['land', 'water', 'sky'];
 
-/** v1では「配置可能なパターンが1通り」を狙いやすくするため、1ステージあたりの動物数の上限を設ける。 */
-export const MAX_ANIMALS_PER_STAGE = 5;
+/** 「唯一解だが配置候補は多い」歯応えのあるパズルを作れるよう、1ステージあたりの動物数の上限を設ける。 */
+export const MAX_ANIMALS_PER_STAGE = 8;
 
 export const validateStage = (stage: Stage): string[] => {
   const errors: string[] = [];
