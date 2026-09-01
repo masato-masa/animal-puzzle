@@ -6,6 +6,9 @@ import { CHAPTERS, getStage } from '@/levels/stages';
 import { loadProgress } from '@/storage/progress';
 import { colors, ui } from '@/theme';
 
+/** ピース数からざっくりした難易度の目安（★の数）を出す。 */
+const difficultyStars = (pieceCount: number): number => (pieceCount <= 2 ? 1 : pieceCount <= 5 ? 2 : 3);
+
 export default function StageSelectScreen() {
   const router = useRouter();
   const [clearedIds, setClearedIds] = useState<Set<string>>(new Set());
@@ -39,7 +42,10 @@ export default function StageSelectScreen() {
                 onPress={() => router.push({ pathname: '/game/[stageId]', params: { stageId } })}>
                 <Text style={styles.rowLabel}>{stage.name}</Text>
                 <View style={styles.rowMeta}>
-                  <Text style={styles.rowPieces}>🧩 {stage.animals.length}</Text>
+                  <Text style={styles.rowStars}>
+                    {'★'.repeat(difficultyStars(stage.animals.length))}
+                    {'☆'.repeat(3 - difficultyStars(stage.animals.length))}
+                  </Text>
                   {cleared ? <Text style={styles.rowCheck}>✓ クリア</Text> : null}
                 </View>
               </Pressable>
@@ -99,10 +105,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
   },
-  rowPieces: {
-    color: colors.textMuted,
-    fontSize: 13,
-    fontWeight: '700',
+  rowStars: {
+    color: colors.accentDark,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   rowCheck: {
     color: colors.success,
