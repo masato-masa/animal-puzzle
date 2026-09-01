@@ -68,6 +68,53 @@ export const STAGES: Stage[] = [
     terrain: terrain(['#####', '....#', '....#', '#####', '#####']),
     animals: animals([['elephant', 2]]),
   },
+  {
+    id: 'stage-6',
+    name: '6. はなれたライオン',
+    rows: 7,
+    cols: 5,
+    terrain: terrain(['.#.#.', '.#.#.', '#####', '#####', '#####', '##.##', '##.##']),
+    animals: animals([
+      ['lion', 1],
+      ['giraffe', 3],
+    ]),
+  },
+  {
+    id: 'stage-7',
+    name: '7. れつのひみつ',
+    rows: 7,
+    cols: 5,
+    terrain: terrain(['#.#.#', '#.#.#', '#..##', '#..##', '#####', '#.#.#', '#.#.#']),
+    animals: animals([
+      ['zebra', 2],
+      ['lion', 2],
+      ['giraffe', 2],
+    ]),
+  },
+  {
+    id: 'stage-8',
+    name: '8. しまうまのくさり',
+    rows: 8,
+    cols: 5,
+    terrain: terrain(['#.#.#', '#.#.#', '#..##', '#..##', '#..##', '#####', '#.#.#', '#.#.#']),
+    animals: animals([
+      ['zebra', 3],
+      ['lion', 2],
+      ['giraffe', 2],
+    ]),
+  },
+  {
+    id: 'stage-9',
+    name: '9. さばんなのだいさくせん',
+    rows: 7,
+    cols: 5,
+    terrain: terrain(['.#.#.', '.#.#.', '..###', '..###', '#####', '.#.#.', '.#.#.']),
+    animals: animals([
+      ['zebra', 2],
+      ['lion', 3],
+      ['giraffe', 3],
+    ]),
+  },
 ];
 
 export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
