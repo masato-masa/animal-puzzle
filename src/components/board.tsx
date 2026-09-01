@@ -7,6 +7,7 @@ import { colors, ui } from '@/theme';
 import { AnimalPiece } from './animal-piece';
 import { BoardCell } from './board-cell';
 import { Draggable } from './draggable';
+import { PopIn } from './pop-in';
 
 type Props = {
   state: GameState;
@@ -73,17 +74,19 @@ export function Board({
                   height: h * cell,
                 },
               ]}>
-              <Draggable
-                onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
-                onDragMove={onPieceDragMove}
-                onDragEnd={onPieceDragEnd}>
-                <AnimalPiece
-                  species={animal.species}
-                  violating={violatingIds.has(animal.instanceId)}
-                  hidden={animal.instanceId === hiddenInstanceId}
-                  size={{ w: w * cell, h: h * cell }}
-                />
-              </Draggable>
+              <PopIn>
+                <Draggable
+                  onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
+                  onDragMove={onPieceDragMove}
+                  onDragEnd={onPieceDragEnd}>
+                  <AnimalPiece
+                    species={animal.species}
+                    violating={violatingIds.has(animal.instanceId)}
+                    hidden={animal.instanceId === hiddenInstanceId}
+                    size={{ w: w * cell, h: h * cell }}
+                  />
+                </Draggable>
+              </PopIn>
             </View>
           );
         })}

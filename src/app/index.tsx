@@ -38,7 +38,10 @@ export default function StageSelectScreen() {
                 style={styles.row}
                 onPress={() => router.push({ pathname: '/game/[stageId]', params: { stageId } })}>
                 <Text style={styles.rowLabel}>{stage.name}</Text>
-                {cleared ? <Text style={styles.rowCheck}>✓ クリア</Text> : null}
+                <View style={styles.rowMeta}>
+                  <Text style={styles.rowPieces}>🧩 {stage.animals.length}</Text>
+                  {cleared ? <Text style={styles.rowCheck}>✓ クリア</Text> : null}
+                </View>
               </Pressable>
             );
           })}
@@ -89,6 +92,16 @@ const styles = StyleSheet.create({
   rowLabel: {
     color: colors.text,
     fontSize: 16,
+    fontWeight: '700',
+  },
+  rowMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  rowPieces: {
+    color: colors.textMuted,
+    fontSize: 13,
     fontWeight: '700',
   },
   rowCheck: {
