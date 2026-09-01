@@ -19,6 +19,11 @@ export const colors = {
   skyDark: '#BFE3F5',
   skyLight: '#F6FCFF',
 
+  /** 配置不可の壁（草むら）マス。 */
+  wall: '#3C6B35',
+  wallDark: '#254520',
+  wallLight: '#5C8F53',
+
   panel: '#FFF8EA',
   panelBorder: '#C89A5B',
 
@@ -48,6 +53,7 @@ export const terrainColors = {
   land: { fill: colors.land, dark: colors.landDark, light: colors.landLight },
   water: { fill: colors.water, dark: colors.waterDark, light: colors.waterLight },
   sky: { fill: colors.sky, dark: colors.skyDark, light: colors.skyLight },
+  wall: { fill: colors.wall, dark: colors.wallDark, light: colors.wallLight },
 } as const;
 
 /** ポップな見た目の共通値。snake-puzzleと同じ「くっきりした2Dパズル」の質感。 */

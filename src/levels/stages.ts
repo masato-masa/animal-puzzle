@@ -9,98 +9,64 @@ const animals = (spec: Array<[Species, number]>): AnimalInstance[] => {
   return list;
 };
 
-const TERRAIN_CHARS: Record<string, CellTerrain> = { '.': 'land', '~': 'water', '^': 'sky', x: 'void' };
-const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split('').map((ch) => TERRAIN_CHARS[ch] ?? 'land'));
-const landGrid = (rows: number, cols: number): CellTerrain[][] => Array.from({ length: rows }, () => Array<CellTerrain>(cols).fill('land'));
+const TERRAIN_CHARS: Record<string, CellTerrain> = { '.': 'land', '~': 'water', '^': 'sky', '#': 'wall', x: 'void' };
+/** 1文字1マスの見取り図から地形グリッドを作る（.=平地 ~=水場 ^=空 #=壁 x=void）。 */
+const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split('').map((ch) => TERRAIN_CHARS[ch] ?? 'wall'));
 
+/**
+ * 全ステージは「配置可能なパターンが1通り」になるよう engine/solver.ts の countSolutions で
+ * 検証済み（__tests__/engine.test.ts の「shipped stage content」回帰テストで継続的にチェックされる）。
+ * 動物は1ステージ5体まで。壁(#)で盤面を好きな形に区切ることで、正方形でない見た目や
+ * ピースの配置を一意に絞り込む仕掛けを表現している。
+ */
 export const STAGES: Stage[] = [
   {
     id: 'stage-1',
     name: '1. リスのひろば',
     rows: 5,
     cols: 5,
-    terrain: landGrid(5, 5),
-    animals: animals([['squirrel', 25]]),
+    terrain: terrain(['#####', '##.##', '#...#', '##.##', '#####']),
+    animals: animals([['squirrel', 5]]),
   },
   {
     id: 'stage-2',
-    name: '2. ライオンとシマウマ',
+    name: '2. シマウマのなかまたち',
     rows: 5,
     cols: 5,
-    terrain: landGrid(5, 5),
-    animals: animals([
-      ['lion', 2],
-      ['zebra', 2],
-      ['squirrel', 17],
-    ]),
+    terrain: terrain(['..###', '..###', '#####', '#####', '#####']),
+    animals: animals([['zebra', 2]]),
   },
   {
     id: 'stage-3',
-    name: '3. キリンのきょり',
+    name: '3. キリンとライオンときょり',
     rows: 6,
-    cols: 6,
-    terrain: landGrid(6, 6),
+    cols: 5,
+    terrain: terrain(['#.###', '#.###', '#####', '#####', '#.^##', '#.###']),
     animals: animals([
-      ['lion', 2],
-      ['zebra', 2],
-      ['giraffe', 2],
-      ['squirrel', 24],
+      ['lion', 1],
+      ['giraffe', 1],
+      ['oxpecker', 1],
     ]),
   },
   {
     id: 'stage-4',
-    name: '4. ワニのいる水辺',
-    rows: 7,
-    cols: 7,
-    terrain: terrain([
-      '.......',
-      '.......',
-      '.......',
-      '.......',
-      '.......',
-      '~~.....',
-      '~~.....',
-    ]),
+    name: '4. 水辺のキリン',
+    rows: 6,
+    cols: 5,
+    terrain: terrain(['.####', '.####', '#####', '#.###', '#.###', '#~~##']),
     animals: animals([
-      ['lion', 2],
-      ['zebra', 2],
-      ['giraffe', 2],
-      ['crocodile', 2],
-      ['squirrel', 33],
+      ['giraffe', 1],
+      ['lion', 1],
+      ['crocodile', 1],
     ]),
   },
   {
     id: 'stage-5',
-    name: '5. サバンナ全開',
-    rows: 8,
-    cols: 8,
-    terrain: terrain([
-      '...^^...',
-      '........',
-      '........',
-      '........',
-      '........',
-      '........',
-      '~~......',
-      '~~......',
-    ]),
-    animals: animals([
-      ['lion', 2],
-      ['zebra', 2],
-      ['giraffe', 2],
-      ['crocodile', 2],
-      ['elephant', 2],
-      ['oxpecker', 2],
-      ['squirrel', 38],
-    ]),
-  },
-  {
-    id: 'stage-6',
-    name: '6. じゅうじ型のひろば',
-    rows: 7,
-    cols: 7,
-    terrain: terrain(['xxx.xxx', 'xxx.xxx', 'xxx.xxx', '.......', 'xxx.xxx', 'xxx.xxx', 'xxx.xxx']),
-    animals: animals([['squirrel', 13]]),
+    name: '5. ゾウのなかよし',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['#####', '....#', '....#', '#####', '#####']),
+    animals: animals([['elephant', 2]]),
   },
 ];
 

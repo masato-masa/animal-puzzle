@@ -4,7 +4,7 @@ import type { Terrain } from '@/engine';
 import { colors, terrainColors } from '@/theme';
 
 type Props = {
-  terrain: Terrain;
+  terrain: Terrain | 'wall';
   validAnchor?: boolean;
   dimmed?: boolean;
 };

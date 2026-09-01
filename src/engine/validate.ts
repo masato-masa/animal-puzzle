@@ -4,6 +4,9 @@ import { SHAPES } from './shapes';
 
 const TERRAINS: Terrain[] = ['land', 'water', 'sky'];
 
+/** v1では「配置可能なパターンが1通り」を狙いやすくするため、1ステージあたりの動物数の上限を設ける。 */
+export const MAX_ANIMALS_PER_STAGE = 5;
+
 export const validateStage = (stage: Stage): string[] => {
   const errors: string[] = [];
   const label = `[${stage.id}]`;
@@ -13,6 +16,12 @@ export const validateStage = (stage: Stage): string[] => {
   }
   if (stage.terrain.length !== stage.rows || stage.terrain.some((row) => row.length !== stage.cols)) {
     errors.push(`${label} terrain grid shape does not match rows/cols`);
+  }
+  if (stage.animals.length > MAX_ANIMALS_PER_STAGE) {
+    errors.push(`${label} too many animals: ${stage.animals.length} (max ${MAX_ANIMALS_PER_STAGE})`);
+  }
+  if (stage.animals.length === 0) {
+    errors.push(`${label} stage has no animals`);
   }
 
   const seen = new Set<string>();
@@ -26,7 +35,7 @@ export const validateStage = (stage: Stage): string[] => {
   let totalPlaceableCells = 0;
   for (const row of stage.terrain) {
     for (const t of row) {
-      if (t === 'void') continue;
+      if (t === 'void' || t === 'wall') continue;
       terrainCounts[t]++;
       totalPlaceableCells++;
     }

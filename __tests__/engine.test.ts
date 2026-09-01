@@ -2,12 +2,14 @@ import {
   boundingBox,
   canPlace,
   conditionCheckers,
+  countSolutions,
   createGameState,
   isStageCleared,
   placeAnimal,
   resetStage,
   returnPieceAt,
   shapeCells,
+  solutionStatus,
   terrainAt,
   validateStage,
   type CellTerrain,
@@ -89,6 +91,19 @@ describe('board placement', () => {
     const stage = makeStage({
       terrain: [
         ['void', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 'z1', species: 'zebra' }],
+    });
+    const state = createGameState(stage);
+    expect(canPlace(state, 'z1', { r: 0, c: 0 })).toBe(false);
+    expect(canPlace(state, 'z1', { r: 0, c: 1 })).toBe(true);
+  });
+
+  test('canPlace rejects a piece that would span a wall cell', () => {
+    const stage = makeStage({
+      terrain: [
+        ['wall', 'land', 'land', 'land', 'land'],
         ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
       ],
       animals: [{ instanceId: 'z1', species: 'zebra' }],
@@ -274,14 +289,71 @@ describe('isStageCleared', () => {
   });
 });
 
+describe('countSolutions / solutionStatus', () => {
+  test('a single animal on a single matching cell has exactly one solution', () => {
+    const stage = makeStage({
+      terrain: [
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(countSolutions(stage)).toBe(1);
+    expect(solutionStatus(stage)).toBe('unique');
+  });
+
+  test('an animal with two equally valid target cells has multiple solutions', () => {
+    const stage = makeStage({
+      terrain: [
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(countSolutions(stage)).toBe(2);
+    expect(solutionStatus(stage)).toBe('multiple');
+  });
+
+  test('an unsatisfiable stage has zero solutions', () => {
+    const stage = makeStage({
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(countSolutions(stage)).toBe(0);
+    expect(solutionStatus(stage)).toBe('none');
+  });
+
+  test('swapping two identical pieces counts as the same solution (dedup)', () => {
+    // 2x2 land block: two non-rotatable horizontal zebra dominoes can only tile it
+    // by stacking (row0 + row1), but naive search finds that tiling twice (once per
+    // instance-to-row assignment) — countSolutions must dedupe those into 1.
+    const stage = makeStage({
+      terrain: [
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 3 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [
+        { instanceId: 'z1', species: 'zebra' },
+        { instanceId: 'z2', species: 'zebra' },
+      ],
+    });
+    expect(countSolutions(stage)).toBe(1);
+    expect(solutionStatus(stage)).toBe('unique');
+  });
+});
+
 describe('validateStage', () => {
   const validStage: Stage = {
     id: 'valid',
     name: 'Valid',
     rows: 5,
     cols: 5,
-    terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('land')),
-    animals: Array.from({ length: 25 }, (_, i) => ({ instanceId: `s${i}`, species: 'squirrel' as const })),
+    terrain: [
+      Array<CellTerrain>(5).fill('land'),
+      ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+    ],
+    animals: Array.from({ length: 5 }, (_, i) => ({ instanceId: `s${i}`, species: 'squirrel' as const })),
   };
 
   test('a well-formed stage has no errors', () => {
@@ -337,6 +409,36 @@ describe('validateStage', () => {
     expect(validateStage(stage).some((e) => e.includes('flockRequired but fewer than 2'))).toBe(true);
   });
 
+  test('wall cells are excluded from terrain counts just like void', () => {
+    const stage: Stage = {
+      id: 'with-wall',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['wall', 'wall', 'wall', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [
+        { instanceId: 's0', species: 'squirrel' },
+        { instanceId: 's1', species: 'squirrel' },
+      ],
+    };
+    expect(validateStage(stage)).toEqual([]);
+  });
+
+  test('flags more than the max animals per stage', () => {
+    const stage: Stage = {
+      id: 'too-many',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('land')),
+      animals: Array.from({ length: 25 }, (_, i) => ({ instanceId: `s${i}`, species: 'squirrel' as const })),
+    };
+    expect(validateStage(stage).some((e) => e.includes('too many animals'))).toBe(true);
+  });
+
   test('flags symbiosisRequired with a missing partner species', () => {
     const stage: Stage = {
       id: 'lonely-oxpecker',
@@ -359,6 +461,10 @@ describe('validateStage', () => {
 describe('shipped stage content', () => {
   test.each(STAGES)('$id ($name) is structurally valid', (stage) => {
     expect(validateStage(stage)).toEqual([]);
+  });
+
+  test.each(STAGES)('$id ($name) has exactly one solution', (stage) => {
+    expect(solutionStatus(stage)).toBe('unique');
   });
 
   test('every stage id is unique', () => {

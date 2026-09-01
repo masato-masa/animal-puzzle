@@ -44,6 +44,10 @@ export default function StageSelectScreen() {
           })}
         </View>
       ))}
+
+      <Pressable style={styles.myStagesButton} onPress={() => router.push('/my-stages')}>
+        <Text style={styles.myStagesButtonLabel}>マイステージ / ステージを作る</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -91,5 +95,21 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontSize: 13,
     fontWeight: '900',
+  },
+  myStagesButton: {
+    alignSelf: 'center',
+    marginTop: 8,
+    backgroundColor: colors.panel,
+    borderWidth: 2,
+    borderColor: colors.panelBorder,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    ...ui.shadow,
+  },
+  myStagesButtonLabel: {
+    color: colors.text,
+    fontWeight: '900',
+    fontSize: 14,
   },
 });
