@@ -55,8 +55,11 @@ export function Draggable({ onDragStart, onDragEnd, onDragMove, children }: Prop
 }
 
 const styles = {
-  // Web専用: ドラッグ中にブラウザの文字選択が発生して指の動きを奪うのを防ぐ。
-  noSelect: { userSelect: 'none' } as const,
+  // Web専用: ドラッグ中にブラウザの文字選択・スクロール・ピンチズームが
+  // 割り込んで指の動きを奪うのを防ぐ。特にtouchActionが無いとスマホで
+  // 「タッチしても動かせない」「ページごと拡大縮小されて一部だけ縮んで見える」
+  // といった不具合になる。
+  noSelect: { userSelect: 'none', touchAction: 'none' } as const,
 };
 
 /** 必要なタイミングで最新のページ座標を測り直せるコンテナ用。 */

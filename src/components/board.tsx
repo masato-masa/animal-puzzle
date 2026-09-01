@@ -59,31 +59,33 @@ export function Board({
           );
         })}
 
-        {placed
-          .filter((animal) => animal.instanceId !== hiddenInstanceId)
-          .map((animal) => {
-            const { w, h } = boundingBox(animal.species);
-            return (
-              <View
-                key={animal.instanceId}
-                style={[
-                  styles.pieceSlot,
-                  {
-                    left: animal.anchor.c * cell,
-                    top: animal.anchor.r * cell,
-                    width: w * cell,
-                    height: h * cell,
-                  },
-                ]}>
-                <Draggable
-                  onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
-                  onDragMove={onPieceDragMove}
-                  onDragEnd={onPieceDragEnd}>
-                  <AnimalPiece species={animal.species} violating={violatingIds.has(animal.instanceId)} />
-                </Draggable>
-              </View>
-            );
-          })}
+        {placed.map((animal) => {
+          const { w, h } = boundingBox(animal.species);
+          return (
+            <View
+              key={animal.instanceId}
+              style={[
+                styles.pieceSlot,
+                {
+                  left: animal.anchor.c * cell,
+                  top: animal.anchor.r * cell,
+                  width: w * cell,
+                  height: h * cell,
+                },
+              ]}>
+              <Draggable
+                onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
+                onDragMove={onPieceDragMove}
+                onDragEnd={onPieceDragEnd}>
+                <AnimalPiece
+                  species={animal.species}
+                  violating={violatingIds.has(animal.instanceId)}
+                  hidden={animal.instanceId === hiddenInstanceId}
+                />
+              </Draggable>
+            </View>
+          );
+        })}
       </View>
     </View>
   );

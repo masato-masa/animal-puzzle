@@ -6,13 +6,15 @@ import { colors, speciesEmoji, ui } from '@/theme';
 type Props = {
   species: Species;
   violating?: boolean;
+  /** ドラッグ中の本体を隠す時に使う。マウント自体は維持しないとドラッグ操作が途中で切れてしまう。 */
+  hidden?: boolean;
 };
 
 /**
  * 盤面上に配置されたピースの見た目。親（board.tsx）が footprint 分の
  * 絶対配置ボックスを用意し、その中いっぱいに描画される想定。
  */
-export function AnimalPiece({ species, violating }: Props) {
+export function AnimalPiece({ species, violating, hidden }: Props) {
   return (
     <View
       style={[
@@ -22,6 +24,7 @@ export function AnimalPiece({ species, violating }: Props) {
           borderWidth: violating ? 3 : 2,
           backgroundColor: violating ? 'rgba(232, 56, 47, 0.22)' : colors.panel,
         },
+        hidden && styles.hidden,
       ]}>
       <Text style={styles.icon}>{speciesEmoji[species]}</Text>
     </View>
@@ -39,5 +42,8 @@ const styles = StyleSheet.create({
   },
   icon: {
     fontSize: 22,
+  },
+  hidden: {
+    opacity: 0,
   },
 });
