@@ -190,8 +190,17 @@ export const STAGES: Stage[] = [
   },
 ];
 
+const stageIdsFrom = (fromId: string, toId: string): string[] => {
+  const from = STAGES.findIndex((s) => s.id === fromId);
+  const to = STAGES.findIndex((s) => s.id === toId);
+  return STAGES.slice(from, to + 1).map((s) => s.id);
+};
+
 export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
-  { id: 'savanna-basics', name: 'サバンナのきほん', stageIds: STAGES.map((s) => s.id) },
+  { id: 'savanna-basics', name: '1章 サバンナのきほん', stageIds: stageIdsFrom('stage-1', 'stage-5') },
+  { id: 'savanna-thinking', name: '2章 かんがえるサバンナ', stageIds: stageIdsFrom('stage-6', 'stage-9') },
+  { id: 'elephant-secret', name: '3章 ゾウのひみつ', stageIds: stageIdsFrom('stage-10', 'stage-12') },
+  { id: 'wisdom-challenge', name: '4章 ちえくらべ', stageIds: stageIdsFrom('stage-13', 'stage-15') },
 ];
 
 export const getStage = (id: string): Stage | undefined => STAGES.find((s) => s.id === id);
