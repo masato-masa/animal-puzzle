@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { boundingBox, type Species } from '@/engine';
+import { speciesArt } from '@/lib/animal-art';
 import { colors, speciesEmoji, ui } from '@/theme';
 
 import { Draggable } from './draggable';
@@ -19,11 +20,16 @@ type Props = {
 /** トレイ用の単一チップ。形状のミニプレビュー（横長/縦長/正方形）を反映する。つまんで盤面へドラッグする。 */
 export function AnimalChip({ species, hidden, onDragStart, onDragMove, onDragEnd }: Props) {
   const { w, h } = boundingBox(species);
+  const art = speciesArt[species];
   return (
     <View style={[styles.wrapper, hidden && styles.hidden]}>
       <Draggable onDragStart={onDragStart} onDragMove={onDragMove} onDragEnd={onDragEnd}>
         <View style={[styles.chip, { width: w * CHIP_UNIT, height: h * CHIP_UNIT }]}>
-          <Text style={styles.icon}>{speciesEmoji[species]}</Text>
+          {art ? (
+            <Image source={art} style={{ width: w * CHIP_UNIT - 4, height: h * CHIP_UNIT - 4 }} resizeMode="contain" />
+          ) : (
+            <Text style={styles.icon}>{speciesEmoji[species]}</Text>
+          )}
         </View>
       </Draggable>
     </View>
@@ -44,6 +50,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.panelBorder,
     backgroundColor: colors.panel,
+    overflow: 'hidden',
     ...ui.shadow,
   },
   icon: {

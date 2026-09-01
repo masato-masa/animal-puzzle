@@ -195,7 +195,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
               height: overlayBox.h * cell,
             },
           ]}>
-          <AnimalPiece species={drag.species} />
+          <AnimalPiece species={drag.species} size={{ w: overlayBox.w * cell, h: overlayBox.h * cell }} />
         </View>
       ) : null}
     </View>

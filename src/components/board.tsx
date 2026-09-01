@@ -81,6 +81,7 @@ export function Board({
                   species={animal.species}
                   violating={violatingIds.has(animal.instanceId)}
                   hidden={animal.instanceId === hiddenInstanceId}
+                  size={{ w: w * cell, h: h * cell }}
                 />
               </Draggable>
             </View>
