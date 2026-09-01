@@ -1,24 +1,28 @@
 import { StyleSheet, View } from 'react-native';
 
-import type { AnimalInstance } from '@/engine';
+import type { AnimalInstance, Species } from '@/engine';
 
 import { AnimalChip } from './animal-chip';
 
 type Props = {
   tray: AnimalInstance[];
-  selectedInstanceId: string | null;
-  onSelect: (instanceId: string) => void;
+  hiddenInstanceId: string | null;
+  onChipDragStart: (instanceId: string, species: Species, pageX: number, pageY: number) => void;
+  onChipDragMove: (dx: number, dy: number) => void;
+  onChipDragEnd: (dx: number, dy: number, pageX: number, pageY: number) => void;
 };
 
-export function Tray({ tray, selectedInstanceId, onSelect }: Props) {
+export function Tray({ tray, hiddenInstanceId, onChipDragStart, onChipDragMove, onChipDragEnd }: Props) {
   return (
     <View style={styles.wrap}>
       {tray.map((a) => (
         <AnimalChip
           key={a.instanceId}
           species={a.species}
-          selected={a.instanceId === selectedInstanceId}
-          onPress={() => onSelect(a.instanceId)}
+          hidden={a.instanceId === hiddenInstanceId}
+          onDragStart={(pageX, pageY) => onChipDragStart(a.instanceId, a.species, pageX, pageY)}
+          onDragMove={onChipDragMove}
+          onDragEnd={onChipDragEnd}
         />
       ))}
     </View>

@@ -44,10 +44,22 @@ export const returnToTray = (state: GameState, instanceId: string): GameState =>
   };
 };
 
-/** タップされたセルにピースがあれば、そのピース全体をトレイに戻す。 */
+/** 指定セルにピースがあれば、そのピース全体をトレイに戻す。 */
 export const returnPieceAt = (state: GameState, pos: Pos): GameState => {
   const animal = animalAt(state, pos);
   return animal ? returnToTray(state, animal.instanceId) : state;
+};
+
+/**
+ * 盤面上に既にあるピースを新しいアンカーへ動かす（ドラッグでの移動用）。
+ * 移動先が配置不可（地形不一致・他ピースと重なる等）なら何もせず元の状態を返す
+ * ＝見た目上は元の位置にスナップバックする。
+ */
+export const moveAnimal = (state: GameState, instanceId: string, anchor: Pos): GameState => {
+  const withoutPiece = returnToTray(state, instanceId);
+  if (withoutPiece === state) return state;
+  const next = placeAnimal(withoutPiece, instanceId, anchor);
+  return next === withoutPiece ? state : next;
 };
 
 export const resetStage = (state: GameState): GameState => createGameState(state.stage);

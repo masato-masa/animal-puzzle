@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import {
-  animalAt,
+  boundingBox,
   createGameState,
   isStageCleared,
+  moveAnimal,
   placeAnimal,
   resetStage,
-  returnPieceAt,
-  validAnchorCells,
+  returnToTray,
   violatingAnimals,
   type GameState,
   type Pos,
+  type Species,
   type Stage,
 } from '@/engine';
 import { colors } from '@/theme';
 
+import { AnimalPiece } from './animal-piece';
 import { BackButton } from './back-button';
 import { Board } from './board';
 import { ClearOverlay } from './clear-overlay';
+import { useMeasuredRect } from './draggable';
 import { StageHud } from './stage-hud';
 import { Tray } from './tray';
 
@@ -31,15 +34,48 @@ type Props = {
   onList: () => void;
 };
 
+type Drag =
+  | {
+      kind: 'board';
+      instanceId: string;
+      species: Species;
+      originAnchor: Pos;
+      startX: number;
+      startY: number;
+      dx: number;
+      dy: number;
+    }
+  | {
+      kind: 'tray';
+      instanceId: string;
+      species: Species;
+      startX: number;
+      startY: number;
+      dx: number;
+      dy: number;
+    };
+
+const inRect = (px: number, py: number, rect: { x: number; y: number; w: number; h: number } | null): boolean =>
+  !!rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+
 /** 1ステージの画面全体を統括する。engineへの呼び出しはこのコンポーネントに集約する。 */
+/** 画面幅いっぱいから左右パディング分を引いた、盤面エリアに使える横幅の目安。 */
+const BOARD_AREA_HORIZONTAL_PADDING = 32;
+
 export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onList }: Props) {
+  const { width: windowWidth } = useWindowDimensions();
   const [state, setState] = useState<GameState>(() => createGameState(stage));
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(null);
-  const [cell, setCell] = useState(40);
+  const [drag, setDrag] = useState<Drag | null>(null);
   const clearedNotified = useRef(false);
 
+  const root = useMeasuredRect();
+  const boardArea = useMeasuredRect();
+  const trayArea = useMeasuredRect();
+
+  const availableWidth = Math.min(windowWidth - BOARD_AREA_HORIZONTAL_PADDING, 520);
+  const cell = Math.max(18, Math.min(64, Math.floor(availableWidth / stage.cols)));
+
   const violatingIds = new Set(violatingAnimals(state).map((a) => a.instanceId));
-  const validAnchors = selectedInstanceId ? validAnchorCells(state, selectedInstanceId) : null;
   const cleared = isStageCleared(state);
 
   useEffect(() => {
@@ -50,60 +86,118 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     if (!cleared) clearedNotified.current = false;
   }, [cleared, onCleared]);
 
-  const handleLayout = (e: LayoutChangeEvent) => {
-    const width = e.nativeEvent.layout.width;
-    setCell(Math.max(18, Math.min(64, Math.floor(width / stage.cols))));
+  useEffect(() => {
+    // レイアウトが落ち着いてから測る。フォント読み込み等での遅延ずれに強くするため少し待つ。
+    const t = setTimeout(() => {
+      root.measure();
+      boardArea.measure();
+      trayArea.measure();
+    }, 50);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cell, stage.id]);
+
+  const handlePieceDragStart = (instanceId: string, species: Species, anchor: Pos, pageX: number, pageY: number) => {
+    boardArea.measure();
+    trayArea.measure();
+    setDrag({ kind: 'board', instanceId, species, originAnchor: anchor, startX: pageX, startY: pageY, dx: 0, dy: 0 });
   };
 
-  const handleCellPress = (pos: Pos) => {
-    const existing = animalAt(state, pos);
-    if (existing) {
-      setState((s) => returnPieceAt(s, pos));
-      setSelectedInstanceId(null);
-      return;
-    }
-    if (!selectedInstanceId) return;
-    setState((s) => {
-      const next = placeAnimal(s, selectedInstanceId, pos);
-      if (next !== s) setSelectedInstanceId(null);
-      return next;
+  const handleChipDragStart = (instanceId: string, species: Species, pageX: number, pageY: number) => {
+    boardArea.measure();
+    trayArea.measure();
+    setDrag({ kind: 'tray', instanceId, species, startX: pageX, startY: pageY, dx: 0, dy: 0 });
+  };
+
+  const handleDragMove = (dx: number, dy: number) => {
+    setDrag((d) => (d ? { ...d, dx, dy } : d));
+  };
+
+  const handleDragEnd = (dx: number, dy: number, pageX: number, pageY: number) => {
+    setDrag((d) => {
+      if (!d) return null;
+      if (d.kind === 'board') {
+        if (inRect(pageX, pageY, trayArea.rect)) {
+          setState((s) => returnToTray(s, d.instanceId));
+        } else {
+          const deltaCols = Math.round(dx / cell);
+          const deltaRows = Math.round(dy / cell);
+          const anchor: Pos = { r: d.originAnchor.r + deltaRows, c: d.originAnchor.c + deltaCols };
+          setState((s) => moveAnimal(s, d.instanceId, anchor));
+        }
+      } else {
+        const board = boardArea.rect;
+        if (board && inRect(pageX, pageY, board)) {
+          const c = Math.floor((pageX - board.x) / cell);
+          const r = Math.floor((pageY - board.y) / cell);
+          setState((s) => placeAnimal(s, d.instanceId, { r, c }));
+        }
+      }
+      return null;
     });
-  };
-
-  const handleSelectTray = (instanceId: string) => {
-    setSelectedInstanceId((prev) => (prev === instanceId ? null : instanceId));
   };
 
   const handleReset = () => {
     setState((s) => resetStage(s));
-    setSelectedInstanceId(null);
+    setDrag(null);
   };
 
   const handleRetry = () => {
     setState(createGameState(stage));
-    setSelectedInstanceId(null);
+    setDrag(null);
     clearedNotified.current = false;
   };
 
+  const overlayBox = drag ? boundingBox(drag.species) : null;
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container} ref={root.ref}>
       <BackButton onPress={onBack} />
       <Text style={styles.title}>{stage.name}</Text>
 
-      <View style={styles.boardArea} onLayout={handleLayout}>
+      <View style={styles.boardArea}>
         <Board
           state={state}
           cell={cell}
           violatingIds={violatingIds}
-          validAnchors={validAnchors}
-          onCellPress={handleCellPress}
+          hiddenInstanceId={drag?.kind === 'board' ? drag.instanceId : null}
+          onPieceDragStart={handlePieceDragStart}
+          onPieceDragMove={handleDragMove}
+          onPieceDragEnd={handleDragEnd}
+          floorRef={boardArea.ref}
+          onFloorLayout={boardArea.onLayout}
         />
       </View>
 
-      <Tray tray={state.tray} selectedInstanceId={selectedInstanceId} onSelect={handleSelectTray} />
+      <View ref={trayArea.ref} onLayout={trayArea.onLayout}>
+        <Tray
+          tray={state.tray}
+          hiddenInstanceId={drag?.kind === 'tray' ? drag.instanceId : null}
+          onChipDragStart={handleChipDragStart}
+          onChipDragMove={handleDragMove}
+          onChipDragEnd={handleDragEnd}
+        />
+      </View>
+
       <StageHud remaining={state.tray.length} onReset={handleReset} />
 
       {cleared ? <ClearOverlay hasNext={hasNext} onNext={onNext} onRetry={handleRetry} onList={onList} /> : null}
+
+      {drag && overlayBox && root.rect ? (
+        <View
+          pointerEvents="none"
+          style={[
+            styles.dragOverlay,
+            {
+              left: drag.startX - root.rect.x + drag.dx,
+              top: drag.startY - root.rect.y + drag.dy,
+              width: overlayBox.w * cell,
+              height: overlayBox.h * cell,
+            },
+          ]}>
+          <AnimalPiece species={drag.species} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -125,5 +219,10 @@ const styles = StyleSheet.create({
   boardArea: {
     width: '100%',
     alignItems: 'center',
+  },
+  dragOverlay: {
+    position: 'absolute',
+    zIndex: 50,
+    opacity: 0.9,
   },
 });

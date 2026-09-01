@@ -5,6 +5,7 @@ import {
   countSolutions,
   createGameState,
   isStageCleared,
+  moveAnimal,
   placeAnimal,
   resetStage,
   returnPieceAt,
@@ -122,6 +123,35 @@ describe('board placement', () => {
     state = returnPieceAt(state, { r: 1, c: 1 });
     expect(state.placed).toHaveLength(0);
     expect(state.tray).toHaveLength(1);
+  });
+
+  test('moveAnimal relocates an already-placed piece to a new anchor', () => {
+    const stage = makeStage({ animals: [{ instanceId: 'e1', species: 'elephant' }] });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'e1', { r: 0, c: 0 });
+    state = moveAnimal(state, 'e1', { r: 1, c: 1 });
+    expect(state.placed[0].anchor).toEqual({ r: 1, c: 1 });
+    expect(state.placed[0].cells).toEqual([
+      { r: 1, c: 1 },
+      { r: 1, c: 2 },
+      { r: 2, c: 1 },
+      { r: 2, c: 2 },
+    ]);
+  });
+
+  test('moveAnimal snaps back (no-op) when the destination is invalid', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'e1', species: 'elephant' },
+        { instanceId: 's1', species: 'squirrel' },
+      ],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'e1', { r: 0, c: 0 });
+    state = placeAnimal(state, 's1', { r: 3, c: 3 });
+    const before = state;
+    state = moveAnimal(state, 'e1', { r: 3, c: 3 }); // overlaps the squirrel
+    expect(state).toBe(before);
   });
 
   test('resetStage empties the board back to a full tray', () => {
