@@ -115,6 +115,43 @@ export const STAGES: Stage[] = [
       ['giraffe', 3],
     ]),
   },
+  {
+    id: 'stage-10',
+    name: '10. ゾウのすきまさがし',
+    rows: 5,
+    cols: 6,
+    terrain: terrain(['#####.', '#####.', '......', '......', '######']),
+    animals: animals([
+      ['zebra', 2],
+      ['elephant', 2],
+      ['lion', 1],
+    ]),
+  },
+  {
+    id: 'stage-11',
+    name: '11. わかれたせき',
+    rows: 5,
+    cols: 6,
+    terrain: terrain(['....##', '......', '......', '######', '######']),
+    animals: animals([
+      ['elephant', 2],
+      ['giraffe', 1],
+      ['lion', 1],
+      ['zebra', 2],
+    ]),
+  },
+  {
+    id: 'stage-12',
+    name: '12. たてにならぶゾウ',
+    rows: 7,
+    cols: 5,
+    terrain: terrain(['..###', '..###', '..###', '..###', '..###', '...##', '##.##']),
+    animals: animals([
+      ['elephant', 2],
+      ['zebra', 2],
+      ['lion', 1],
+    ]),
+  },
 ];
 
 export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
