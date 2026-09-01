@@ -4,6 +4,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { colors, ui } from '@/theme';
 
 import { ActionButton } from './action-button';
+import { Confetti } from './confetti';
 
 type Props = {
   hasNext: boolean;
@@ -21,6 +22,7 @@ export function ClearOverlay({ hasNext, onNext, onRetry, onList }: Props) {
 
   return (
     <View style={styles.backdrop}>
+      <Confetti />
       <Animated.View
         style={[
           styles.card,
