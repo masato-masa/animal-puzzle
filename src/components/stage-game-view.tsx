@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import {
   boundingBox,
@@ -7,7 +7,6 @@ import {
   isStageCleared,
   moveAnimal,
   placeAnimal,
-  resetStage,
   returnToTray,
   violatingAnimals,
   type AnimalInstance,
@@ -16,16 +15,13 @@ import {
   type Species,
   type Stage,
 } from '@/engine';
-import { colors } from '@/theme';
+import { colors, ui } from '@/theme';
 
 import { AnimalPiece } from './animal-piece';
-import { BackButton } from './back-button';
 import { Board } from './board';
 import { ClearOverlay } from './clear-overlay';
 import { ConditionsPanel } from './conditions-panel';
-import { ConfirmDialog } from './confirm-dialog';
 import { useMeasuredRect } from './draggable';
-import { StageHud } from './stage-hud';
 import { Tray } from './tray';
 
 type Props = {
@@ -68,8 +64,8 @@ const BOARD_AREA_HORIZONTAL_PADDING = 32;
 const MIN_CELL = 18;
 const MAX_CELL = 64;
 const TRAY_PIECE_MARGIN = 8;
-/** 盤面・トレイ以外に見積もる固定の縦スペース（もどるボタン余白・タイトル・HUD・条件見出し等）。 */
-const FIXED_CHROME_HEIGHT = 250;
+/** 盤面・トレイ以外に見積もる固定の縦スペース（上部バー・余白等）。じょうけんは重ねて開くので含めない。 */
+const FIXED_CHROME_HEIGHT = 110;
 
 /** トレイの各ピースの初期位置を、折り返しのある単純なグリッドとして一度だけ計算する。 */
 const packTray = (
@@ -117,7 +113,6 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   const [state, setState] = useState<GameState>(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
   const [conditionsExpanded, setConditionsExpanded] = useState(false);
-  const [confirmingReset, setConfirmingReset] = useState(false);
   const clearedNotified = useRef(false);
 
   const cell = fitCell(stage, windowWidth, windowHeight);
@@ -226,18 +221,6 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     setPiecePosition(d.instanceId, pieceLeft, pieceTop);
   };
 
-  const handleReset = () => {
-    if (state.placed.length === 0) return;
-    setConfirmingReset(true);
-  };
-
-  const confirmReset = () => {
-    setState((s) => resetStage(s));
-    setCustomPositions({});
-    setDrag(null);
-    setConfirmingReset(false);
-  };
-
   const handleRetry = () => {
     setState(createGameState(stage));
     setCustomPositions({});
@@ -249,9 +232,24 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
 
   return (
     <View style={styles.screen}>
-      <BackButton onPress={onBack} />
       <View style={styles.content} ref={content.ref} onLayout={content.onLayout}>
-        <Text style={styles.title}>{stage.name}</Text>
+        <View style={styles.topBar}>
+          <Pressable onPress={onBack} hitSlop={8} style={styles.iconBtn}>
+            <Text style={styles.iconText}>←</Text>
+          </Pressable>
+          <Text style={styles.title} numberOfLines={1}>
+            {stage.name}
+          </Text>
+          <Pressable onPress={() => setConditionsExpanded((v) => !v)} hitSlop={8} style={styles.iconBtn}>
+            <Text style={styles.iconText}>{conditionsExpanded ? '▲' : '▼'}</Text>
+          </Pressable>
+
+          {conditionsExpanded ? (
+            <View style={styles.conditionsDropdown}>
+              <ConditionsPanel species={uniqueSpecies} />
+            </View>
+          ) : null}
+        </View>
 
         <View style={styles.boardArea}>
           <Board
@@ -280,14 +278,6 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
           />
         </View>
 
-        <StageHud remaining={state.tray.length} onReset={handleReset} />
-
-        <ConditionsPanel
-          species={uniqueSpecies}
-          expanded={conditionsExpanded}
-          onToggleExpanded={() => setConditionsExpanded((v) => !v)}
-        />
-
         {drag && overlayBox && content.rect ? (
           <View
             pointerEvents="none"
@@ -306,16 +296,6 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
       </View>
 
       {cleared ? <ClearOverlay hasNext={hasNext} onNext={onNext} onRetry={handleRetry} onList={onList} /> : null}
-
-      {confirmingReset ? (
-        <ConfirmDialog
-          title="リセットしますか？"
-          message="おいた動物がすべてトレイに戻ります。"
-          confirmLabel="リセット"
-          onConfirm={confirmReset}
-          onCancel={() => setConfirmingReset(false)}
-        />
-      ) : null}
     </View>
   );
 }
@@ -331,15 +311,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    paddingTop: 48,
+    paddingTop: 16,
     paddingHorizontal: 16,
     paddingBottom: 12,
     position: 'relative',
   },
-  title: {
+  topBar: {
+    width: '100%',
+    maxWidth: 520,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    zIndex: 20,
+  },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.panel,
+    borderWidth: 2,
+    borderColor: colors.panelBorder,
+    ...ui.shadow,
+  },
+  iconText: {
     color: colors.text,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '900',
+  },
+  title: {
+    flex: 1,
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  conditionsDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    marginTop: 8,
+    zIndex: 30,
   },
   boardArea: {
     width: '100%',
