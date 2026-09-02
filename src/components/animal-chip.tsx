@@ -41,9 +41,7 @@ export function AnimalChip({ species, cell, hidden, onDragStart, onDragMove, onD
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    margin: 4,
-  },
+  wrapper: {},
   hidden: {
     opacity: 0,
   },

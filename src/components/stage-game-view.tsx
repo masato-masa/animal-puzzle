@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import {
   boundingBox,
@@ -10,6 +10,7 @@ import {
   resetStage,
   returnToTray,
   violatingAnimals,
+  type AnimalInstance,
   type GameState,
   type Pos,
   type Species,
@@ -17,7 +18,6 @@ import {
 } from '@/engine';
 import { colors } from '@/theme';
 
-import { AnimalChip } from './animal-chip';
 import { AnimalPiece } from './animal-piece';
 import { BackButton } from './back-button';
 import { Board } from './board';
@@ -58,31 +58,86 @@ type Drag =
       dy: number;
     };
 
-type FloatingPos = { x: number; y: number };
+type TrayPos = { x: number; y: number };
 
 const inRect = (px: number, py: number, rect: { x: number; y: number; w: number; h: number } | null): boolean =>
   !!rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
 
 /** 画面幅いっぱいから左右パディング分を引いた、盤面エリアに使える横幅の目安。 */
 const BOARD_AREA_HORIZONTAL_PADDING = 32;
+const MIN_CELL = 18;
+const MAX_CELL = 64;
+const TRAY_PIECE_MARGIN = 8;
+/** 盤面・トレイ以外に見積もる固定の縦スペース（もどるボタン余白・タイトル・HUD・条件見出し等）。 */
+const FIXED_CHROME_HEIGHT = 250;
+
+/** トレイの各ピースの初期位置を、折り返しのある単純なグリッドとして一度だけ計算する。 */
+const packTray = (
+  animals: AnimalInstance[],
+  cell: number,
+  zoneWidth: number
+): { positions: Record<string, TrayPos>; height: number } => {
+  const positions: Record<string, TrayPos> = {};
+  let x = 0;
+  let y = 0;
+  let rowHeight = 0;
+  for (const a of animals) {
+    const { w, h } = boundingBox(a.species);
+    const pw = w * cell;
+    const ph = h * cell;
+    if (x > 0 && x + pw > zoneWidth) {
+      x = 0;
+      y += rowHeight + TRAY_PIECE_MARGIN;
+      rowHeight = 0;
+    }
+    positions[a.instanceId] = { x, y };
+    x += pw + TRAY_PIECE_MARGIN;
+    rowHeight = Math.max(rowHeight, ph);
+  }
+  return { positions, height: animals.length === 0 ? 0 : y + rowHeight };
+};
+
+/** 縦スクロールなしで収まるよう、横幅だけでなく画面の高さからもセルサイズを決める。 */
+const fitCell = (stage: Stage, windowWidth: number, windowHeight: number): number => {
+  const availableWidth = Math.min(windowWidth - BOARD_AREA_HORIZONTAL_PADDING, 520);
+  let cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(availableWidth / stage.cols)));
+
+  while (cell > MIN_CELL) {
+    const boardHeight = stage.rows * cell;
+    const trayHeight = packTray(stage.animals, cell, cell * stage.cols).height;
+    if (FIXED_CHROME_HEIGHT + boardHeight + trayHeight <= windowHeight) break;
+    cell -= 1;
+  }
+  return cell;
+};
 
 /** 1ステージの画面全体を統括する。engineへの呼び出しはこのコンポーネントに集約する。 */
 export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onList }: Props) {
-  const { width: windowWidth } = useWindowDimensions();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [state, setState] = useState<GameState>(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
-  const [conditionsExpanded, setConditionsExpanded] = useState(true);
+  const [conditionsExpanded, setConditionsExpanded] = useState(false);
   const [confirmingReset, setConfirmingReset] = useState(false);
-  /** トレイにあるが、盤面のマスにもトレイの並びにも収まらず自由な位置に置かれているピース。 */
-  const [floating, setFloating] = useState<Record<string, FloatingPos>>({});
   const clearedNotified = useRef(false);
+
+  const cell = fitCell(stage, windowWidth, windowHeight);
+  const trayZoneWidth = cell * stage.cols;
+  const trayLayout = packTray(stage.animals, cell, trayZoneWidth);
+
+  /**
+   * ドラッグでユーザーが動かしたピースの位置（トレイ枠基準）。まだ動かしていないピースは
+   * trayLayout.positionsの初期グリッド位置を使う。cellはウィンドウサイズから毎レンダー
+   * 計算し直すため、初回マウント時のuseState初期値としてtrayLayoutを固定してしまうと、
+   * 初回のcellがまだ安定していない場合にズレたまま固まってしまう。そのため「動かした
+   * ピースだけ上書きする差分」として持ち、動かしていないピースは常に最新のcellで
+   * 計算されたデフォルト位置を使うようにする。
+   */
+  const [customPositions, setCustomPositions] = useState<Record<string, TrayPos>>({});
+  const positions: Record<string, TrayPos> = { ...trayLayout.positions, ...customPositions };
 
   const content = useMeasuredRect();
   const boardArea = useMeasuredRect();
   const trayArea = useMeasuredRect();
-
-  const availableWidth = Math.min(windowWidth - BOARD_AREA_HORIZONTAL_PADDING, 520);
-  const cell = Math.max(18, Math.min(64, Math.floor(availableWidth / stage.cols)));
 
   const violatingIds = new Set(violatingAnimals(state).map((a) => a.instanceId));
   const cleared = isStageCleared(state);
@@ -97,8 +152,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   }, [cleared, onCleared]);
 
   useEffect(() => {
-    // レイアウトが落ち着いてから測る。フォント読み込み等での遅延ずれや、条件パネルの
-    // 開閉によるトレイ位置のズレに強くするため少し待つ。
+    // レイアウトが落ち着いてから測る。フォント読み込み等での遅延ずれに強くするため少し待つ。
     const t = setTimeout(() => {
       content.measure();
       boardArea.measure();
@@ -106,18 +160,18 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     }, 50);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, stage.id, conditionsExpanded]);
+  }, [cell, stage.id]);
 
-  const setFloatingPosition = (instanceId: string, pageLeft: number, pageTop: number) => {
-    const origin = content.rect;
+  const setPiecePosition = (instanceId: string, pageLeft: number, pageTop: number) => {
+    const origin = trayArea.rect;
     if (!origin) return;
-    setFloating((f) => ({ ...f, [instanceId]: { x: pageLeft - origin.x, y: pageTop - origin.y } }));
+    setCustomPositions((p) => ({ ...p, [instanceId]: { x: pageLeft - origin.x, y: pageTop - origin.y } }));
   };
 
-  const clearFloating = (instanceId: string) => {
-    setFloating((f) => {
-      if (!(instanceId in f)) return f;
-      const next = { ...f };
+  const clearPosition = (instanceId: string) => {
+    setCustomPositions((p) => {
+      if (!(instanceId in p)) return p;
+      const next = { ...p };
       delete next[instanceId];
       return next;
     });
@@ -154,16 +208,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     const pieceCenterY = pieceTop + (box.h * cell) / 2;
 
     const board = boardArea.rect;
-    const overTray = inRect(pieceCenterX, pieceCenterY, trayArea.rect);
-    const overBoard = inRect(pieceCenterX, pieceCenterY, board);
-
-    if (overTray) {
-      if (d.kind === 'board') setState((s) => returnToTray(s, d.instanceId));
-      clearFloating(d.instanceId);
-      return;
-    }
-
-    if (overBoard && board) {
+    if (board && inRect(pieceCenterX, pieceCenterY, board)) {
       const anchor: Pos = {
         r: Math.round((pieceTop - board.y) / cell),
         c: Math.round((pieceLeft - board.x) / cell),
@@ -171,112 +216,94 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
       const next = (d.kind === 'board' ? moveAnimal : placeAnimal)(state, d.instanceId, anchor);
       if (next !== state) {
         setState(next);
-        clearFloating(d.instanceId);
+        clearPosition(d.instanceId);
         return;
       }
     }
 
-    // マスにぴったりはまらなかった場合は、指を離したその場所に自由に置く（茂みの上なども可）。
+    // 有効なマスにぴったりはまらなかった場合は、指を離したその場所に自由に置く（トレイの外・茂みの上なども可）。
     if (d.kind === 'board') setState((s) => returnToTray(s, d.instanceId));
-    setFloatingPosition(d.instanceId, pieceLeft, pieceTop);
+    setPiecePosition(d.instanceId, pieceLeft, pieceTop);
   };
 
   const handleReset = () => {
-    if (state.placed.length === 0 && Object.keys(floating).length === 0) return;
+    if (state.placed.length === 0) return;
     setConfirmingReset(true);
   };
 
   const confirmReset = () => {
     setState((s) => resetStage(s));
-    setFloating({});
+    setCustomPositions({});
     setDrag(null);
     setConfirmingReset(false);
   };
 
   const handleRetry = () => {
     setState(createGameState(stage));
-    setFloating({});
+    setCustomPositions({});
     setDrag(null);
     clearedNotified.current = false;
   };
 
   const overlayBox = drag ? boundingBox(drag.species) : null;
-  const strayTray = state.tray.filter((a) => !(a.instanceId in floating));
 
   return (
     <View style={styles.screen}>
       <BackButton onPress={onBack} />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.content} ref={content.ref} onLayout={content.onLayout}>
-          <Text style={styles.title}>{stage.name}</Text>
+      <View style={styles.content} ref={content.ref} onLayout={content.onLayout}>
+        <Text style={styles.title}>{stage.name}</Text>
 
-          <View style={styles.boardArea}>
-            <Board
-              state={state}
-              cell={cell}
-              violatingIds={violatingIds}
-              hiddenInstanceId={drag?.kind === 'board' ? drag.instanceId : null}
-              onPieceDragStart={handlePieceDragStart}
-              onPieceDragMove={handleDragMove}
-              onPieceDragEnd={handleDragEnd}
-              floorRef={boardArea.ref}
-              onFloorLayout={boardArea.onLayout}
-            />
-          </View>
-
-          <ConditionsPanel
-            species={uniqueSpecies}
-            expanded={conditionsExpanded}
-            onToggleExpanded={() => setConditionsExpanded((v) => !v)}
+        <View style={styles.boardArea}>
+          <Board
+            state={state}
+            cell={cell}
+            violatingIds={violatingIds}
+            hiddenInstanceId={drag?.kind === 'board' ? drag.instanceId : null}
+            onPieceDragStart={handlePieceDragStart}
+            onPieceDragMove={handleDragMove}
+            onPieceDragEnd={handleDragEnd}
+            floorRef={boardArea.ref}
+            onFloorLayout={boardArea.onLayout}
           />
-
-          <View ref={trayArea.ref} onLayout={trayArea.onLayout} style={styles.trayWrap}>
-            <Tray
-              tray={strayTray}
-              cell={cell}
-              hiddenInstanceId={drag?.kind === 'tray' ? drag.instanceId : null}
-              onChipDragStart={handleChipDragStart}
-              onChipDragMove={handleDragMove}
-              onChipDragEnd={handleDragEnd}
-            />
-          </View>
-
-          <StageHud remaining={state.tray.length} onReset={handleReset} />
-
-          {Object.entries(floating).map(([instanceId, pos]) => {
-            const animal = state.tray.find((a) => a.instanceId === instanceId);
-            if (!animal) return null;
-            return (
-              <View key={instanceId} style={[styles.floatingSlot, { left: pos.x, top: pos.y }]}>
-                <AnimalChip
-                  species={animal.species}
-                  cell={cell}
-                  hidden={drag?.kind === 'tray' && drag.instanceId === instanceId}
-                  onDragStart={(pageX, pageY) => handleChipDragStart(instanceId, animal.species, pageX, pageY)}
-                  onDragMove={handleDragMove}
-                  onDragEnd={handleDragEnd}
-                />
-              </View>
-            );
-          })}
-
-          {drag && overlayBox && content.rect ? (
-            <View
-              pointerEvents="none"
-              style={[
-                styles.dragOverlay,
-                {
-                  left: drag.startX - content.rect.x + drag.dx,
-                  top: drag.startY - content.rect.y + drag.dy,
-                  width: overlayBox.w * cell,
-                  height: overlayBox.h * cell,
-                },
-              ]}>
-              <AnimalPiece species={drag.species} size={{ w: overlayBox.w * cell, h: overlayBox.h * cell }} />
-            </View>
-          ) : null}
         </View>
-      </ScrollView>
+
+        <View ref={trayArea.ref} onLayout={trayArea.onLayout}>
+          <Tray
+            tray={state.tray}
+            cell={cell}
+            positions={positions}
+            size={{ width: trayZoneWidth, height: trayLayout.height }}
+            hiddenInstanceId={drag?.kind === 'tray' ? drag.instanceId : null}
+            onChipDragStart={handleChipDragStart}
+            onChipDragMove={handleDragMove}
+            onChipDragEnd={handleDragEnd}
+          />
+        </View>
+
+        <StageHud remaining={state.tray.length} onReset={handleReset} />
+
+        <ConditionsPanel
+          species={uniqueSpecies}
+          expanded={conditionsExpanded}
+          onToggleExpanded={() => setConditionsExpanded((v) => !v)}
+        />
+
+        {drag && overlayBox && content.rect ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.dragOverlay,
+              {
+                left: drag.startX - content.rect.x + drag.dx,
+                top: drag.startY - content.rect.y + drag.dy,
+                width: overlayBox.w * cell,
+                height: overlayBox.h * cell,
+              },
+            ]}>
+            <AnimalPiece species={drag.species} size={{ w: overlayBox.w * cell, h: overlayBox.h * cell }} />
+          </View>
+        ) : null}
+      </View>
 
       {cleared ? <ClearOverlay hasNext={hasNext} onNext={onNext} onRetry={handleRetry} onList={onList} /> : null}
 
@@ -298,33 +325,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.skyBottom,
   },
-  scrollContent: {
-    alignItems: 'center',
-    paddingTop: 64,
-    paddingHorizontal: 16,
-    paddingBottom: 48,
-  },
   content: {
+    flex: 1,
     width: '100%',
     alignItems: 'center',
-    gap: 16,
+    justifyContent: 'center',
+    gap: 12,
+    paddingTop: 48,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     position: 'relative',
   },
   title: {
     color: colors.text,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '900',
   },
   boardArea: {
     width: '100%',
     alignItems: 'center',
-  },
-  trayWrap: {
-    width: '100%',
-  },
-  floatingSlot: {
-    position: 'absolute',
-    zIndex: 5,
   },
   dragOverlay: {
     position: 'absolute',
