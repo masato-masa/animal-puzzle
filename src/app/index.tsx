@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { Species } from '@/engine';
-import { CHAPTERS, getStage } from '@/levels/stages';
+import { CHAPTERS, getStage, STAGES } from '@/levels/stages';
 import { speciesArt } from '@/lib/animal-art';
 import { loadProgress } from '@/storage/progress';
 import { colors, speciesEmoji, ui } from '@/theme';
@@ -29,9 +29,21 @@ export default function StageSelectScreen() {
     }, [])
   );
 
+  const totalCleared = clearedIds.size;
+  const totalStages = STAGES.length;
+  const overallRatio = totalStages === 0 ? 0 : totalCleared / totalStages;
+
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Text style={styles.appTitle}>動物パズル</Text>
+      <View style={styles.overallProgress}>
+        <View style={styles.overallProgressTrack}>
+          <View style={[styles.overallProgressFill, { width: `${overallRatio * 100}%` }]} />
+        </View>
+        <Text style={styles.overallProgressText}>
+          {totalCleared} / {totalStages} クリア
+        </Text>
+      </View>
       {CHAPTERS.map((chapter) => {
         const chapterClearedCount = chapter.stageIds.filter((id) => clearedIds.has(id)).length;
         return (
@@ -100,6 +112,29 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
     marginBottom: 8,
+  },
+  overallProgress: {
+    gap: 6,
+    marginBottom: 4,
+  },
+  overallProgressTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: colors.panel,
+    borderWidth: 2,
+    borderColor: colors.panelBorder,
+    overflow: 'hidden',
+  },
+  overallProgressFill: {
+    height: '100%',
+    backgroundColor: colors.accent,
+    borderRadius: 999,
+  },
+  overallProgressText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   chapter: {
     gap: 10,
