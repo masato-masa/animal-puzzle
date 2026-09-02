@@ -9,6 +9,8 @@ import { Draggable } from './draggable';
 import { PopIn } from './pop-in';
 
 const grassBg = require('@/assets/images/terrain/grass-bg.png');
+const fenceH = require('@/assets/images/fence/fence-h.png');
+const fenceV = require('@/assets/images/fence/fence-v.png');
 
 type Props = {
   state: GameState;
@@ -25,7 +27,7 @@ type Props = {
   onFloorLayout?: (e: LayoutChangeEvent) => void;
 };
 
-/** 盤面の描画。voidマスは何も描かず非インタラクティブにすることで非矩形の外形を表現する。枠線は持たない。 */
+/** 盤面の描画。voidマスは何も描かず非インタラクティブにすることで非矩形の外形を表現する。盤面自体は柵で囲む。 */
 export function Board({
   state,
   cell,
@@ -41,65 +43,131 @@ export function Board({
   const width = stage.cols * cell;
   const height = stage.rows * cell;
 
+  const fenceThickness = Math.round(cell * 0.7);
+  const outerWidth = width + fenceThickness * 2;
+  const hSegW = cell * 2;
+  const vSegH = cell * 2;
+  const hCount = Math.ceil(outerWidth / hSegW);
+  const vCount = Math.ceil(height / vSegH);
+
   const cells: Pos[] = [];
   for (let r = 0; r < stage.rows; r++) {
     for (let c = 0; c < stage.cols; c++) cells.push({ r, c });
   }
 
   return (
-    <View ref={floorRef} onLayout={onFloorLayout} style={[styles.floor, { width, height }]}>
-      <Image source={grassBg} resizeMode="cover" style={[StyleSheet.absoluteFill, { width, height }]} />
+    <View style={[styles.fenceWrap, { width: outerWidth, height: height + fenceThickness * 2 }]}>
+      <View style={[styles.fenceRow, { top: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+        {Array.from({ length: hCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={fenceH}
+            resizeMode="stretch"
+            style={{ position: 'absolute', left: i * hSegW, width: hSegW, height: fenceThickness }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceRow, { bottom: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+        {Array.from({ length: hCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={fenceH}
+            resizeMode="stretch"
+            style={{ position: 'absolute', left: i * hSegW, width: hSegW, height: fenceThickness }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceCol, { left: 0, top: fenceThickness, width: fenceThickness, height }]}>
+        {Array.from({ length: vCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={fenceV}
+            resizeMode="stretch"
+            style={{ position: 'absolute', top: i * vSegH, width: fenceThickness, height: vSegH }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceCol, { right: 0, top: fenceThickness, width: fenceThickness, height }]}>
+        {Array.from({ length: vCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={fenceV}
+            resizeMode="stretch"
+            style={{ position: 'absolute', top: i * vSegH, width: fenceThickness, height: vSegH }}
+          />
+        ))}
+      </View>
 
-      {cells.map((pos) => {
-        const terrain = terrainAt(stage, pos);
-        if (terrain === 'void' || terrain === 'land') return null;
-        return (
-          <View
-            key={`${pos.r},${pos.c}`}
-            style={[styles.cell, { left: pos.c * cell, top: pos.r * cell, width: cell, height: cell }]}>
-            <BoardCell terrain={terrain} size={cell} />
-          </View>
-        );
-      })}
+      <View
+        ref={floorRef}
+        onLayout={onFloorLayout}
+        style={[styles.floor, { left: fenceThickness, top: fenceThickness, width, height }]}>
+        <Image source={grassBg} resizeMode="cover" style={[StyleSheet.absoluteFill, { width, height }]} />
 
-      {placed.map((animal) => {
-        const { w, h } = boundingBox(animal.species);
-        return (
-          <View
-            key={animal.instanceId}
-            style={[
-              styles.pieceSlot,
-              {
-                left: animal.anchor.c * cell,
-                top: animal.anchor.r * cell,
-                width: w * cell,
-                height: h * cell,
-              },
-            ]}>
-            <PopIn>
-              <Draggable
-                onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
-                onDragMove={onPieceDragMove}
-                onDragEnd={onPieceDragEnd}>
-                <AnimalPiece
-                  species={animal.species}
-                  violating={violatingIds.has(animal.instanceId)}
-                  hidden={animal.instanceId === hiddenInstanceId}
-                  size={{ w: w * cell, h: h * cell }}
-                />
-              </Draggable>
-            </PopIn>
-          </View>
-        );
-      })}
+        {cells.map((pos) => {
+          const terrain = terrainAt(stage, pos);
+          if (terrain === 'void' || terrain === 'land') return null;
+          return (
+            <View
+              key={`${pos.r},${pos.c}`}
+              style={[styles.cell, { left: pos.c * cell, top: pos.r * cell, width: cell, height: cell }]}>
+              <BoardCell terrain={terrain} size={cell} />
+            </View>
+          );
+        })}
+
+        {placed.map((animal) => {
+          const { w, h } = boundingBox(animal.species);
+          return (
+            <View
+              key={animal.instanceId}
+              style={[
+                styles.pieceSlot,
+                {
+                  left: animal.anchor.c * cell,
+                  top: animal.anchor.r * cell,
+                  width: w * cell,
+                  height: h * cell,
+                },
+              ]}>
+              <PopIn>
+                <Draggable
+                  onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
+                  onDragMove={onPieceDragMove}
+                  onDragEnd={onPieceDragEnd}>
+                  <AnimalPiece
+                    species={animal.species}
+                    violating={violatingIds.has(animal.instanceId)}
+                    hidden={animal.instanceId === hiddenInstanceId}
+                    size={{ w: w * cell, h: h * cell }}
+                  />
+                </Draggable>
+              </PopIn>
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  floor: {
+  fenceWrap: {
     position: 'relative',
     alignSelf: 'center',
+  },
+  fenceRow: {
+    position: 'absolute',
+    overflow: 'hidden',
+    zIndex: 3,
+  },
+  fenceCol: {
+    position: 'absolute',
+    overflow: 'hidden',
+    zIndex: 3,
+  },
+  floor: {
+    position: 'absolute',
     overflow: 'hidden',
   },
   cell: {

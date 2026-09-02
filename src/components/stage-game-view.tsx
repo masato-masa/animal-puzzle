@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import {
   boundingBox,
@@ -23,6 +23,8 @@ import { ClearOverlay } from './clear-overlay';
 import { ConditionsPanel } from './conditions-panel';
 import { useMeasuredRect } from './draggable';
 import { Tray } from './tray';
+
+const grassBg = require('@/assets/images/terrain/grass-bg.png');
 
 type Props = {
   stage: Stage;
@@ -65,7 +67,7 @@ const MIN_CELL = 18;
 const MAX_CELL = 64;
 const TRAY_PIECE_MARGIN = 8;
 /** 盤面・トレイ以外に見積もる固定の縦スペース（上部バー・余白等）。じょうけんは重ねて開くので含めない。 */
-const FIXED_CHROME_HEIGHT = 110;
+const FIXED_CHROME_HEIGHT = 150;
 
 /** トレイの各ピースの初期位置を、折り返しのある単純なグリッドとして一度だけ計算する。 */
 const packTray = (
@@ -93,13 +95,15 @@ const packTray = (
   return { positions, height: animals.length === 0 ? 0 : y + rowHeight };
 };
 
-/** 縦スクロールなしで収まるよう、横幅だけでなく画面の高さからもセルサイズを決める。 */
+/** 縦スクロールなしで収まるよう、横幅だけでなく画面の高さからもセルサイズを決める。柵の太さ分も見込む。 */
 const fitCell = (stage: Stage, windowWidth: number, windowHeight: number): number => {
   const availableWidth = Math.min(windowWidth - BOARD_AREA_HORIZONTAL_PADDING, 520);
-  let cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(availableWidth / stage.cols)));
+  // 柵の太さ（左右あわせてセル約1.4個分）も横幅に収まるよう見込んでおく。
+  let cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(availableWidth / (stage.cols + 1.4))));
 
   while (cell > MIN_CELL) {
-    const boardHeight = stage.rows * cell;
+    const fenceThickness = Math.round(cell * 0.7);
+    const boardHeight = stage.rows * cell + fenceThickness * 2;
     const trayHeight = packTray(stage.animals, cell, cell * stage.cols).height;
     if (FIXED_CHROME_HEIGHT + boardHeight + trayHeight <= windowHeight) break;
     cell -= 1;
@@ -232,6 +236,12 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
 
   return (
     <View style={styles.screen}>
+      <Image
+        source={grassBg}
+        resizeMode="cover"
+        style={[styles.screenBg, { width: windowWidth, height: windowHeight }]}
+      />
+
       <View style={styles.content} ref={content.ref} onLayout={content.onLayout}>
         <View style={styles.topBar}>
           <Pressable onPress={onBack} hitSlop={8} style={styles.iconBtn}>
@@ -304,6 +314,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.skyBottom,
+  },
+  screenBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   content: {
     flex: 1,
