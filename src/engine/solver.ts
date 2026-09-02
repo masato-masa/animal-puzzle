@@ -44,6 +44,38 @@ export const countSolutions = (stage: Stage, cap = 2): number => {
   return count;
 };
 
+/**
+ * 種の配置条件（隣接禁止など）を無視し、「地形と重なりだけ見て形が入る」パターン数を数える。
+ * countSolutions と比較することで、そのステージが本当にルールで絞り込まれているか
+ * （見た目の候補は複数あるが正解は1つ）をステージ作成時にチェックできる。
+ */
+export const countGeometricPlacements = (stage: Stage, cap = 20): number => {
+  const instances = stage.animals;
+  const seen = new Set<string>();
+  let count = 0;
+
+  const backtrack = (state: GameState, index: number): void => {
+    if (count >= cap) return;
+    if (index === instances.length) {
+      const sig = canonicalSignature(state);
+      if (!seen.has(sig)) {
+        seen.add(sig);
+        count++;
+      }
+      return;
+    }
+    for (let r = 0; r < stage.rows && count < cap; r++) {
+      for (let c = 0; c < stage.cols && count < cap; c++) {
+        const next = placeAnimal(state, instances[index].instanceId, { r, c });
+        if (next !== state) backtrack(next, index + 1);
+      }
+    }
+  };
+
+  backtrack(createGameState(stage), 0);
+  return count;
+};
+
 export type SolutionStatus = 'none' | 'unique' | 'multiple';
 
 export const solutionStatus = (stage: Stage): SolutionStatus => {

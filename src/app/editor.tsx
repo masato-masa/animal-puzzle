@@ -1,11 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { BackButton } from '@/components/back-button';
 import {
   MAX_ANIMALS_PER_STAGE,
   SPECIES,
+  countGeometricPlacements,
   countSolutions,
   validateStage,
   type AnimalInstance,
@@ -14,15 +15,16 @@ import {
   type Stage,
 } from '@/engine';
 import { speciesArt } from '@/lib/animal-art';
+import { describeWarning, findDesignWarnings, type DesignWarning } from '@/lib/stage-design-checks';
+import { buildSubmissionIssueUrl } from '@/lib/stage-submission';
 import { generateCustomStageId, saveCustomStage } from '@/storage/custom-stages';
 import { colors, speciesEmoji, speciesLabel, terrainColors, ui } from '@/theme';
 
-const ALL_SPECIES = Object.keys(SPECIES) as Species[];
+/** 実際に使われているのは平地の陸上種のみ（水場・空の種は現状お休み中の仕様）。エディタも実際の盤面に合わせる。 */
+const ALL_SPECIES = (Object.keys(SPECIES) as Species[]).filter((s) => SPECIES[s].terrain === 'land');
 
 const PAINT_OPTIONS: { terrain: CellTerrain; label: string }[] = [
   { terrain: 'land', label: '平地' },
-  { terrain: 'water', label: '水場' },
-  { terrain: 'sky', label: '空' },
   { terrain: 'wall', label: '壁' },
 ];
 
@@ -46,7 +48,7 @@ const emptyCounts = (): Record<Species, number> =>
 type CheckResult =
   | { kind: 'errors'; errors: string[] }
   | { kind: 'none' }
-  | { kind: 'unique' }
+  | { kind: 'unique'; geometricCount: number; warnings: DesignWarning[] }
   | { kind: 'multiple' };
 
 export default function EditorScreen() {
@@ -94,9 +96,19 @@ export default function EditorScreen() {
       return;
     }
     const count = countSolutions(stage, 2);
-    if (count === 0) setResult({ kind: 'none' });
-    else if (count === 1) setResult({ kind: 'unique' });
-    else setResult({ kind: 'multiple' });
+    if (count === 0) {
+      setResult({ kind: 'none' });
+      return;
+    }
+    if (count > 1) {
+      setResult({ kind: 'multiple' });
+      return;
+    }
+    setResult({
+      kind: 'unique',
+      geometricCount: countGeometricPlacements(stage, 20),
+      warnings: findDesignWarnings(stage),
+    });
   };
 
   const canSave = result?.kind === 'unique' && !saving;
@@ -108,6 +120,11 @@ export default function EditorScreen() {
     await saveCustomStage({ ...stage, id, name: name || '無題のステージ' });
     setSaving(false);
     router.push({ pathname: '/game/[stageId]', params: { stageId: id } });
+  };
+
+  const handleSubmit = () => {
+    if (result?.kind !== 'unique') return;
+    Linking.openURL(buildSubmissionIssueUrl({ ...stage, name: name || '無題のステージ' }, result.geometricCount));
   };
 
   return (
@@ -198,6 +215,12 @@ export default function EditorScreen() {
         onPress={handleSave}>
         <Text style={styles.saveButtonLabel}>保存してあそぶ</Text>
       </Pressable>
+
+      {result?.kind === 'unique' ? (
+        <Pressable style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonLabel}>GitHubに投稿する</Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }
@@ -258,7 +281,20 @@ function ResultView({ result }: { result: CheckResult }) {
   }
   return (
     <View style={[styles.resultBox, styles.resultOk]}>
-      <Text style={styles.resultOkText}>唯一解です！保存できます。</Text>
+      <Text style={styles.resultOkText}>
+        唯一解です！保存できます。（配置パターン {result.geometricCount}
+        {result.geometricCount >= 20 ? '+' : ''} 通り中、正解1通り）
+      </Text>
+      {result.geometricCount === 1 ? (
+        <Text style={styles.resultHintText}>
+          ヒント：形だけで置き場所が1通りに決まっています。壁で仕切って「もっともらしい候補」を増やすと、より考えごたえのあるステージになります。
+        </Text>
+      ) : null}
+      {result.warnings.map((w, i) => (
+        <Text key={i} style={styles.resultHintText}>
+          ヒント：{describeWarning(w)}
+        </Text>
+      ))}
     </View>
   );
 }
@@ -412,6 +448,11 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     fontSize: 14,
   },
+  resultHintText: {
+    color: colors.textMuted,
+    fontWeight: '700',
+    fontSize: 12,
+  },
   nameInput: {
     borderWidth: 2,
     borderColor: colors.panelBorder,
@@ -439,5 +480,20 @@ const styles = StyleSheet.create({
     color: colors.textOnDark,
     fontWeight: '900',
     fontSize: 16,
+  },
+  submitButton: {
+    alignSelf: 'center',
+    backgroundColor: colors.panel,
+    borderWidth: 2,
+    borderColor: colors.panelBorder,
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 28,
+    ...ui.shadow,
+  },
+  submitButtonLabel: {
+    color: colors.text,
+    fontWeight: '900',
+    fontSize: 14,
   },
 });

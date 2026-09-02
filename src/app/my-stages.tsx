@@ -1,10 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BackButton } from '@/components/back-button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
-import type { Stage } from '@/engine';
+import { countGeometricPlacements, type Stage } from '@/engine';
+import { buildSubmissionIssueUrl } from '@/lib/stage-submission';
 import { deleteCustomStage, listCustomStages } from '@/storage/custom-stages';
 import { colors, ui } from '@/theme';
 
@@ -36,6 +37,11 @@ export default function MyStagesScreen() {
     reload();
   };
 
+  const handleSubmit = (stage: Stage) => {
+    const geometricCount = countGeometricPlacements(stage, 20);
+    Linking.openURL(buildSubmissionIssueUrl(stage, geometricCount));
+  };
+
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -54,6 +60,9 @@ export default function MyStagesScreen() {
                 <Text style={styles.rowMeta}>
                   {stage.rows}x{stage.cols} ・ {difficultyStars(stage.animals.length)}
                 </Text>
+              </Pressable>
+              <Pressable style={styles.submitButton} onPress={() => handleSubmit(stage)}>
+                <Text style={styles.submitButtonLabel}>投稿</Text>
               </Pressable>
               <Pressable style={styles.deleteButton} onPress={() => setDeleting(stage)}>
                 <Text style={styles.deleteButtonLabel}>削除</Text>
@@ -127,6 +136,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     marginTop: 2,
+  },
+  submitButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.panelBorder,
+    backgroundColor: colors.panel,
+  },
+  submitButtonLabel: {
+    color: colors.text,
+    fontWeight: '900',
+    fontSize: 12,
   },
   deleteButton: {
     paddingVertical: 10,
