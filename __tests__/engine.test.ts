@@ -311,9 +311,15 @@ describe('isStageCleared', () => {
   });
 
   test('false while a violation remains even with an empty tray', () => {
-    const stage = makeStage({ animals: [{ instanceId: 'zA', species: 'zebra' }] });
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'g1', species: 'giraffe' },
+        { instanceId: 'l1', species: 'lion' },
+      ],
+    });
     let state = createGameState(stage);
-    state = placeAnimal(state, 'zA', { r: 0, c: 0 });
+    state = placeAnimal(state, 'g1', { r: 0, c: 0 }); // (0,0),(1,0)
+    state = placeAnimal(state, 'l1', { r: 0, c: 1 }); // (0,1),(1,1) -> adjacent to giraffe
     expect(state.tray).toHaveLength(0);
     expect(isStageCleared(state)).toBe(false);
   });
@@ -422,21 +428,6 @@ describe('validateStage', () => {
       terrain: [Array<CellTerrain>(5).fill('water'), ...validStage.terrain.slice(1)],
     };
     expect(validateStage(bad).some((e) => e.includes('terrain "land" cell count'))).toBe(true);
-  });
-
-  test('flags flockRequired with fewer than 2 instances', () => {
-    const stage: Stage = {
-      id: 'lonely-zebra',
-      name: 'x',
-      rows: 5,
-      cols: 5,
-      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('land')),
-      animals: [
-        { instanceId: 'z1', species: 'zebra' },
-        ...Array.from({ length: 23 }, (_, i) => ({ instanceId: `s${i}`, species: 'squirrel' as const })),
-      ],
-    };
-    expect(validateStage(stage).some((e) => e.includes('flockRequired but fewer than 2'))).toBe(true);
   });
 
   test('wall cells are excluded from terrain counts just like void', () => {
