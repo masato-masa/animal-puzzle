@@ -6,23 +6,25 @@ import { colors, speciesEmoji, ui } from '@/theme';
 
 import { Draggable } from './draggable';
 
-/** トレイのミニプレビューの1マス分の単位px。 */
-const CHIP_UNIT = 26;
-
 type Props = {
   species: Species;
+  /** 1マスの辺長(px)。盤面のマスと同じ大きさにするため、呼び出し側から渡す。 */
+  cell: number;
   hidden?: boolean;
   onDragStart: (pageX: number, pageY: number) => void;
   onDragMove: (dx: number, dy: number) => void;
-  onDragEnd: (dx: number, dy: number, pageX: number, pageY: number) => void;
+  onDragEnd: (dx: number, dy: number) => void;
 };
 
-/** トレイ用の単一チップ。形状のミニプレビュー（横長/縦長/正方形）を反映する。つまんで盤面へドラッグする。 */
-export function AnimalChip({ species, hidden, onDragStart, onDragMove, onDragEnd }: Props) {
+/**
+ * トレイ用の単一チップ。盤面のピースと同じ大きさ（cell基準）で表示することで、
+ * つまんだ瞬間に大きさが変わらないようにする。つまんで盤面へドラッグする。
+ */
+export function AnimalChip({ species, cell, hidden, onDragStart, onDragMove, onDragEnd }: Props) {
   const { w, h } = boundingBox(species);
   const art = speciesArt[species];
-  const width = w * CHIP_UNIT;
-  const height = h * CHIP_UNIT;
+  const width = w * cell;
+  const height = h * cell;
   return (
     <View style={[styles.wrapper, hidden && styles.hidden]}>
       <Draggable onDragStart={onDragStart} onDragMove={onDragMove} onDragEnd={onDragEnd}>

@@ -18,7 +18,7 @@ type Props = {
   hiddenInstanceId: string | null;
   onPieceDragStart: (instanceId: string, species: Species, anchor: Pos, pageX: number, pageY: number) => void;
   onPieceDragMove: (dx: number, dy: number) => void;
-  onPieceDragEnd: (dx: number, dy: number, pageX: number, pageY: number) => void;
+  onPieceDragEnd: (dx: number, dy: number) => void;
   /** マス目そのもの（floor）の実ページ座標を測るためのref。ドロップ判定に使う。 */
   floorRef?: RefObject<View | null>;
   onFloorLayout?: (e: LayoutChangeEvent) => void;

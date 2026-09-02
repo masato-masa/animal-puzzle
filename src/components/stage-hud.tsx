@@ -7,15 +7,22 @@ import { ActionButton } from './action-button';
 type Props = {
   remaining: number;
   onReset: () => void;
+  showConditions: boolean;
+  onToggleConditions: () => void;
 };
 
-export function StageHud({ remaining, onReset }: Props) {
+export function StageHud({ remaining, onReset, showConditions, onToggleConditions }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.stat}>
         <Text style={styles.statLabel}>のこり</Text>
         <Text style={styles.statValue}>{remaining}</Text>
       </View>
+      <ActionButton
+        label={showConditions ? 'じょうけん ▲' : 'じょうけん ▼'}
+        onPress={onToggleConditions}
+        tone={showConditions ? 'primary' : 'default'}
+      />
       <ActionButton label="リセット" onPress={onReset} />
     </View>
   );

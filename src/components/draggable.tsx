@@ -6,8 +6,8 @@ type Props = {
   onDragStart: (pageX: number, pageY: number) => void;
   /** ドラッグ中。開始位置からの累積移動量(px)。 */
   onDragMove: (dx: number, dy: number) => void;
-  /** ドラッグ終了。累積移動量と、指を離した瞬間のページ座標。 */
-  onDragEnd: (dx: number, dy: number, pageX: number, pageY: number) => void;
+  /** ドラッグ終了。開始位置からの累積移動量(px)。 */
+  onDragEnd: (dx: number, dy: number) => void;
   children: React.ReactNode;
 };
 
@@ -39,10 +39,10 @@ export function Draggable({ onDragStart, onDragEnd, onDragMove, children }: Prop
         callbacks.current.onDragMove(gesture.dx, gesture.dy);
       },
       onPanResponderRelease: (_e, gesture) => {
-        callbacks.current.onDragEnd(gesture.dx, gesture.dy, gesture.moveX, gesture.moveY);
+        callbacks.current.onDragEnd(gesture.dx, gesture.dy);
       },
       onPanResponderTerminate: (_e, gesture) => {
-        callbacks.current.onDragEnd(gesture.dx, gesture.dy, gesture.moveX, gesture.moveY);
+        callbacks.current.onDragEnd(gesture.dx, gesture.dy);
       },
     })
   ).current;

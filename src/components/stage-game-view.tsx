@@ -21,6 +21,7 @@ import { AnimalPiece } from './animal-piece';
 import { BackButton } from './back-button';
 import { Board } from './board';
 import { ClearOverlay } from './clear-overlay';
+import { ConditionsPanel } from './conditions-panel';
 import { useMeasuredRect } from './draggable';
 import { StageHud } from './stage-hud';
 import { Tray } from './tray';
@@ -58,14 +59,15 @@ type Drag =
 const inRect = (px: number, py: number, rect: { x: number; y: number; w: number; h: number } | null): boolean =>
   !!rect && px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
 
-/** 1ステージの画面全体を統括する。engineへの呼び出しはこのコンポーネントに集約する。 */
 /** 画面幅いっぱいから左右パディング分を引いた、盤面エリアに使える横幅の目安。 */
 const BOARD_AREA_HORIZONTAL_PADDING = 32;
 
+/** 1ステージの画面全体を統括する。engineへの呼び出しはこのコンポーネントに集約する。 */
 export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onList }: Props) {
   const { width: windowWidth } = useWindowDimensions();
   const [state, setState] = useState<GameState>(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
+  const [showConditions, setShowConditions] = useState(false);
   const clearedNotified = useRef(false);
 
   const root = useMeasuredRect();
@@ -77,6 +79,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
 
   const violatingIds = new Set(violatingAnimals(state).map((a) => a.instanceId));
   const cleared = isStageCleared(state);
+  const uniqueSpecies = Array.from(new Set(stage.animals.map((a) => a.species)));
 
   useEffect(() => {
     if (cleared && !clearedNotified.current) {
@@ -95,7 +98,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     }, 50);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cell, stage.id]);
+  }, [cell, stage.id, showConditions]);
 
   const handlePieceDragStart = (instanceId: string, species: Species, anchor: Pos, pageX: number, pageY: number) => {
     boardArea.measure();
@@ -113,24 +116,35 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
     setDrag((d) => (d ? { ...d, dx, dy } : d));
   };
 
-  const handleDragEnd = (dx: number, dy: number, pageX: number, pageY: number) => {
+  const handleDragEnd = (dx: number, dy: number) => {
     setDrag((d) => {
       if (!d) return null;
+      // つまんだ場所に関係なく、ピース自体の左上位置（つかんだ瞬間の位置＋移動量）を基準にする。
+      // 縦2マスのピースの下半分をつまんでも、上半分をつまんでも同じように動く。
+      const pieceLeft = d.startX + dx;
+      const pieceTop = d.startY + dy;
+      const box = boundingBox(d.species);
+      const pieceCenterX = pieceLeft + (box.w * cell) / 2;
+      const pieceCenterY = pieceTop + (box.h * cell) / 2;
+
       if (d.kind === 'board') {
-        if (inRect(pageX, pageY, trayArea.rect)) {
+        if (inRect(pieceCenterX, pieceCenterY, trayArea.rect)) {
           setState((s) => returnToTray(s, d.instanceId));
         } else {
-          const deltaCols = Math.round(dx / cell);
-          const deltaRows = Math.round(dy / cell);
-          const anchor: Pos = { r: d.originAnchor.r + deltaRows, c: d.originAnchor.c + deltaCols };
+          const board = boardArea.rect;
+          const anchor: Pos = board
+            ? { r: Math.round((pieceTop - board.y) / cell), c: Math.round((pieceLeft - board.x) / cell) }
+            : d.originAnchor;
           setState((s) => moveAnimal(s, d.instanceId, anchor));
         }
       } else {
         const board = boardArea.rect;
-        if (board && inRect(pageX, pageY, board)) {
-          const c = Math.floor((pageX - board.x) / cell);
-          const r = Math.floor((pageY - board.y) / cell);
-          setState((s) => placeAnimal(s, d.instanceId, { r, c }));
+        if (board) {
+          const anchor: Pos = {
+            r: Math.round((pieceTop - board.y) / cell),
+            c: Math.round((pieceLeft - board.x) / cell),
+          };
+          setState((s) => placeAnimal(s, d.instanceId, anchor));
         }
       }
       return null;
@@ -155,6 +169,8 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
       <BackButton onPress={onBack} />
       <Text style={styles.title}>{stage.name}</Text>
 
+      {showConditions ? <ConditionsPanel species={uniqueSpecies} /> : null}
+
       <View style={styles.boardArea}>
         <Board
           state={state}
@@ -172,6 +188,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
       <View ref={trayArea.ref} onLayout={trayArea.onLayout}>
         <Tray
           tray={state.tray}
+          cell={cell}
           hiddenInstanceId={drag?.kind === 'tray' ? drag.instanceId : null}
           onChipDragStart={handleChipDragStart}
           onChipDragMove={handleDragMove}
@@ -179,7 +196,12 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
         />
       </View>
 
-      <StageHud remaining={state.tray.length} onReset={handleReset} />
+      <StageHud
+        remaining={state.tray.length}
+        onReset={handleReset}
+        showConditions={showConditions}
+        onToggleConditions={() => setShowConditions((v) => !v)}
+      />
 
       {cleared ? <ClearOverlay hasNext={hasNext} onNext={onNext} onRetry={handleRetry} onList={onList} /> : null}
 
