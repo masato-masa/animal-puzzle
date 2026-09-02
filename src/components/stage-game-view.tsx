@@ -22,6 +22,7 @@ import { BackButton } from './back-button';
 import { Board } from './board';
 import { ClearOverlay } from './clear-overlay';
 import { ConditionsPanel } from './conditions-panel';
+import { ConfirmDialog } from './confirm-dialog';
 import { useMeasuredRect } from './draggable';
 import { StageHud } from './stage-hud';
 import { Tray } from './tray';
@@ -69,6 +70,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   const [drag, setDrag] = useState<Drag | null>(null);
   const [showConditions, setShowConditions] = useState(false);
   const [shake, setShake] = useState<{ id: string; token: number }>({ id: '', token: 0 });
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const clearedNotified = useRef(false);
 
   const triggerShake = (instanceId: string) => setShake((s) => ({ id: instanceId, token: s.token + 1 }));
@@ -158,8 +160,14 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   };
 
   const handleReset = () => {
+    if (state.placed.length === 0) return;
+    setConfirmingReset(true);
+  };
+
+  const confirmReset = () => {
     setState((s) => resetStage(s));
     setDrag(null);
+    setConfirmingReset(false);
   };
 
   const handleRetry = () => {
@@ -214,6 +222,16 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
       />
 
       {cleared ? <ClearOverlay hasNext={hasNext} onNext={onNext} onRetry={handleRetry} onList={onList} /> : null}
+
+      {confirmingReset ? (
+        <ConfirmDialog
+          title="リセットしますか？"
+          message="おいた動物がすべてトレイに戻ります。"
+          confirmLabel="リセット"
+          onConfirm={confirmReset}
+          onCancel={() => setConfirmingReset(false)}
+        />
+      ) : null}
 
       {drag && overlayBox && root.rect ? (
         <View

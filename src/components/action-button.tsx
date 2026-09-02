@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { colors, ui } from '@/theme';
 
-type Tone = 'default' | 'primary' | 'success';
+type Tone = 'default' | 'primary' | 'success' | 'danger';
 
 export function ActionButton({
   label,
@@ -20,7 +20,9 @@ export function ActionButton({
       ? { bg: colors.accent, edge: colors.accentDark, text: colors.text }
       : tone === 'success'
         ? { bg: colors.success, edge: colors.successDark, text: colors.textOnDark }
-        : { bg: colors.panel, edge: colors.panelBorder, text: colors.text };
+        : tone === 'danger'
+          ? { bg: colors.danger, edge: colors.dangerDark, text: colors.textOnDark }
+          : { bg: colors.panel, edge: colors.panelBorder, text: colors.text };
 
   return (
     <Pressable

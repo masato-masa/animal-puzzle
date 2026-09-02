@@ -1,8 +1,9 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BackButton } from '@/components/back-button';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import type { Stage } from '@/engine';
 import { deleteCustomStage, listCustomStages } from '@/storage/custom-stages';
 import { colors, ui } from '@/theme';
@@ -16,6 +17,7 @@ const difficultyStars = (pieceCount: number): string => {
 export default function MyStagesScreen() {
   const router = useRouter();
   const [stages, setStages] = useState<Stage[]>([]);
+  const [deleting, setDeleting] = useState<Stage | null>(null);
 
   const reload = useCallback(() => {
     listCustomStages().then(setStages);
@@ -27,53 +29,61 @@ export default function MyStagesScreen() {
     }, [reload])
   );
 
-  const handleDelete = (stage: Stage) => {
-    Alert.alert('削除しますか？', stage.name, [
-      { text: 'キャンセル', style: 'cancel' },
-      {
-        text: '削除',
-        style: 'destructive',
-        onPress: async () => {
-          await deleteCustomStage(stage.id);
-          reload();
-        },
-      },
-    ]);
+  const confirmDelete = async () => {
+    if (!deleting) return;
+    await deleteCustomStage(deleting.id);
+    setDeleting(null);
+    reload();
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <BackButton onPress={() => router.back()} />
-      <Text style={styles.title}>マイステージ</Text>
+    <View style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <BackButton onPress={() => router.back()} />
+        <Text style={styles.title}>マイステージ</Text>
 
-      {stages.length === 0 ? (
-        <Text style={styles.empty}>まだステージがありません。エディタで作ってみましょう。</Text>
-      ) : (
-        stages.map((stage) => (
-          <View key={stage.id} style={styles.row}>
-            <Pressable
-              style={styles.rowMain}
-              onPress={() => router.push({ pathname: '/game/[stageId]', params: { stageId: stage.id } })}>
-              <Text style={styles.rowLabel}>{stage.name}</Text>
-              <Text style={styles.rowMeta}>
-                {stage.rows}x{stage.cols} ・ {difficultyStars(stage.animals.length)}
-              </Text>
-            </Pressable>
-            <Pressable style={styles.deleteButton} onPress={() => handleDelete(stage)}>
-              <Text style={styles.deleteButtonLabel}>削除</Text>
-            </Pressable>
-          </View>
-        ))
-      )}
+        {stages.length === 0 ? (
+          <Text style={styles.empty}>まだステージがありません。エディタで作ってみましょう。</Text>
+        ) : (
+          stages.map((stage) => (
+            <View key={stage.id} style={styles.row}>
+              <Pressable
+                style={styles.rowMain}
+                onPress={() => router.push({ pathname: '/game/[stageId]', params: { stageId: stage.id } })}>
+                <Text style={styles.rowLabel}>{stage.name}</Text>
+                <Text style={styles.rowMeta}>
+                  {stage.rows}x{stage.cols} ・ {difficultyStars(stage.animals.length)}
+                </Text>
+              </Pressable>
+              <Pressable style={styles.deleteButton} onPress={() => setDeleting(stage)}>
+                <Text style={styles.deleteButtonLabel}>削除</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
 
-      <Pressable style={styles.createButton} onPress={() => router.push('/editor')}>
-        <Text style={styles.createButtonLabel}>＋ 新しいステージを作る</Text>
-      </Pressable>
-    </ScrollView>
+        <Pressable style={styles.createButton} onPress={() => router.push('/editor')}>
+          <Text style={styles.createButtonLabel}>＋ 新しいステージを作る</Text>
+        </Pressable>
+      </ScrollView>
+
+      {deleting ? (
+        <ConfirmDialog
+          title="削除しますか？"
+          message={deleting.name}
+          confirmLabel="削除"
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleting(null)}
+        />
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   content: {
     padding: 20,
     paddingTop: 56,
