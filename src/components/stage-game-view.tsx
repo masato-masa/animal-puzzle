@@ -68,7 +68,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   const { width: windowWidth } = useWindowDimensions();
   const [state, setState] = useState<GameState>(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
-  const [showConditions, setShowConditions] = useState(false);
+  const [showConditions, setShowConditions] = useState(true);
   const [shake, setShake] = useState<{ id: string; token: number }>({ id: '', token: 0 });
   const [confirmingReset, setConfirmingReset] = useState(false);
   const clearedNotified = useRef(false);
