@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { BackButton } from '@/components/back-button';
 import {
@@ -13,6 +13,7 @@ import {
   type Species,
   type Stage,
 } from '@/engine';
+import { speciesArt } from '@/lib/animal-art';
 import { generateCustomStageId, saveCustomStage } from '@/storage/custom-stages';
 import { colors, speciesEmoji, speciesLabel, terrainColors, ui } from '@/theme';
 
@@ -157,7 +158,11 @@ export default function EditorScreen() {
       <Section label={`動物をえらぶ（${totalAnimals} / ${MAX_ANIMALS_PER_STAGE}）`}>
         {ALL_SPECIES.map((species) => (
           <View key={species} style={styles.animalRow}>
-            <Text style={styles.animalIcon}>{speciesEmoji[species]}</Text>
+            {speciesArt[species] ? (
+              <Image source={speciesArt[species]} resizeMode="cover" style={styles.animalArt} />
+            ) : (
+              <Text style={styles.animalIcon}>{speciesEmoji[species]}</Text>
+            )}
             <Text style={styles.animalLabel}>{speciesLabel[species]}</Text>
             <View style={styles.stepper}>
               <Pressable style={styles.stepperButton} onPress={() => changeCount(species, -1)}>
@@ -330,6 +335,11 @@ const styles = StyleSheet.create({
   animalIcon: {
     fontSize: 20,
     width: 28,
+  },
+  animalArt: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
   },
   animalLabel: {
     color: colors.text,

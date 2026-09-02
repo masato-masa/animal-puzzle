@@ -7,6 +7,12 @@ import type { Stage } from '@/engine';
 import { deleteCustomStage, listCustomStages } from '@/storage/custom-stages';
 import { colors, ui } from '@/theme';
 
+/** ピース数からざっくりした難易度の目安（★の数）を出す。 */
+const difficultyStars = (pieceCount: number): string => {
+  const stars = pieceCount <= 2 ? 1 : pieceCount <= 5 ? 2 : 3;
+  return '★'.repeat(stars) + '☆'.repeat(3 - stars);
+};
+
 export default function MyStagesScreen() {
   const router = useRouter();
   const [stages, setStages] = useState<Stage[]>([]);
@@ -50,7 +56,7 @@ export default function MyStagesScreen() {
               onPress={() => router.push({ pathname: '/game/[stageId]', params: { stageId: stage.id } })}>
               <Text style={styles.rowLabel}>{stage.name}</Text>
               <Text style={styles.rowMeta}>
-                {stage.rows}x{stage.cols} ・ 動物{stage.animals.length}体
+                {stage.rows}x{stage.cols} ・ {difficultyStars(stage.animals.length)}
               </Text>
             </Pressable>
             <Pressable style={styles.deleteButton} onPress={() => handleDelete(stage)}>
