@@ -188,6 +188,63 @@ export const STAGES: Stage[] = [
       ['zebra', 2],
     ]),
   },
+  {
+    id: 'stage-16',
+    name: '16. じゅうじろのひみつ',
+    rows: 8,
+    cols: 7,
+    terrain: terrain([
+      '.######',
+      '#.##.##',
+      '#.##.##',
+      '#....##',
+      '#######',
+      '#.##.##',
+      '#.##.##',
+      '######.',
+    ]),
+    animals: animals([
+      ['lion', 2],
+      ['giraffe', 2],
+      ['zebra', 2],
+      ['squirrel', 2],
+    ]),
+  },
+  {
+    id: 'stage-17',
+    name: '17. とびとびのしまじま',
+    rows: 7,
+    cols: 8,
+    terrain: terrain(['.###.##.', '####.###', '#....###', '########', '#.#####.', '#.#####.', '###.####']),
+    animals: animals([
+      ['giraffe', 1],
+      ['lion', 2],
+      ['zebra', 2],
+      ['squirrel', 3],
+    ]),
+  },
+  {
+    id: 'stage-18',
+    name: '18. ひしがたのさばんな',
+    rows: 8,
+    cols: 8,
+    terrain: terrain([
+      'xxx.#xxx',
+      'xx.###xx',
+      'x#.##.#x',
+      '#####.#.',
+      '.#....##',
+      'x######x',
+      'xx####xx',
+      'xxx#.xxx',
+    ]),
+    animals: animals([
+      ['giraffe', 1],
+      ['lion', 1],
+      ['zebra', 2],
+      ['squirrel', 4],
+    ]),
+  },
 ];
 
 const stageIdsFrom = (fromId: string, toId: string): string[] => {
@@ -201,6 +258,7 @@ export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
   { id: 'savanna-thinking', name: '2章 かんがえるサバンナ', stageIds: stageIdsFrom('stage-6', 'stage-9') },
   { id: 'elephant-secret', name: '3章 ゾウのひみつ', stageIds: stageIdsFrom('stage-10', 'stage-12') },
   { id: 'wisdom-challenge', name: '4章 ちえくらべ', stageIds: stageIdsFrom('stage-13', 'stage-15') },
+  { id: 'maze-savanna', name: '5章 めいろのサバンナ', stageIds: stageIdsFrom('stage-16', 'stage-18') },
 ];
 
 export const getStage = (id: string): Stage | undefined => STAGES.find((s) => s.id === id);
