@@ -9,8 +9,12 @@ import { Draggable } from './draggable';
 import { PopIn } from './pop-in';
 
 const grassBg = require('@/assets/images/terrain/grass-bg.png');
-const fenceH = require('@/assets/images/fence/fence-h.png');
-const fenceV = require('@/assets/images/fence/fence-v.png');
+const cornerTL = require('@/assets/images/fence/corner-tl.png');
+const cornerTR = require('@/assets/images/fence/corner-tr.png');
+const cornerBL = require('@/assets/images/fence/corner-bl.png');
+const cornerBR = require('@/assets/images/fence/corner-br.png');
+const railH = require('@/assets/images/fence/rail-h.png');
+const railV = require('@/assets/images/fence/rail-v.png');
 
 type Props = {
   state: GameState;
@@ -27,7 +31,7 @@ type Props = {
   onFloorLayout?: (e: LayoutChangeEvent) => void;
 };
 
-/** 盤面の描画。voidマスは何も描かず非インタラクティブにすることで非矩形の外形を表現する。盤面自体は柵で囲む。 */
+/** 盤面の描画。盤面は常に矩形で、使わないマスは茂み（wall）で埋める運用に統一している。盤面自体は柵で囲む。 */
 export function Board({
   state,
   cell,
@@ -43,12 +47,13 @@ export function Board({
   const width = stage.cols * cell;
   const height = stage.rows * cell;
 
-  const fenceThickness = Math.round(cell * 0.7);
+  const fenceThickness = Math.round(cell * 0.9);
   const outerWidth = width + fenceThickness * 2;
-  const hSegW = cell * 2;
-  const vSegH = cell * 2;
-  const hCount = Math.ceil(outerWidth / hSegW);
-  const vCount = Math.ceil(height / vSegH);
+  const outerHeight = height + fenceThickness * 2;
+  const railSegW = cell * 2;
+  const railSegH = cell * 2;
+  const hCount = Math.ceil(width / railSegW);
+  const vCount = Math.ceil(height / railSegH);
 
   const cells: Pos[] = [];
   for (let r = 0; r < stage.rows; r++) {
@@ -56,24 +61,38 @@ export function Board({
   }
 
   return (
-    <View style={[styles.fenceWrap, { width: outerWidth, height: height + fenceThickness * 2 }]}>
-      <View style={[styles.fenceRow, { top: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+    <View style={[styles.fenceWrap, { width: outerWidth, height: outerHeight }]}>
+      <Image source={cornerTL} style={{ position: 'absolute', left: 0, top: 0, width: fenceThickness, height: fenceThickness }} />
+      <Image
+        source={cornerTR}
+        style={{ position: 'absolute', right: 0, top: 0, width: fenceThickness, height: fenceThickness }}
+      />
+      <Image
+        source={cornerBL}
+        style={{ position: 'absolute', left: 0, bottom: 0, width: fenceThickness, height: fenceThickness }}
+      />
+      <Image
+        source={cornerBR}
+        style={{ position: 'absolute', right: 0, bottom: 0, width: fenceThickness, height: fenceThickness }}
+      />
+
+      <View style={[styles.fenceRow, { top: 0, left: fenceThickness, width, height: fenceThickness }]}>
         {Array.from({ length: hCount }).map((_, i) => (
           <Image
             key={i}
-            source={fenceH}
+            source={railH}
             resizeMode="stretch"
-            style={{ position: 'absolute', left: i * hSegW, width: hSegW, height: fenceThickness }}
+            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
           />
         ))}
       </View>
-      <View style={[styles.fenceRow, { bottom: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+      <View style={[styles.fenceRow, { bottom: 0, left: fenceThickness, width, height: fenceThickness }]}>
         {Array.from({ length: hCount }).map((_, i) => (
           <Image
             key={i}
-            source={fenceH}
+            source={railH}
             resizeMode="stretch"
-            style={{ position: 'absolute', left: i * hSegW, width: hSegW, height: fenceThickness }}
+            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
           />
         ))}
       </View>
@@ -81,9 +100,9 @@ export function Board({
         {Array.from({ length: vCount }).map((_, i) => (
           <Image
             key={i}
-            source={fenceV}
+            source={railV}
             resizeMode="stretch"
-            style={{ position: 'absolute', top: i * vSegH, width: fenceThickness, height: vSegH }}
+            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
           />
         ))}
       </View>
@@ -91,9 +110,9 @@ export function Board({
         {Array.from({ length: vCount }).map((_, i) => (
           <Image
             key={i}
-            source={fenceV}
+            source={railV}
             resizeMode="stretch"
-            style={{ position: 'absolute', top: i * vSegH, width: fenceThickness, height: vSegH }}
+            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
           />
         ))}
       </View>

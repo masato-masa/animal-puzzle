@@ -98,11 +98,11 @@ const packTray = (
 /** 縦スクロールなしで収まるよう、横幅だけでなく画面の高さからもセルサイズを決める。柵の太さ分も見込む。 */
 const fitCell = (stage: Stage, windowWidth: number, windowHeight: number): number => {
   const availableWidth = Math.min(windowWidth - BOARD_AREA_HORIZONTAL_PADDING, 520);
-  // 柵の太さ（左右あわせてセル約1.4個分）も横幅に収まるよう見込んでおく。
-  let cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(availableWidth / (stage.cols + 1.4))));
+  // 柵の太さ（左右あわせてセル約1.8個分）も横幅に収まるよう見込んでおく。
+  let cell = Math.max(MIN_CELL, Math.min(MAX_CELL, Math.floor(availableWidth / (stage.cols + 1.8))));
 
   while (cell > MIN_CELL) {
-    const fenceThickness = Math.round(cell * 0.7);
+    const fenceThickness = Math.round(cell * 0.9);
     const boardHeight = stage.rows * cell + fenceThickness * 2;
     const trayHeight = packTray(stage.animals, cell, cell * stage.cols).height;
     if (FIXED_CHROME_HEIGHT + boardHeight + trayHeight <= windowHeight) break;

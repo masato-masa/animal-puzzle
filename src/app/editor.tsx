@@ -24,7 +24,6 @@ const PAINT_OPTIONS: { terrain: CellTerrain; label: string }[] = [
   { terrain: 'water', label: '水場' },
   { terrain: 'sky', label: '空' },
   { terrain: 'wall', label: '壁' },
-  { terrain: 'void', label: 'void' },
 ];
 
 const MIN_SIZE = 5;
