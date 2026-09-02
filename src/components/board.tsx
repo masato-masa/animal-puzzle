@@ -55,7 +55,7 @@ export function Board({
             <View
               key={`${pos.r},${pos.c}`}
               style={[styles.cell, { left: pos.c * cell, top: pos.r * cell, width: cell, height: cell }]}>
-              <BoardCell terrain={terrain} />
+              <BoardCell terrain={terrain} size={cell} />
             </View>
           );
         })}

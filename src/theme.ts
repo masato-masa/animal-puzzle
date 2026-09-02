@@ -23,10 +23,6 @@ export const colors = {
   wall: '#3C6B35',
   wallDark: '#254520',
   wallLight: '#5C8F53',
-  bushLeaf: '#6FA84A',
-  bushLeafEdge: '#4C7A34',
-  bushLeafDark: '#4F8236',
-  bushLeafDarkEdge: '#365B24',
 
   panel: '#FFF8EA',
   panelBorder: '#C89A5B',
