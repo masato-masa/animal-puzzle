@@ -8,6 +8,7 @@ import { AnimalPiece } from './animal-piece';
 import { BoardCell } from './board-cell';
 import { Draggable } from './draggable';
 import { PopIn } from './pop-in';
+import { Shake } from './shake';
 
 type Props = {
   state: GameState;
@@ -16,6 +17,9 @@ type Props = {
   violatingIds: Set<string>;
   /** ドラッグ中のピース。見た目は呼び出し側のDragOverlayが描くので、ここでは空欄として扱う。 */
   hiddenInstanceId: string | null;
+  /** 置けない場所へドロップされて弾かれたピース。振動フィードバックを出す。 */
+  shakeInstanceId: string | null;
+  shakeToken: number;
   onPieceDragStart: (instanceId: string, species: Species, anchor: Pos, pageX: number, pageY: number) => void;
   onPieceDragMove: (dx: number, dy: number) => void;
   onPieceDragEnd: (dx: number, dy: number) => void;
@@ -30,6 +34,8 @@ export function Board({
   cell,
   violatingIds,
   hiddenInstanceId,
+  shakeInstanceId,
+  shakeToken,
   onPieceDragStart,
   onPieceDragMove,
   onPieceDragEnd,
@@ -75,17 +81,19 @@ export function Board({
                 },
               ]}>
               <PopIn>
-                <Draggable
-                  onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
-                  onDragMove={onPieceDragMove}
-                  onDragEnd={onPieceDragEnd}>
-                  <AnimalPiece
-                    species={animal.species}
-                    violating={violatingIds.has(animal.instanceId)}
-                    hidden={animal.instanceId === hiddenInstanceId}
-                    size={{ w: w * cell, h: h * cell }}
-                  />
-                </Draggable>
+                <Shake token={animal.instanceId === shakeInstanceId ? shakeToken : 0}>
+                  <Draggable
+                    onDragStart={(pageX, pageY) => onPieceDragStart(animal.instanceId, animal.species, animal.anchor, pageX, pageY)}
+                    onDragMove={onPieceDragMove}
+                    onDragEnd={onPieceDragEnd}>
+                    <AnimalPiece
+                      species={animal.species}
+                      violating={violatingIds.has(animal.instanceId)}
+                      hidden={animal.instanceId === hiddenInstanceId}
+                      size={{ w: w * cell, h: h * cell }}
+                    />
+                  </Draggable>
+                </Shake>
               </PopIn>
             </View>
           );

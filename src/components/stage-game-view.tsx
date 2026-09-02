@@ -68,7 +68,10 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   const [state, setState] = useState<GameState>(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
   const [showConditions, setShowConditions] = useState(false);
+  const [shake, setShake] = useState<{ id: string; token: number }>({ id: '', token: 0 });
   const clearedNotified = useRef(false);
+
+  const triggerShake = (instanceId: string) => setShake((s) => ({ id: instanceId, token: s.token + 1 }));
 
   const root = useMeasuredRect();
   const boardArea = useMeasuredRect();
@@ -117,38 +120,41 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
   };
 
   const handleDragEnd = (dx: number, dy: number) => {
-    setDrag((d) => {
-      if (!d) return null;
-      // つまんだ場所に関係なく、ピース自体の左上位置（つかんだ瞬間の位置＋移動量）を基準にする。
-      // 縦2マスのピースの下半分をつまんでも、上半分をつまんでも同じように動く。
-      const pieceLeft = d.startX + dx;
-      const pieceTop = d.startY + dy;
-      const box = boundingBox(d.species);
-      const pieceCenterX = pieceLeft + (box.w * cell) / 2;
-      const pieceCenterY = pieceTop + (box.h * cell) / 2;
+    const d = drag;
+    setDrag(null);
+    if (!d) return;
 
-      if (d.kind === 'board') {
-        if (inRect(pieceCenterX, pieceCenterY, trayArea.rect)) {
-          setState((s) => returnToTray(s, d.instanceId));
-        } else {
-          const board = boardArea.rect;
-          const anchor: Pos = board
-            ? { r: Math.round((pieceTop - board.y) / cell), c: Math.round((pieceLeft - board.x) / cell) }
-            : d.originAnchor;
-          setState((s) => moveAnimal(s, d.instanceId, anchor));
-        }
-      } else {
-        const board = boardArea.rect;
-        if (board) {
-          const anchor: Pos = {
-            r: Math.round((pieceTop - board.y) / cell),
-            c: Math.round((pieceLeft - board.x) / cell),
-          };
-          setState((s) => placeAnimal(s, d.instanceId, anchor));
-        }
+    // つまんだ場所に関係なく、ピース自体の左上位置（つかんだ瞬間の位置＋移動量）を基準にする。
+    // 縦2マスのピースの下半分をつまんでも、上半分をつまんでも同じように動く。
+    const pieceLeft = d.startX + dx;
+    const pieceTop = d.startY + dy;
+    const box = boundingBox(d.species);
+    const pieceCenterX = pieceLeft + (box.w * cell) / 2;
+    const pieceCenterY = pieceTop + (box.h * cell) / 2;
+
+    if (d.kind === 'board') {
+      if (inRect(pieceCenterX, pieceCenterY, trayArea.rect)) {
+        setState((s) => returnToTray(s, d.instanceId));
+        return;
       }
-      return null;
-    });
+      const board = boardArea.rect;
+      const anchor: Pos = board
+        ? { r: Math.round((pieceTop - board.y) / cell), c: Math.round((pieceLeft - board.x) / cell) }
+        : d.originAnchor;
+      const next = moveAnimal(state, d.instanceId, anchor);
+      if (next === state) triggerShake(d.instanceId);
+      else setState(next);
+    } else {
+      const board = boardArea.rect;
+      if (!board) return;
+      const anchor: Pos = {
+        r: Math.round((pieceTop - board.y) / cell),
+        c: Math.round((pieceLeft - board.x) / cell),
+      };
+      const next = placeAnimal(state, d.instanceId, anchor);
+      if (next === state) triggerShake(d.instanceId);
+      else setState(next);
+    }
   };
 
   const handleReset = () => {
@@ -177,6 +183,8 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
           cell={cell}
           violatingIds={violatingIds}
           hiddenInstanceId={drag?.kind === 'board' ? drag.instanceId : null}
+          shakeInstanceId={shake.id}
+          shakeToken={shake.token}
           onPieceDragStart={handlePieceDragStart}
           onPieceDragMove={handleDragMove}
           onPieceDragEnd={handleDragEnd}
@@ -190,6 +198,8 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
           tray={state.tray}
           cell={cell}
           hiddenInstanceId={drag?.kind === 'tray' ? drag.instanceId : null}
+          shakeInstanceId={shake.id}
+          shakeToken={shake.token}
           onChipDragStart={handleChipDragStart}
           onChipDragMove={handleDragMove}
           onChipDragEnd={handleDragEnd}
