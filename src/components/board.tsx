@@ -52,8 +52,9 @@ export function Board({
   const outerHeight = height + fenceThickness * 2;
   const railSegW = cell * 2;
   const railSegH = cell * 2;
-  const hCount = Math.ceil(width / railSegW);
-  const vCount = Math.ceil(height / railSegH);
+  // レールは角ポストの下まで敷き詰め、ポストを最前面に重ねて継ぎ目を隠す。
+  const hCount = Math.ceil(outerWidth / railSegW);
+  const vCount = Math.ceil(outerHeight / railSegH);
 
   const cells: Pos[] = [];
   for (let r = 0; r < stage.rows; r++) {
@@ -62,60 +63,51 @@ export function Board({
 
   return (
     <View style={[styles.fenceWrap, { width: outerWidth, height: outerHeight }]}>
-      <Image source={cornerTL} style={{ position: 'absolute', left: 0, top: 0, width: fenceThickness, height: fenceThickness }} />
-      <Image
-        source={cornerTR}
-        style={{ position: 'absolute', right: 0, top: 0, width: fenceThickness, height: fenceThickness }}
-      />
-      <Image
-        source={cornerBL}
-        style={{ position: 'absolute', left: 0, bottom: 0, width: fenceThickness, height: fenceThickness }}
-      />
-      <Image
-        source={cornerBR}
-        style={{ position: 'absolute', right: 0, bottom: 0, width: fenceThickness, height: fenceThickness }}
-      />
+      <View style={[styles.fenceRow, { top: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+        {Array.from({ length: hCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={railH}
+            resizeMode="stretch"
+            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceRow, { bottom: 0, left: 0, width: outerWidth, height: fenceThickness }]}>
+        {Array.from({ length: hCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={railH}
+            resizeMode="stretch"
+            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceCol, { left: 0, top: 0, width: fenceThickness, height: outerHeight }]}>
+        {Array.from({ length: vCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={railV}
+            resizeMode="stretch"
+            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
+          />
+        ))}
+      </View>
+      <View style={[styles.fenceCol, { right: 0, top: 0, width: fenceThickness, height: outerHeight }]}>
+        {Array.from({ length: vCount }).map((_, i) => (
+          <Image
+            key={i}
+            source={railV}
+            resizeMode="stretch"
+            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
+          />
+        ))}
+      </View>
 
-      <View style={[styles.fenceRow, { top: 0, left: fenceThickness, width, height: fenceThickness }]}>
-        {Array.from({ length: hCount }).map((_, i) => (
-          <Image
-            key={i}
-            source={railH}
-            resizeMode="stretch"
-            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
-          />
-        ))}
-      </View>
-      <View style={[styles.fenceRow, { bottom: 0, left: fenceThickness, width, height: fenceThickness }]}>
-        {Array.from({ length: hCount }).map((_, i) => (
-          <Image
-            key={i}
-            source={railH}
-            resizeMode="stretch"
-            style={{ position: 'absolute', left: i * railSegW, width: railSegW, height: fenceThickness }}
-          />
-        ))}
-      </View>
-      <View style={[styles.fenceCol, { left: 0, top: fenceThickness, width: fenceThickness, height }]}>
-        {Array.from({ length: vCount }).map((_, i) => (
-          <Image
-            key={i}
-            source={railV}
-            resizeMode="stretch"
-            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
-          />
-        ))}
-      </View>
-      <View style={[styles.fenceCol, { right: 0, top: fenceThickness, width: fenceThickness, height }]}>
-        {Array.from({ length: vCount }).map((_, i) => (
-          <Image
-            key={i}
-            source={railV}
-            resizeMode="stretch"
-            style={{ position: 'absolute', top: i * railSegH, width: fenceThickness, height: railSegH }}
-          />
-        ))}
-      </View>
+      <Image source={cornerTL} style={[styles.corner, { left: 0, top: 0, width: fenceThickness, height: fenceThickness }]} />
+      <Image source={cornerTR} style={[styles.corner, { right: 0, top: 0, width: fenceThickness, height: fenceThickness }]} />
+      <Image source={cornerBL} style={[styles.corner, { left: 0, bottom: 0, width: fenceThickness, height: fenceThickness }]} />
+      <Image source={cornerBR} style={[styles.corner, { right: 0, bottom: 0, width: fenceThickness, height: fenceThickness }]} />
 
       <View
         ref={floorRef}
@@ -184,6 +176,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     overflow: 'hidden',
     zIndex: 3,
+  },
+  corner: {
+    position: 'absolute',
+    zIndex: 4,
   },
   floor: {
     position: 'absolute',
