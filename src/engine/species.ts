@@ -42,4 +42,30 @@ export const SPECIES: Record<Species, AnimalDef> = {
     shape: 'single',
     conditions: [{ kind: 'adjacentRequired', with: 'giraffe' }],
   },
+  monkey: {
+    species: 'monkey',
+    shape: 'single',
+    conditions: [
+      { kind: 'flockRequired' },
+      { kind: 'adjacentForbidden', with: 'leopard' },
+    ],
+  },
+  leopard: {
+    species: 'leopard',
+    shape: 'domino_v',
+    conditions: [
+      { kind: 'adjacentForbidden', with: 'leopard' },
+      { kind: 'adjacentForbidden', with: 'squirrel' },
+    ],
+  },
+  rhino: {
+    species: 'rhino',
+    shape: 'square2x2',
+    conditions: [{ kind: 'minDistance', from: 'rhino', distance: 3 }],
+  },
+  gorilla: {
+    species: 'gorilla',
+    shape: 'square2x2',
+    conditions: [{ kind: 'blockAdjacentRequired', block: 'tree' }],
+  },
 };

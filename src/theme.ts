@@ -80,6 +80,10 @@ export const speciesEmoji: Record<Species, string> = {
   crocodile: '🐊',
   oxpecker: '🐦',
   squirrel: '🐿️',
+  monkey: '🐒',
+  leopard: '🐆',
+  rhino: '🦏',
+  gorilla: '🦍',
 };
 
 export const speciesLabel: Record<Species, string> = {
@@ -90,6 +94,10 @@ export const speciesLabel: Record<Species, string> = {
   crocodile: 'ワニ',
   oxpecker: 'ウシツツキ',
   squirrel: 'リス',
+  monkey: 'サル',
+  leopard: 'ヒョウ',
+  rhino: 'サイ',
+  gorilla: 'ゴリラ',
 };
 
 export const blockLabel: Record<ConditionBlock, string> = {

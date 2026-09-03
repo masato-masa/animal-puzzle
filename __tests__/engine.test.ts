@@ -12,14 +12,17 @@ import {
   returnPieceAt,
   shapeCells,
   solutionStatus,
+  SPECIES,
   terrainAt,
   unsatisfiedStageRules,
   validateStage,
   type CellTerrain,
+  type Species,
   type Stage,
 } from '@/engine';
 import { CHAPTERS, STAGES } from '@/levels/stages';
 import { migrateStageTerrain } from '@/storage/migrate-stage';
+import { speciesEmoji, speciesLabel } from '@/theme';
 
 const makeStage = (overrides: Partial<Stage> = {}): Stage => ({
   id: 'test',
@@ -54,6 +57,10 @@ describe('shapes', () => {
     expect(boundingBox('zebra')).toEqual({ w: 2, h: 1 });
     expect(boundingBox('lion')).toEqual({ w: 1, h: 2 });
     expect(boundingBox('elephant')).toEqual({ w: 2, h: 2 });
+    expect(boundingBox('monkey')).toEqual({ w: 1, h: 1 });
+    expect(boundingBox('leopard')).toEqual({ w: 1, h: 2 });
+    expect(boundingBox('rhino')).toEqual({ w: 2, h: 2 });
+    expect(boundingBox('gorilla')).toEqual({ w: 2, h: 2 });
   });
 });
 
@@ -798,5 +805,36 @@ describe('migrateStageTerrain', () => {
   test('returns an equivalent stage when there is nothing to migrate', () => {
     const stage = makeStage({ animals: [{ instanceId: 's0', species: 'squirrel' }] });
     expect(migrateStageTerrain(stage)).toEqual(stage);
+  });
+});
+
+describe('species roster', () => {
+  const allSpecies = Object.keys(SPECIES) as Species[];
+
+  test('every species has a label and an emoji', () => {
+    for (const sp of allSpecies) {
+      expect(speciesLabel[sp]).toBeTruthy();
+      expect(speciesEmoji[sp]).toBeTruthy();
+    }
+  });
+
+  test('every condition refers to a species that exists', () => {
+    for (const sp of allSpecies) {
+      for (const c of SPECIES[sp].conditions) {
+        if ('with' in c) expect(SPECIES[c.with]).toBeDefined();
+        if ('from' in c) expect(SPECIES[c.from]).toBeDefined();
+      }
+    }
+  });
+
+  test('at least three species share each of the 1x1, vertical-domino and 2x2 shapes', () => {
+    const byShape = new Map<string, Species[]>();
+    for (const sp of allSpecies) {
+      const shape = SPECIES[sp].shape;
+      byShape.set(shape, [...(byShape.get(shape) ?? []), sp]);
+    }
+    expect(byShape.get('single')!.length).toBeGreaterThanOrEqual(3);
+    expect(byShape.get('domino_v')!.length).toBeGreaterThanOrEqual(3);
+    expect(byShape.get('square2x2')!.length).toBeGreaterThanOrEqual(3);
   });
 });

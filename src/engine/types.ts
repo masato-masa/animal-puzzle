@@ -5,7 +5,11 @@ export type Species =
   | 'elephant'
   | 'crocodile'
   | 'oxpecker'
-  | 'squirrel';
+  | 'squirrel'
+  | 'monkey'
+  | 'leopard'
+  | 'rhino'
+  | 'gorilla';
 
 /** 動物を置けないブロック。盤面の仕切りであり、一部は条件から参照される。 */
 export type BlockKind = 'wall' | 'water' | 'tree';
