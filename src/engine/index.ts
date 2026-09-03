@@ -8,3 +8,4 @@ export * from './validate';
 export * from './solver';
 export * from './propagation';
 export * from './solver-level';
+export * from './rule-trace';

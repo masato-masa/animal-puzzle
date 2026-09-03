@@ -2,6 +2,7 @@ import {
   boundingBox,
   canPlace,
   conditionCheckers,
+  countRuleMoves,
   countSolutions,
   createGameState,
   findSolution,
@@ -1044,6 +1045,53 @@ describe('solverLevel', () => {
     expect(level).not.toBe('L0');
     expect(level).not.toBe('L1');
     expect(level).not.toBe('unsolvable');
+  });
+});
+
+describe('countRuleMoves', () => {
+  test('returns 0 for an unsolvable stage', () => {
+    const stage = makeStage({
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(countRuleMoves(stage)).toBe(0);
+  });
+
+  test('returns 0 when the geometric packing is already unique (no rule ever does work)', () => {
+    const stage = makeStage({
+      terrain: [
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(countRuleMoves(stage)).toBe(0);
+  });
+
+  test('counts a move where the geometric candidates are ambiguous but the rule narrows to one', () => {
+    const stage: Stage = {
+      id: 'rule-moves-l1',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'wall', 'wall', 'land', 'land'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+      ],
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+      rules: [{ kind: 'above', a: 'zebra', b: 'lion' }],
+    };
+    // Task 2/Task 4と同じフィクスチャ。シマウマは幾何的に(0,3)アンカーの1通りしかないので
+    // シマウマ自身の手はRに数えられない。ライオンは幾何だけなら(0,0)/(3,0)アンカーの2通りが
+    // あるが、「シマウマはライオンより上」のルールでシマウマが行0にいる以上(0,0)アンカーは
+    // 使えず1通りに絞られる。この1手がRとして数えられるはず。
+    expect(countRuleMoves(stage)).toBeGreaterThanOrEqual(1);
   });
 });
 
