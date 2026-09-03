@@ -881,11 +881,27 @@ describe('stage submission snippet', () => {
         ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
       ],
       animals: [{ instanceId: 's0', species: 'squirrel' }],
-      rules: [{ kind: 'above', a: 'squirrel', b: 'zebra' }],
+      rules: [
+        { kind: 'above', a: 'squirrel', b: 'zebra' },
+        { kind: 'exactDistance', a: 'squirrel', b: 'zebra', distance: 2 },
+      ],
     };
     const snippet = buildStageCodeSnippet(stage);
     expect(snippet).toContain(`'.~T#x'`);
-    expect(snippet).toContain(`{ kind: 'above', a: 'squirrel', b: 'zebra' }`);
+
+    // Pin the entire rules block — brackets, indentation, and each rule line's
+    // trailing comma — not just a substring of one rule. This also covers a
+    // mixed-type rule (exactDistance) so the numeric `distance` field must be
+    // asserted unquoted (a serialization regression could emit `distance: '2'`,
+    // which would silently break when pasted into stages.ts's number-typed field).
+    const expectedRulesBlock = [
+      '  rules: [',
+      `    { kind: 'above', a: 'squirrel', b: 'zebra' },`,
+      `    { kind: 'exactDistance', a: 'squirrel', b: 'zebra', distance: 2 },`,
+      '  ],',
+    ].join('\n');
+    expect(snippet).toContain(expectedRulesBlock);
+    expect(snippet).not.toContain(`distance: '2'`);
   });
 
   test('omits the rules block when a stage has none', () => {
