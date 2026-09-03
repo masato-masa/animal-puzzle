@@ -1009,6 +1009,51 @@ describe('propagation', () => {
     expect(result.fullySolved).toBe(true);
   });
 
+  test('propagateToFixation resolves via a genuine hidden single (a cell only one candidate can cover)', () => {
+    // ゾウ(square2x2)・ワニ(domino_h、blockAdjacentRequired:water)・リス(1マス)の3体。
+    // 土地は、ゾウ用の3行2列ブロック(0,0)-(2,1)の6マスと、孤立したリス専用マス(4,4)の
+    // 計7マス。(0,2)と(1,2)は水マス(land以外)。
+    //
+    // ゾウのアンカーは(0,0)[0-1行目を覆う]と(1,0)[1-2行目を覆う]の2通りで、
+    // 単体では「候補1つ」にならない(naked groupにならない)。
+    // ワニは幾何的には(0,0)/(1,0)/(2,0)の3通りのアンカーがあり得るが、
+    // blockAdjacentRequired:waterにより「駒のどこかのマスが水に隣接」していないと
+    // 候補から除外される。(2,0)-(2,1)はどちらも水に隣接しないため除外され、
+    // ワニの候補は(0,0)/(1,0)の2通りに絞られる——これも単体ではnaked groupにならない。
+    // リスは1体だけで、未確定のland全7マスすべてが候補になる。
+    //
+    // これが本題(hidden singleが必須になる箇所): 1巡目、リス専用マス(4,4)は
+    // ゾウ・ワニのどちらの候補にも含まれない(そこまで届く駒が無い)ため、
+    // 「(4,4)を覆えるのはリスの(4,4)アンカーだけ」というhidden singleで確定する。
+    // 2巡目、リスが除かれた後もゾウ(2候補)・ワニ(2候補)はまだnaked groupにならないが、
+    // マス(2,0)は「ワニの候補(0,0)/(1,0)のどちらにも含まれず、ゾウの(1,0)アンカーだけが
+    // 覆える」ため、ここでも本物のhidden singleとして確定し、ゾウは(1,0)に強制される。
+    // 3巡目、ワニの候補は(1,0)がゾウに埋まったことで(0,0)だけに絞られ、
+    // ここでようやくnaked group(単体候補)としてワニも確定し、全マスが埋まる。
+    // (実際にこの3段階の分岐をトレースして検証済み。)
+    const stage: Stage = {
+      id: 'hidden-single-l1',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'land', 'water', 'wall', 'wall'],
+        ['land', 'land', 'water', 'wall', 'wall'],
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        Array<CellTerrain>(5).fill('wall'),
+        ['wall', 'wall', 'wall', 'wall', 'land'],
+      ],
+      animals: [
+        { instanceId: 'e1', species: 'elephant' },
+        { instanceId: 'c1', species: 'crocodile' },
+        { instanceId: 's1', species: 'squirrel' },
+      ],
+    };
+    const result = propagateToFixation(createGameState(stage));
+    expect(result.contradiction).toBe(false);
+    expect(result.fullySolved).toBe(true);
+  });
+
   // stage-8/stage-9はnaked-group検出だけで純粋な伝播のみで解ける
   // （fullySolvedになる）ことを確認する。stage-13/stage-14/stage-18は
   // 伝播だけでは行き詰まる（下のsolverLevelテストでdepth<=3のバックトラックが

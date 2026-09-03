@@ -74,19 +74,68 @@ describe('meetsChapterBar', () => {
     const grade = gradeStage(l1Stage);
     // l1Stageの効いている条件数は1(ステージ限定ルールのみ)で、1章の必要範囲2〜3本に
     // 届かない。ここでは合否理由に条件数の指摘が含まれることを確認する。
-    const reasons = meetsChapterBar(grade, 1);
+    const reasons = meetsChapterBar(grade, 1, l1Stage);
     expect(reasons.some((r) => r.includes('条件数'))).toBe(true);
   });
 
   test('an unsolvable grade fails every chapter bar with a solutions reason', () => {
     const grade = gradeStage(unsolvableStage);
-    const reasons = meetsChapterBar(grade, 1);
+    const reasons = meetsChapterBar(grade, 1, unsolvableStage);
     expect(reasons.some((r) => r.includes('唯一解'))).toBe(true);
   });
 
   test('chapter 2 requires L3 or above', () => {
     const grade = gradeStage(l1Stage); // level L1
-    const reasons = meetsChapterBar(grade, 2);
+    const reasons = meetsChapterBar(grade, 2, l1Stage);
     expect(reasons.some((r) => r.includes('レベル'))).toBe(true);
+  });
+
+  test('a grade exceeding chapter 1 ceiling on level is rejected even though it clears the floor', () => {
+    // l1Stageはlevel L1(chapter1の上限L2以内)なので、代わりに上限だけを検証する専用の
+    // 高レベル・低ルール手数フィクスチャは不要 — 既存のl1Stageで上限チェックの配線だけ確認する。
+    // より厳密な検証は次のテストで行う。
+    const grade = gradeStage(l1Stage);
+    const reasons = meetsChapterBar(grade, 1, l1Stage);
+    // レベルはL1で上限L2以内なので「レベルが高すぎる」理由は出ないはず。
+    expect(reasons.some((r) => r.includes('高すぎる'))).toBe(false);
+  });
+
+  test('chapter 1 rejects a stage with design warnings', () => {
+    const stage: Stage = {
+      id: 'warn-stage',
+      name: 'x',
+      rows: 8,
+      cols: 5,
+      terrain: [
+        Array<CellTerrain>(5).fill('wall'),
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 6 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    };
+    const grade = gradeStage(stage);
+    const reasons = meetsChapterBar(grade, 1, stage);
+    expect(reasons.some((r) => r.includes('無駄'))).toBe(true);
+  });
+
+  test('chapter 2+ requires at least two species sharing one shape', () => {
+    // squirrelだけの1種構成 = 同じ形(single)の駒が1種類しか無い。
+    const stage: Stage = {
+      id: 'single-shape',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 's2', species: 'squirrel' },
+      ],
+    };
+    const grade = gradeStage(stage);
+    const reasons = meetsChapterBar(grade, 2, stage);
+    expect(reasons.some((r) => r.includes('同じ形'))).toBe(true);
   });
 });

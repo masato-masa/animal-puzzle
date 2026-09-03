@@ -63,6 +63,13 @@ export const ruleFilteredCandidateAnchors = (state: GameState, instanceId: strin
   return out;
 };
 
+/**
+ * 空きマスの列挙。伝播（特にhidden single判定）は、盤面のlandマス総数と全動物の
+ * 必要マス数が一致していること（validateStageが保証する不変条件）を前提にしている。
+ * この前提が崩れたstageに対して呼ぶと、実際には正しく解けていないのに全マスが
+ * 埋まったように見えて誤って確定してしまう恐れがある。呼び出し側は必ず
+ * validateStageを通した後のstageで使うこと。
+ */
 const emptyCellsOf = (state: GameState): Pos[] => {
   const filled = new Set(state.placed.flatMap((p) => p.cells.map(posKey)));
   const out: Pos[] = [];
