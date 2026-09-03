@@ -78,9 +78,12 @@ const emptyCellsOf = (state: GameState): Pos[] => {
 export type PropagationResult = { state: GameState; fullySolved: boolean; contradiction: boolean };
 
 /**
- * naked single（ある駒の候補が1つだけ）とhidden single（あるマスを覆える候補が1つだけ）を
+ * naked group（同じ種の残り駒がk体、候補地点の和集合（＝同種内はどの個体でも同一）も
+ * ちょうどk箇所しかない）とhidden single（あるマスを覆える候補が1つだけ）を
  * 交互に探し、見つかる限り確定させ続ける。どちらも見つからなくなったら停止する
  * （矛盾が無ければ「行き詰まり」＝これ以上は背理法が必要、というL1判定の材料になる）。
+ * naked groupはサイズ1のときnaked single（駒の候補が1つだけ）と一致するため、
+ * 単体のnaked single判定は不要（naked groupが包含する）。
  */
 export const propagateToFixation = (initial: GameState): PropagationResult => {
   let state = initial;
@@ -99,9 +102,31 @@ export const propagateToFixation = (initial: GameState): PropagationResult => {
       if (cands.length === 0) return { state, fullySolved: false, contradiction: true };
     }
 
-    const nakedSingle = state.tray.find((t) => candidatesByInstance.get(t.instanceId)!.length === 1);
-    if (nakedSingle) {
-      state = placeAnimal(state, nakedSingle.instanceId, candidatesByInstance.get(nakedSingle.instanceId)![0]);
+    // 種ごとにグループ化する。同種の残り駒は互いに交換可能で、候補集合は
+    // どの個体を渡してもruleFilteredCandidateAnchorsの結果が一致するため、
+    // 先頭の1体分だけ計算すれば十分（種ごとに1回で済む）。
+    const instanceIdsBySpecies = new Map<Species, string[]>();
+    for (const t of state.tray) {
+      const list = instanceIdsBySpecies.get(t.species);
+      if (list) list.push(t.instanceId);
+      else instanceIdsBySpecies.set(t.species, [t.instanceId]);
+    }
+
+    let nakedGroup: { instanceIds: string[]; candidates: Pos[] } | null = null;
+    for (const instanceIds of instanceIdsBySpecies.values()) {
+      const candidates = candidatesByInstance.get(instanceIds[0])!;
+      if (candidates.length === instanceIds.length) {
+        nakedGroup = { instanceIds, candidates };
+        break;
+      }
+    }
+    if (nakedGroup) {
+      // 個体と候補地点を先頭から順に対応付けて1体ずつ配置する。同種内はどの
+      // 組み合わせでも良いが、後続の配置ではcanPlaceが既に埋まったマスを
+      // 自動的に除外するため、単純な対応付けで正しく動く。
+      for (let i = 0; i < nakedGroup.instanceIds.length; i++) {
+        state = placeAnimal(state, nakedGroup.instanceIds[i], nakedGroup.candidates[i]);
+      }
       continue;
     }
 

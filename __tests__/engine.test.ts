@@ -981,6 +981,58 @@ describe('propagation', () => {
     expect(result.state.tray).toHaveLength(0);
     expect(result.fullySolved).toBe(false);
   });
+
+  test('propagateToFixation resolves a naked group (multiple same-species instances with exactly that many candidates)', () => {
+    // ライオン2体・キリン1体。ライオンの土地は2か所(縦2×2列)しかなく、単体では
+    // どちらも「候補が1つだけ」にならないが、2体×2候補で完全に一致するnaked-groupとして
+    // 一括確定できるはず。
+    const stage: Stage = {
+      id: 'naked-group-l1',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'wall', 'land', 'wall', 'wall'],
+        ['land', 'wall', 'land', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+      ],
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'l2', species: 'lion' },
+      ],
+    };
+    const result = propagateToFixation(createGameState(stage));
+    expect(result.contradiction).toBe(false);
+    expect(result.fullySolved).toBe(true);
+  });
+
+  // stage-8/stage-9はnaked-group検出だけで純粋な伝播のみで解ける
+  // （fullySolvedになる）ことを確認する。stage-13/stage-14/stage-18は
+  // 伝播だけでは行き詰まる（下のsolverLevelテストでdepth<=3のバックトラックが
+  // 必要なことを別途確認している）ため、ここではstage-8/stage-9のみを対象にする。
+  test.each(['stage-8', 'stage-9'])(
+    'propagateToFixation solves shipped %s by propagation alone (regression: needs naked-group detection)',
+    (id) => {
+      const stage = STAGES.find((s) => s.id === id)!;
+      const result = propagateToFixation(createGameState(stage));
+      expect(result.contradiction).toBe(false);
+      expect(result.fullySolved).toBe(true);
+    }
+  );
+
+  // stage-13/stage-14/stage-18はnaked-group検出が無いと伝播が全く進まず、
+  // solverLevelのdepth<=3のバックトラック予算内では解けずに'unsolvable'に
+  // 誤判定されていた（Task 7で発覚）。naked-group検出があれば、伝播で
+  // 候補が絞られた状態からバックトラックがdepth<=3で解に到達できる。
+  test.each(['stage-13', 'stage-14', 'stage-18'])(
+    'solverLevel no longer reports shipped %s as unsolvable (regression: needs naked-group detection)',
+    (id) => {
+      const stage = STAGES.find((s) => s.id === id)!;
+      expect(solverLevel(stage)).not.toBe('unsolvable');
+    }
+  );
 });
 
 describe('solverLevel', () => {
