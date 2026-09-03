@@ -1,4 +1,4 @@
-import type { ConditionBlock, SpeciesCondition, GameState, PlacedAnimal } from './types';
+import type { ConditionBlock, SpeciesCondition, GameState, PlacedAnimal, Species } from './types';
 import { isAdjacent, manhattan } from './types';
 import { SPECIES } from './species';
 import { terrainAt } from './board';
@@ -71,6 +71,16 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
     return !touchesBlock(state, animal, c.block);
   },
 };
+
+/** 盤上にあるその種の駒がすべてこの条件を満たしているか。1体も置いていなければtrue。 */
+export const isSpeciesConditionSatisfied = (
+  state: GameState,
+  species: Species,
+  condition: SpeciesCondition
+): boolean =>
+  state.placed
+    .filter((p) => p.species === species)
+    .every((p) => conditionCheckers[condition.kind](state, p, condition));
 
 export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal): boolean =>
   SPECIES[animal.species].conditions.every((c) => conditionCheckers[c.kind](state, animal, c));

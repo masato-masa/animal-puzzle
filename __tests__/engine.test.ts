@@ -4,6 +4,7 @@ import {
   conditionCheckers,
   countSolutions,
   createGameState,
+  isSpeciesConditionSatisfied,
   isStageCleared,
   isStageRuleSatisfied,
   moveAnimal,
@@ -426,6 +427,34 @@ describe('conditionCheckers', () => {
     let apart = createGameState(stage);
     apart = placeAnimal(apart, 's1', { r: 3, c: 3 });
     expect(conditionCheckers.blockAdjacentForbidden(apart, apart.placed[0], condition)).toBe(true);
+  });
+
+  test('isSpeciesConditionSatisfied is false when any placed piece of that species violates it', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'z1', species: 'zebra' },
+        { instanceId: 'z2', species: 'zebra' },
+        { instanceId: 'l1', species: 'lion' },
+      ],
+    });
+    const condition = { kind: 'adjacentForbidden', with: 'lion' } as const;
+
+    // シマウマは横2マス、ライオンは縦2マス。z1は(0,0)-(0,1)、z2は(4,0)-(4,1)を占める。
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'z1', { r: 0, c: 0 });
+    state = placeAnimal(state, 'z2', { r: 4, c: 0 });
+    state = placeAnimal(state, 'l1', { r: 2, c: 4 });
+    expect(isSpeciesConditionSatisfied(state, 'zebra', condition)).toBe(true);
+
+    // (1,0)-(2,0)へ動かすと、z1の(0,0)と上下で接する。
+    state = moveAnimal(state, 'l1', { r: 1, c: 0 });
+    expect(isSpeciesConditionSatisfied(state, 'zebra', condition)).toBe(false);
+  });
+
+  test('isSpeciesConditionSatisfied is true when no piece of that species is placed yet', () => {
+    const stage = makeStage({ animals: [{ instanceId: 'z1', species: 'zebra' }] });
+    const state = createGameState(stage);
+    expect(isSpeciesConditionSatisfied(state, 'zebra', { kind: 'adjacentForbidden', with: 'lion' })).toBe(true);
   });
 });
 

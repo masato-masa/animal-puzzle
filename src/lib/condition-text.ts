@@ -1,4 +1,4 @@
-import type { SpeciesCondition } from '@/engine';
+import type { SpeciesCondition, StageRule } from '@/engine';
 import { blockLabel, speciesLabel } from '@/theme';
 
 /** 条件を短い日本語の説明文にする（じょうけんパネル表示用）。 */
@@ -22,5 +22,27 @@ export const conditionText = (condition: SpeciesCondition): string => {
       return `${blockLabel[condition.block]}のとなりには置けない`;
     default:
       return '';
+  }
+};
+
+/** ステージ限定ルールを短い日本語の説明文にする。 */
+export const stageRuleText = (rule: StageRule): string => {
+  const a = speciesLabel[rule.a];
+  const b = speciesLabel[rule.b];
+  switch (rule.kind) {
+    case 'above':
+      return `${a}は${b}より上にいる`;
+    case 'leftOf':
+      return `${a}は${b}より左にいる`;
+    case 'sameRow':
+      return `${a}と${b}は同じ行にいる`;
+    case 'sameCol':
+      return `${a}と${b}は同じ列にいる`;
+    case 'differentRow':
+      return `${a}と${b}は同じ行に置けない`;
+    case 'differentCol':
+      return `${a}と${b}は同じ列に置けない`;
+    case 'exactDistance':
+      return `${a}と${b}はちょうど${rule.distance}マスはなす`;
   }
 };

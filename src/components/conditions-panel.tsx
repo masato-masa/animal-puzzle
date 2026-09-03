@@ -1,16 +1,25 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
-import { SPECIES, type Species } from '@/engine';
+import { SPECIES, isSpeciesConditionSatisfied, isStageRuleSatisfied, type GameState, type Species } from '@/engine';
 import { speciesArt } from '@/lib/animal-art';
-import { conditionText } from '@/lib/condition-text';
+import { conditionText, stageRuleText } from '@/lib/condition-text';
 import { colors, speciesEmoji, speciesLabel, ui } from '@/theme';
 
 type Props = {
   species: Species[];
+  state: GameState;
 };
 
-/** このステージに登場する動物の配置条件を一覧表示する。開閉は呼び出し側が管理する。 */
-export function ConditionsPanel({ species }: Props) {
+const StatusMark = ({ ok }: { ok: boolean }) => (
+  <Text style={[styles.mark, ok ? styles.markOk : styles.markNg]}>{ok ? '✓' : '✗'}</Text>
+);
+
+/**
+ * このステージに登場する動物の性格と、ステージ限定ルールを一覧表示する。
+ * 各行の左端に、今その条件が満たされているかを出す。開閉は呼び出し側が管理する。
+ */
+export function ConditionsPanel({ species, state }: Props) {
+  const rules = state.stage.rules ?? [];
   return (
     <View style={styles.panel}>
       {species.map((sp) => {
@@ -29,15 +38,30 @@ export function ConditionsPanel({ species }: Props) {
                 <Text style={styles.condition}>とくに条件なし</Text>
               ) : (
                 conditions.map((c, i) => (
-                  <Text key={i} style={styles.condition}>
-                    ・{conditionText(c)}
-                  </Text>
+                  <View key={i} style={styles.conditionRow}>
+                    <StatusMark ok={isSpeciesConditionSatisfied(state, sp, c)} />
+                    <Text style={styles.condition}>{conditionText(c)}</Text>
+                  </View>
                 ))
               )}
             </View>
           </View>
         );
       })}
+      {rules.length > 0 && (
+        <View style={styles.row}>
+          <Text style={styles.emoji}>📋</Text>
+          <View style={styles.textCol}>
+            <Text style={styles.name}>このステージのやくそく</Text>
+            {rules.map((r, i) => (
+              <View key={i} style={styles.conditionRow}>
+                <StatusMark ok={isStageRuleSatisfied(state, r)} />
+                <Text style={styles.condition}>{stageRuleText(r)}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -84,5 +108,21 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: '700',
     fontSize: 12,
+  },
+  conditionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  mark: {
+    fontSize: 14,
+    fontWeight: '800',
+    width: 16,
+  },
+  markOk: {
+    color: colors.success,
+  },
+  markNg: {
+    color: colors.danger,
   },
 });

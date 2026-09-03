@@ -257,7 +257,7 @@ export function StageGameView({ stage, hasNext, onCleared, onNext, onBack, onLis
 
           {conditionsExpanded ? (
             <View style={styles.conditionsDropdown}>
-              <ConditionsPanel species={uniqueSpecies} />
+              <ConditionsPanel species={uniqueSpecies} state={state} />
             </View>
           ) : null}
         </View>
