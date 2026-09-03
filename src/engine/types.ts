@@ -30,7 +30,9 @@ export type SpeciesCondition =
   | { kind: 'minDistance'; from: Species; distance: number }
   | { kind: 'flockRequired' }
   | { kind: 'diagonalForbidden'; with: Species }
-  | { kind: 'surroundForbidden'; with: Species };
+  | { kind: 'surroundForbidden'; with: Species }
+  | { kind: 'blockAdjacentRequired'; block: ConditionBlock }
+  | { kind: 'blockAdjacentForbidden'; block: ConditionBlock };
 
 export type AnimalDef = {
   species: Species;

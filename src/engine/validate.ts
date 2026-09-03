@@ -49,6 +49,8 @@ export const validateStage = (stage: Stage): string[] => {
     );
   }
 
+  const blocksOnBoard = new Set(stage.terrain.flat());
+
   const speciesCount = new Map<Species, number>();
   for (const a of stage.animals) speciesCount.set(a.species, (speciesCount.get(a.species) ?? 0) + 1);
   for (const [species, def] of Object.entries(SPECIES) as [Species, AnimalDef][]) {
@@ -60,6 +62,9 @@ export const validateStage = (stage: Stage): string[] => {
       }
       if (c.kind === 'adjacentRequired' && !speciesCount.get(c.with)) {
         errors.push(`${label} ${species} has adjacentRequired(${c.with}) but no ${c.with} in stage`);
+      }
+      if (c.kind === 'blockAdjacentRequired' && !blocksOnBoard.has(c.block)) {
+        errors.push(`${label} ${species} has blockAdjacentRequired(${c.block}) but no ${c.block} block on the board`);
       }
     }
   }

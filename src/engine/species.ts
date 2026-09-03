@@ -25,10 +25,7 @@ export const SPECIES: Record<Species, AnimalDef> = {
   giraffe: {
     species: 'giraffe',
     shape: 'domino_v',
-    conditions: [
-      { kind: 'adjacentForbidden', with: 'lion' },
-      { kind: 'adjacentForbidden', with: 'crocodile' },
-    ],
+    conditions: [{ kind: 'adjacentForbidden', with: 'lion' }],
   },
   elephant: {
     species: 'elephant',
@@ -38,7 +35,7 @@ export const SPECIES: Record<Species, AnimalDef> = {
   crocodile: {
     species: 'crocodile',
     shape: 'domino_h',
-    conditions: [{ kind: 'adjacentForbidden', with: 'giraffe' }],
+    conditions: [{ kind: 'blockAdjacentRequired', block: 'water' }],
   },
   oxpecker: {
     species: 'oxpecker',

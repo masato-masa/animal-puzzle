@@ -366,6 +366,58 @@ describe('conditionCheckers', () => {
     const condition = { kind: 'diagonalForbidden', with: 'squirrel' } as const;
     expect(conditionCheckers.diagonalForbidden(state, state.placed[0], condition)).toBe(false);
   });
+
+  test('blockAdjacentRequired needs an orthogonally touching block cell', () => {
+    const stage = makeStage({
+      terrain: [
+        ['water', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 'c1', species: 'crocodile' }],
+    });
+    const condition = { kind: 'blockAdjacentRequired', block: 'water' } as const;
+
+    let touching = createGameState(stage);
+    touching = placeAnimal(touching, 'c1', { r: 0, c: 1 });
+    expect(conditionCheckers.blockAdjacentRequired(touching, touching.placed[0], condition)).toBe(true);
+
+    let apart = createGameState(stage);
+    apart = placeAnimal(apart, 'c1', { r: 2, c: 2 });
+    expect(conditionCheckers.blockAdjacentRequired(apart, apart.placed[0], condition)).toBe(false);
+  });
+
+  test('blockAdjacentRequired does not count a diagonal block cell', () => {
+    const stage = makeStage({
+      terrain: [
+        ['water', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 's1', { r: 1, c: 1 });
+    const condition = { kind: 'blockAdjacentRequired', block: 'water' } as const;
+    expect(conditionCheckers.blockAdjacentRequired(state, state.placed[0], condition)).toBe(false);
+  });
+
+  test('blockAdjacentForbidden is the inverse', () => {
+    const stage = makeStage({
+      terrain: [
+        ['tree', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    const condition = { kind: 'blockAdjacentForbidden', block: 'tree' } as const;
+
+    let touching = createGameState(stage);
+    touching = placeAnimal(touching, 's1', { r: 0, c: 1 });
+    expect(conditionCheckers.blockAdjacentForbidden(touching, touching.placed[0], condition)).toBe(false);
+
+    let apart = createGameState(stage);
+    apart = placeAnimal(apart, 's1', { r: 3, c: 3 });
+    expect(conditionCheckers.blockAdjacentForbidden(apart, apart.placed[0], condition)).toBe(true);
+  });
 });
 
 describe('isStageCleared', () => {
@@ -563,6 +615,21 @@ describe('validateStage', () => {
       animals: Array.from({ length: 3 }, (_, i) => ({ instanceId: `o${i}`, species: 'oxpecker' as const })),
     };
     expect(validateStage(stage).some((e) => e.includes('adjacentRequired(giraffe) but no giraffe'))).toBe(true);
+  });
+
+  test('flags blockAdjacentRequired when the board has no such block', () => {
+    const stage: Stage = {
+      id: 'no-water',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'land', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 'c0', species: 'crocodile' }],
+    };
+    expect(validateStage(stage).some((e) => e.includes('blockAdjacentRequired(water) but no water block'))).toBe(true);
   });
 });
 

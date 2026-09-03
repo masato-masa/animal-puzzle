@@ -1,4 +1,4 @@
-import type { Species } from '@/engine';
+import type { ConditionBlock, Species } from '@/engine';
 
 /**
  * サバンナをイメージした配色。蛇パズル（木枠・パーチメント）とは別系統の
@@ -90,4 +90,9 @@ export const speciesLabel: Record<Species, string> = {
   crocodile: 'ワニ',
   oxpecker: 'ウシツツキ',
   squirrel: 'リス',
+};
+
+export const blockLabel: Record<ConditionBlock, string> = {
+  water: '水べ',
+  tree: '木',
 };

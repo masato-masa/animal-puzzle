@@ -1,6 +1,7 @@
-import type { SpeciesCondition, GameState, PlacedAnimal } from './types';
+import type { ConditionBlock, SpeciesCondition, GameState, PlacedAnimal } from './types';
 import { isAdjacent, manhattan } from './types';
 import { SPECIES } from './species';
+import { terrainAt } from './board';
 
 const piecesAdjacent = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
   a.cells.some((ca) => b.cells.some((cb) => isAdjacent(ca, cb)));
@@ -16,6 +17,19 @@ const piecesDiagonal = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
 
 const diagonalNeighborsOf = (state: GameState, piece: PlacedAnimal): PlacedAnimal[] =>
   state.placed.filter((p) => p.instanceId !== piece.instanceId && piecesDiagonal(p, piece));
+
+const ORTHOGONAL = [
+  { r: -1, c: 0 },
+  { r: 1, c: 0 },
+  { r: 0, c: -1 },
+  { r: 0, c: 1 },
+] as const;
+
+/** 駒の占有マスのいずれかが、指定ブロックのマスと上下左右で接しているか。 */
+const touchesBlock = (state: GameState, piece: PlacedAnimal, block: ConditionBlock): boolean =>
+  piece.cells.some((cell) =>
+    ORTHOGONAL.some((d) => terrainAt(state.stage, { r: cell.r + d.r, c: cell.c + d.c }) === block)
+  );
 
 type ConditionChecker = (state: GameState, animal: PlacedAnimal, condition: SpeciesCondition) => boolean;
 
@@ -46,6 +60,14 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
       !neighborsOf(state, animal).some((n) => n.species === c.with) &&
       !diagonalNeighborsOf(state, animal).some((n) => n.species === c.with)
     );
+  },
+  blockAdjacentRequired: (state, animal, c) => {
+    if (c.kind !== 'blockAdjacentRequired') return true;
+    return touchesBlock(state, animal, c.block);
+  },
+  blockAdjacentForbidden: (state, animal, c) => {
+    if (c.kind !== 'blockAdjacentForbidden') return true;
+    return !touchesBlock(state, animal, c.block);
   },
 };
 
