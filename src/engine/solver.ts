@@ -1,4 +1,4 @@
-import { violatingAnimals } from './conditions';
+import { isStageCleared } from './conditions';
 import { createGameState, placeAnimal } from './board';
 import type { GameState, Stage } from './types';
 
@@ -22,7 +22,7 @@ export const countSolutions = (stage: Stage, cap = 2): number => {
   const backtrack = (state: GameState, index: number): void => {
     if (count >= cap) return;
     if (index === instances.length) {
-      if (violatingAnimals(state).length === 0) {
+      if (isStageCleared(state)) {
         const sig = canonicalSignature(state);
         if (!seen.has(sig)) {
           seen.add(sig);

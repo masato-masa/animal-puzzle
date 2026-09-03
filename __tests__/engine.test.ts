@@ -5,6 +5,7 @@ import {
   countSolutions,
   createGameState,
   isStageCleared,
+  isStageRuleSatisfied,
   moveAnimal,
   placeAnimal,
   resetStage,
@@ -12,6 +13,7 @@ import {
   shapeCells,
   solutionStatus,
   terrainAt,
+  unsatisfiedStageRules,
   validateStage,
   type CellTerrain,
   type Stage,
@@ -630,6 +632,129 @@ describe('validateStage', () => {
       animals: [{ instanceId: 'c0', species: 'crocodile' }],
     };
     expect(validateStage(stage).some((e) => e.includes('blockAdjacentRequired(water) but no water block'))).toBe(true);
+  });
+});
+
+describe('stage rules', () => {
+  const twoPieceStage = (rules: Stage['rules']): Stage =>
+    makeStage({
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+      rules,
+    });
+
+  test('above requires every A cell to sit strictly above every B cell', () => {
+    const stage = twoPieceStage([{ kind: 'above', a: 'squirrel', b: 'zebra' }]);
+    let above = createGameState(stage);
+    above = placeAnimal(above, 's1', { r: 0, c: 0 });
+    above = placeAnimal(above, 'z1', { r: 1, c: 0 });
+    expect(isStageRuleSatisfied(above, stage.rules![0])).toBe(true);
+
+    let sameRow = createGameState(stage);
+    sameRow = placeAnimal(sameRow, 's1', { r: 1, c: 0 });
+    sameRow = placeAnimal(sameRow, 'z1', { r: 1, c: 1 });
+    expect(isStageRuleSatisfied(sameRow, stage.rules![0])).toBe(false);
+  });
+
+  test('leftOf works on columns the same way', () => {
+    const stage = twoPieceStage([{ kind: 'leftOf', a: 'squirrel', b: 'zebra' }]);
+    let left = createGameState(stage);
+    left = placeAnimal(left, 's1', { r: 0, c: 0 });
+    left = placeAnimal(left, 'z1', { r: 0, c: 1 });
+    expect(isStageRuleSatisfied(left, stage.rules![0])).toBe(true);
+
+    let right = createGameState(stage);
+    right = placeAnimal(right, 's1', { r: 0, c: 4 });
+    right = placeAnimal(right, 'z1', { r: 0, c: 0 });
+    expect(isStageRuleSatisfied(right, stage.rules![0])).toBe(false);
+  });
+
+  test('sameRow is satisfied when the occupied row sets overlap', () => {
+    const stage = twoPieceStage([{ kind: 'sameRow', a: 'squirrel', b: 'zebra' }]);
+    let same = createGameState(stage);
+    same = placeAnimal(same, 's1', { r: 2, c: 0 });
+    same = placeAnimal(same, 'z1', { r: 2, c: 2 });
+    expect(isStageRuleSatisfied(same, stage.rules![0])).toBe(true);
+
+    let different = createGameState(stage);
+    different = placeAnimal(different, 's1', { r: 0, c: 0 });
+    different = placeAnimal(different, 'z1', { r: 2, c: 2 });
+    expect(isStageRuleSatisfied(different, stage.rules![0])).toBe(false);
+  });
+
+  test('differentCol is the inverse of sameCol', () => {
+    const stage = twoPieceStage([{ kind: 'differentCol', a: 'squirrel', b: 'zebra' }]);
+    // シマウマは横2マス。(2,1)に置くと列1と2を占める。
+    let overlapping = createGameState(stage);
+    overlapping = placeAnimal(overlapping, 's1', { r: 0, c: 1 });
+    overlapping = placeAnimal(overlapping, 'z1', { r: 2, c: 1 });
+    expect(isStageRuleSatisfied(overlapping, stage.rules![0])).toBe(false);
+
+    let apart = createGameState(stage);
+    apart = placeAnimal(apart, 's1', { r: 0, c: 0 });
+    apart = placeAnimal(apart, 'z1', { r: 2, c: 1 });
+    expect(isStageRuleSatisfied(apart, stage.rules![0])).toBe(true);
+  });
+
+  test('exactDistance requires the minimum distance to match exactly', () => {
+    const stage = twoPieceStage([{ kind: 'exactDistance', a: 'squirrel', b: 'zebra', distance: 2 }]);
+    let exact = createGameState(stage);
+    exact = placeAnimal(exact, 's1', { r: 0, c: 0 });
+    exact = placeAnimal(exact, 'z1', { r: 0, c: 2 });
+    expect(isStageRuleSatisfied(exact, stage.rules![0])).toBe(true);
+
+    let tooFar = createGameState(stage);
+    tooFar = placeAnimal(tooFar, 's1', { r: 0, c: 0 });
+    tooFar = placeAnimal(tooFar, 'z1', { r: 0, c: 3 });
+    expect(isStageRuleSatisfied(tooFar, stage.rules![0])).toBe(false);
+  });
+
+  test('a rule is treated as satisfied while one side is still in the tray', () => {
+    const stage = twoPieceStage([{ kind: 'above', a: 'squirrel', b: 'zebra' }]);
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'z1', { r: 0, c: 0 });
+    expect(unsatisfiedStageRules(state)).toEqual([]);
+  });
+
+  test('isStageCleared requires stage rules on top of species conditions', () => {
+    const stage: Stage = {
+      ...makeStage({
+        terrain: [
+          ['land', 'wall', 'wall', 'wall', 'wall'],
+          ['land', 'wall', 'wall', 'wall', 'wall'],
+          ...Array.from({ length: 3 }, () => Array<CellTerrain>(5).fill('wall')),
+        ],
+        animals: [
+          { instanceId: 's1', species: 'squirrel' },
+          { instanceId: 's2', species: 'squirrel' },
+        ],
+      }),
+      rules: [{ kind: 'differentCol', a: 'squirrel', b: 'squirrel' }],
+    };
+    let state = createGameState(stage);
+    state = placeAnimal(state, 's1', { r: 0, c: 0 });
+    state = placeAnimal(state, 's2', { r: 1, c: 0 });
+    expect(state.tray).toHaveLength(0);
+    expect(isStageCleared(state)).toBe(false);
+  });
+
+  test('countSolutions respects stage rules', () => {
+    const base = makeStage({
+      terrain: [
+        ['land', 'wall', 'land', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 'm1', species: 'squirrel' },
+      ],
+    });
+    expect(countSolutions(base, 5)).toBe(1);
+
+    const blocked: Stage = { ...base, rules: [{ kind: 'sameCol', a: 'squirrel', b: 'squirrel' }] };
+    expect(countSolutions(blocked, 5)).toBe(0);
   });
 });
 

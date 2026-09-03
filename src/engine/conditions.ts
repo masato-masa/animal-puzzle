@@ -2,6 +2,7 @@ import type { ConditionBlock, SpeciesCondition, GameState, PlacedAnimal } from '
 import { isAdjacent, manhattan } from './types';
 import { SPECIES } from './species';
 import { terrainAt } from './board';
+import { unsatisfiedStageRules } from './stage-rules';
 
 const piecesAdjacent = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
   a.cells.some((ca) => b.cells.some((cb) => isAdjacent(ca, cb)));
@@ -78,4 +79,4 @@ export const violatingAnimals = (state: GameState): PlacedAnimal[] =>
   state.placed.filter((a) => !isAnimalSatisfied(state, a));
 
 export const isStageCleared = (state: GameState): boolean =>
-  state.tray.length === 0 && violatingAnimals(state).length === 0;
+  state.tray.length === 0 && violatingAnimals(state).length === 0 && unsatisfiedStageRules(state).length === 0;

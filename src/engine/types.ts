@@ -46,6 +46,20 @@ export type Pos = { r: number; c: number };
 
 export type PlacedAnimal = AnimalInstance & { anchor: Pos; cells: Pos[] };
 
+/**
+ * そのステージだけに効く出題側のルール。動物の性格(SpeciesCondition)と違い、
+ * 種のペアに対して指定し、種Aの全個体と種Bの全個体の全ペアで成立を要求する。
+ * 「下」「右」は above / leftOf の引数を入れ替えたものと同値なので用意しない。
+ */
+export type StageRule =
+  | { kind: 'above'; a: Species; b: Species }
+  | { kind: 'leftOf'; a: Species; b: Species }
+  | { kind: 'sameRow'; a: Species; b: Species }
+  | { kind: 'sameCol'; a: Species; b: Species }
+  | { kind: 'differentRow'; a: Species; b: Species }
+  | { kind: 'differentCol'; a: Species; b: Species }
+  | { kind: 'exactDistance'; a: Species; b: Species; distance: number };
+
 export type Stage = {
   id: string;
   name: string;
@@ -53,6 +67,7 @@ export type Stage = {
   cols: number;
   terrain: CellTerrain[][];
   animals: AnimalInstance[];
+  rules?: StageRule[];
 };
 
 export type GameState = {
