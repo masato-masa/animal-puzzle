@@ -28,6 +28,7 @@ import {
   type Stage,
 } from '@/engine';
 import { CHAPTERS, STAGES } from '@/levels/stages';
+import { gradeStage } from '@/lib/stage-difficulty';
 import { buildStageCodeSnippet } from '@/lib/stage-submission';
 import { migrateStageTerrain } from '@/storage/migrate-stage';
 import { speciesEmoji, speciesLabel } from '@/theme';
@@ -1164,6 +1165,15 @@ describe('shipped stage content', () => {
   test('every stage appears in exactly one chapter', () => {
     const chapterStageIds = CHAPTERS.flatMap((c) => c.stageIds);
     expect(chapterStageIds.sort()).toEqual(STAGES.map((s) => s.id).sort());
+  });
+
+  test.each(STAGES)('$id ($name) grades consistently with its known unique solution', (stage) => {
+    // 章の合格ライン(L3以上・R≧4など)は分割3(生成器＋全ステージ作り直し)で満たす対象。
+    // ここではgradeStageが既存の唯一解判定と矛盾しないことだけを確認する。
+    const grade = gradeStage(stage);
+    expect(grade.solutions).toBe(1);
+    expect(grade.geometricPackings).toBeGreaterThanOrEqual(1);
+    expect(grade.level).not.toBe('unsolvable');
   });
 });
 
