@@ -43,6 +43,6 @@ export const SPECIES: Record<Species, AnimalDef> = {
   oxpecker: {
     species: 'oxpecker',
     shape: 'single',
-    conditions: [{ kind: 'symbiosisRequired', with: 'giraffe' }],
+    conditions: [{ kind: 'adjacentRequired', with: 'giraffe' }],
   },
 };

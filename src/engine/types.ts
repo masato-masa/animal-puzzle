@@ -23,16 +23,17 @@ export type CellTerrain = 'land' | BlockKind | 'void';
 export type ShapeCell = { dr: number; dc: number };
 export type ShapeKey = 'single' | 'domino_h' | 'domino_v' | 'square2x2';
 
-export type Condition =
+/** 動物の性格。全ステージで共通に適用される。 */
+export type SpeciesCondition =
   | { kind: 'adjacentForbidden'; with: Species }
+  | { kind: 'adjacentRequired'; with: Species }
   | { kind: 'minDistance'; from: Species; distance: number }
-  | { kind: 'flockRequired' }
-  | { kind: 'symbiosisRequired'; with: Species };
+  | { kind: 'flockRequired' };
 
 export type AnimalDef = {
   species: Species;
   shape: ShapeKey;
-  conditions: Condition[];
+  conditions: SpeciesCondition[];
 };
 
 export type AnimalInstance = { instanceId: string; species: Species };

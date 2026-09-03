@@ -1,4 +1,4 @@
-import type { Condition, GameState, PlacedAnimal } from './types';
+import type { SpeciesCondition, GameState, PlacedAnimal } from './types';
 import { isAdjacent, manhattan } from './types';
 import { SPECIES } from './species';
 
@@ -11,12 +11,16 @@ const pieceDistance = (a: PlacedAnimal, b: PlacedAnimal): number =>
 const neighborsOf = (state: GameState, piece: PlacedAnimal): PlacedAnimal[] =>
   state.placed.filter((p) => p.instanceId !== piece.instanceId && piecesAdjacent(p, piece));
 
-type ConditionChecker = (state: GameState, animal: PlacedAnimal, condition: Condition) => boolean;
+type ConditionChecker = (state: GameState, animal: PlacedAnimal, condition: SpeciesCondition) => boolean;
 
-export const conditionCheckers: Record<Condition['kind'], ConditionChecker> = {
+export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecker> = {
   adjacentForbidden: (state, animal, c) => {
     if (c.kind !== 'adjacentForbidden') return true;
     return !neighborsOf(state, animal).some((n) => n.species === c.with);
+  },
+  adjacentRequired: (state, animal, c) => {
+    if (c.kind !== 'adjacentRequired') return true;
+    return neighborsOf(state, animal).some((n) => n.species === c.with);
   },
   minDistance: (state, animal, c) => {
     if (c.kind !== 'minDistance') return true;
@@ -25,10 +29,6 @@ export const conditionCheckers: Record<Condition['kind'], ConditionChecker> = {
       .every((p) => pieceDistance(p, animal) >= c.distance);
   },
   flockRequired: (state, animal) => neighborsOf(state, animal).some((n) => n.species === animal.species),
-  symbiosisRequired: (state, animal, c) => {
-    if (c.kind !== 'symbiosisRequired') return true;
-    return neighborsOf(state, animal).some((n) => n.species === c.with);
-  },
 };
 
 export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal): boolean =>

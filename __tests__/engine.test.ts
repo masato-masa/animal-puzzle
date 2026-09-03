@@ -291,7 +291,7 @@ describe('conditionCheckers', () => {
     expect(conditionCheckers.flockRequired(state, zebraA, { kind: 'flockRequired' })).toBe(true);
   });
 
-  test('symbiosisRequired fails without the required neighbor and passes once adjacent', () => {
+  test('adjacentRequired fails without the required neighbor and passes once adjacent', () => {
     const stage = makeStage({
       animals: [
         { instanceId: 'o1', species: 'oxpecker' },
@@ -300,16 +300,12 @@ describe('conditionCheckers', () => {
     });
     let state = createGameState(stage);
     state = placeAnimal(state, 'o1', { r: 0, c: 0 });
-    const oxAlone = state.placed[0];
-    expect(
-      conditionCheckers.symbiosisRequired(state, oxAlone, { kind: 'symbiosisRequired', with: 'giraffe' })
-    ).toBe(false);
+    const condition = { kind: 'adjacentRequired', with: 'giraffe' } as const;
 
-    state = placeAnimal(state, 'g1', { r: 1, c: 0 }); // (1,0),(2,0) -> (1,0) adjacent to (0,0)
-    const oxWithGiraffe = state.placed.find((p) => p.instanceId === 'o1')!;
-    expect(
-      conditionCheckers.symbiosisRequired(state, oxWithGiraffe, { kind: 'symbiosisRequired', with: 'giraffe' })
-    ).toBe(true);
+    expect(conditionCheckers.adjacentRequired(state, state.placed[0], condition)).toBe(false);
+
+    state = placeAnimal(state, 'g1', { r: 0, c: 1 });
+    expect(conditionCheckers.adjacentRequired(state, state.placed[0], condition)).toBe(true);
   });
 });
 
@@ -495,7 +491,7 @@ describe('validateStage', () => {
     expect(validateStage(stage).some((e) => e.includes('too many animals'))).toBe(true);
   });
 
-  test('flags symbiosisRequired with a missing partner species', () => {
+  test('flags adjacentRequired with a missing partner species', () => {
     const stage: Stage = {
       id: 'lonely-oxpecker',
       name: 'x',
@@ -507,7 +503,7 @@ describe('validateStage', () => {
       ],
       animals: Array.from({ length: 3 }, (_, i) => ({ instanceId: `o${i}`, species: 'oxpecker' as const })),
     };
-    expect(validateStage(stage).some((e) => e.includes('symbiosisRequired(giraffe) but no giraffe'))).toBe(true);
+    expect(validateStage(stage).some((e) => e.includes('adjacentRequired(giraffe) but no giraffe'))).toBe(true);
   });
 });
 

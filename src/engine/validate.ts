@@ -58,8 +58,8 @@ export const validateStage = (stage: Stage): string[] => {
       if (c.kind === 'flockRequired' && count < 2) {
         errors.push(`${label} ${species} has flockRequired but fewer than 2 instances in stage`);
       }
-      if (c.kind === 'symbiosisRequired' && !speciesCount.get(c.with)) {
-        errors.push(`${label} ${species} has symbiosisRequired(${c.with}) but no ${c.with} in stage`);
+      if (c.kind === 'adjacentRequired' && !speciesCount.get(c.with)) {
+        errors.push(`${label} ${species} has adjacentRequired(${c.with}) but no ${c.with} in stage`);
       }
     }
   }
