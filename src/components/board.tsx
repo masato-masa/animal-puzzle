@@ -56,6 +56,17 @@ export function Board({
   const hCount = Math.ceil(outerWidth / railSegW);
   const vCount = Math.ceil(outerHeight / railSegH);
 
+  // 角画像(corner-*.png)はポスト＋そこから伸びるレールを1枚に描いた素材で、
+  // レール部分の太さは画像全体に対してごく一部（横レールは高さの約23%、
+  // 縦レールは幅の約18%）しかない。単純にfenceThickness四方へ収めると
+  // レールだけ独立タイル(railH/railV)よりずっと細くなり、継ぎ目で太さが
+  // 急変して見える。そこで角画像を実測比率どおりに拡大し、レール部分の
+  // 太さがfenceThicknessに一致する位置までポストを盤外側にはみ出させる。
+  const cornerWidth = fenceThickness * 5.489;
+  const cornerHeight = fenceThickness * 4.386;
+  const cornerOffsetX = fenceThickness * 0.4562;
+  const cornerOffsetY = fenceThickness * 0.4834;
+
   const cells: Pos[] = [];
   for (let r = 0; r < stage.rows; r++) {
     for (let c = 0; c < stage.cols; c++) cells.push({ r, c });
@@ -104,10 +115,22 @@ export function Board({
         ))}
       </View>
 
-      <Image source={cornerTL} style={[styles.corner, { left: 0, top: 0, width: fenceThickness, height: fenceThickness }]} />
-      <Image source={cornerTR} style={[styles.corner, { right: 0, top: 0, width: fenceThickness, height: fenceThickness }]} />
-      <Image source={cornerBL} style={[styles.corner, { left: 0, bottom: 0, width: fenceThickness, height: fenceThickness }]} />
-      <Image source={cornerBR} style={[styles.corner, { right: 0, bottom: 0, width: fenceThickness, height: fenceThickness }]} />
+      <Image
+        source={cornerTL}
+        style={[styles.corner, { left: -cornerOffsetX, top: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
+      />
+      <Image
+        source={cornerTR}
+        style={[styles.corner, { right: -cornerOffsetX, top: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
+      />
+      <Image
+        source={cornerBL}
+        style={[styles.corner, { left: -cornerOffsetX, bottom: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
+      />
+      <Image
+        source={cornerBR}
+        style={[styles.corner, { right: -cornerOffsetX, bottom: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
+      />
 
       <View
         ref={floorRef}
