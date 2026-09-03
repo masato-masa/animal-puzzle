@@ -7,3 +7,4 @@ export * from './board';
 export * from './validate';
 export * from './solver';
 export * from './propagation';
+export * from './solver-level';

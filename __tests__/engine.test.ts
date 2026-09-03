@@ -17,6 +17,7 @@ import {
   ruleFilteredCandidateAnchors,
   shapeCells,
   solutionStatus,
+  solverLevel,
   SPECIES,
   terrainAt,
   unsatisfiedStageRules,
@@ -978,6 +979,71 @@ describe('propagation', () => {
     const result = propagateToFixation(createGameState(stage));
     expect(result.state.tray).toHaveLength(0);
     expect(result.fullySolved).toBe(false);
+  });
+});
+
+describe('solverLevel', () => {
+  test('L0 when the geometric packing is already unique', () => {
+    const stage = makeStage({ animals: [{ instanceId: 's1', species: 'squirrel' }] });
+    // land 25マス全部に対してリス1体だけなので、幾何的な詰め方は25通りある。
+    // L0は「幾何解が1通りしかない」ケースなので、幾何解が2通り以上あるこの場合はL0にならない。
+    expect(solverLevel(stage)).not.toBe('L0');
+  });
+
+  test('L0 when the board and the single piece leave exactly one geometric fit', () => {
+    const stage = makeStage({
+      terrain: [
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(solverLevel(stage)).toBe('L0');
+  });
+
+  test('L1 when propagation alone solves the stage', () => {
+    const stage: Stage = {
+      id: 'solver-level-l1',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'wall', 'wall', 'land', 'land'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+      ],
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+      rules: [{ kind: 'above', a: 'zebra', b: 'lion' }],
+    };
+    // Task 2の `propagateToFixation solves a stage that only needs naked/hidden singles`
+    // で確認済みのフィクスチャと同じ形。
+    expect(solverLevel(stage)).toBe('L1');
+  });
+
+  test('unsolvable when the stage has zero solutions', () => {
+    const stage = makeStage({
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(solverLevel(stage)).toBe('unsolvable');
+  });
+
+  test('at least L2 when propagation makes zero forced moves from the start but a solution exists', () => {
+    // 自作フィクスチャではなく、既存の出荷ステージ stage-6（'6. はなれたライオン'）を使う。
+    // このステージはライオン1体・キリン2体で、キリンの唯一の条件はadjacentForbidden(lion)。
+    // 開始直後はライオン・キリンいずれの候補も複数かつ互いに対称なため、naked/hidden single
+    // では最初の1手も確定できず、唯一解(real=1)に到達するには背理法が要ることが
+    // 分割1以前からの分析で分かっている（ライオン・キリンの条件は分割1で変更していない）。
+    const stage = STAGES.find((s) => s.id === 'stage-6')!;
+    const level = solverLevel(stage);
+    expect(level).not.toBe('L0');
+    expect(level).not.toBe('L1');
+    expect(level).not.toBe('unsolvable');
   });
 });
 
