@@ -1,4 +1,4 @@
-import type { CellTerrain, Species, Stage } from '@/engine';
+import type { CellTerrain, Species, Stage, StageRule } from '@/engine';
 
 const REPO_URL = 'https://github.com/masato-masa/animal-puzzle';
 
@@ -18,6 +18,14 @@ const animalsSnippet = (stage: Stage): string =>
     .map(([species, n]) => `    ['${species}', ${n}],`)
     .join('\n');
 
+const ruleSnippet = (rule: StageRule): string => {
+  const parts = Object.entries(rule).map(([k, v]) => `${k}: ${typeof v === 'string' ? `'${v}'` : v}`);
+  return `    { ${parts.join(', ')} },`;
+};
+
+const rulesSnippet = (stage: Stage): string[] =>
+  stage.rules && stage.rules.length > 0 ? ['  rules: [', ...stage.rules.map(ruleSnippet), '  ],'] : [];
+
 /** stages.ts にそのまま貼り付けられる形式のコード片。投稿Issueの本文に埋め込む。 */
 export const buildStageCodeSnippet = (stage: Stage): string =>
   [
@@ -32,6 +40,7 @@ export const buildStageCodeSnippet = (stage: Stage): string =>
     '  animals: animals([',
     animalsSnippet(stage),
     '  ]),',
+    ...rulesSnippet(stage),
     '},',
   ].join('\n');
 

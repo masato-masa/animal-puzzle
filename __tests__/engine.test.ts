@@ -22,6 +22,7 @@ import {
   type Stage,
 } from '@/engine';
 import { CHAPTERS, STAGES } from '@/levels/stages';
+import { buildStageCodeSnippet } from '@/lib/stage-submission';
 import { migrateStageTerrain } from '@/storage/migrate-stage';
 import { speciesEmoji, speciesLabel } from '@/theme';
 
@@ -865,5 +866,37 @@ describe('species roster', () => {
     expect(byShape.get('single')!.length).toBeGreaterThanOrEqual(3);
     expect(byShape.get('domino_v')!.length).toBeGreaterThanOrEqual(3);
     expect(byShape.get('square2x2')!.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('stage submission snippet', () => {
+  test('encodes every block kind and includes stage rules', () => {
+    const stage: Stage = {
+      id: 'draft',
+      name: 'てすと',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'water', 'tree', 'wall', 'void'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 's0', species: 'squirrel' }],
+      rules: [{ kind: 'above', a: 'squirrel', b: 'zebra' }],
+    };
+    const snippet = buildStageCodeSnippet(stage);
+    expect(snippet).toContain(`'.~T#x'`);
+    expect(snippet).toContain(`{ kind: 'above', a: 'squirrel', b: 'zebra' }`);
+  });
+
+  test('omits the rules block when a stage has none', () => {
+    const stage: Stage = {
+      id: 'draft',
+      name: 'てすと',
+      rows: 5,
+      cols: 5,
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's0', species: 'squirrel' }],
+    };
+    expect(buildStageCodeSnippet(stage)).not.toContain('rules:');
   });
 });

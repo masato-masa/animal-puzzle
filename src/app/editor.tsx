@@ -25,6 +25,8 @@ const ALL_SPECIES = Object.keys(SPECIES) as Species[];
 const PAINT_OPTIONS: { terrain: CellTerrain; label: string }[] = [
   { terrain: 'land', label: '平地' },
   { terrain: 'wall', label: '壁' },
+  { terrain: 'water', label: '水' },
+  { terrain: 'tree', label: '木' },
 ];
 
 const MIN_SIZE = 5;
