@@ -10,7 +10,7 @@ import { colors } from '@/theme';
  * 変わらない。実行時に副作用を持つ最小限の文を入れてハッシュを変え、CDNの誤キャッシュを回避する。
  */
 if (typeof globalThis !== 'undefined') {
-  (globalThis as unknown as Record<string, string>).__buildMarker = '2026-09-03a';
+  (globalThis as unknown as Record<string, string>).__buildMarker = '2026-09-03b';
 }
 
 const navTheme = {
