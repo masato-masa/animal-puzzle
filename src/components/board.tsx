@@ -51,7 +51,7 @@ export function Board({
   // cornerHeight参照)、fenceThicknessを太くするとポストが盤の外へ大きく
   // せり出し、上部バーに被って見切れる。柵全体を細くしてポストのはみ出しを
   // 抑える。
-  const fenceThickness = Math.round(cell * 0.15);
+  const fenceThickness = Math.round(cell * 0.22);
   const outerWidth = width + fenceThickness * 2;
   const outerHeight = height + fenceThickness * 2;
   const railSegW = cell * 2;
