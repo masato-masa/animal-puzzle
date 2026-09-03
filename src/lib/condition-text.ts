@@ -12,6 +12,10 @@ export const conditionText = (condition: SpeciesCondition): string => {
       return 'おなじなかまととなり合わせる';
     case 'adjacentRequired':
       return `${speciesLabel[condition.with]}のとなりが必要`;
+    case 'diagonalForbidden':
+      return `${speciesLabel[condition.with]}のななめのとなりには置けない`;
+    case 'surroundForbidden':
+      return `${speciesLabel[condition.with]}のまわり8マスには置けない`;
     default:
       return '';
   }

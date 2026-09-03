@@ -11,6 +11,12 @@ const pieceDistance = (a: PlacedAnimal, b: PlacedAnimal): number =>
 const neighborsOf = (state: GameState, piece: PlacedAnimal): PlacedAnimal[] =>
   state.placed.filter((p) => p.instanceId !== piece.instanceId && piecesAdjacent(p, piece));
 
+const piecesDiagonal = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
+  a.cells.some((ca) => b.cells.some((cb) => Math.abs(ca.r - cb.r) === 1 && Math.abs(ca.c - cb.c) === 1));
+
+const diagonalNeighborsOf = (state: GameState, piece: PlacedAnimal): PlacedAnimal[] =>
+  state.placed.filter((p) => p.instanceId !== piece.instanceId && piecesDiagonal(p, piece));
+
 type ConditionChecker = (state: GameState, animal: PlacedAnimal, condition: SpeciesCondition) => boolean;
 
 export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecker> = {
@@ -29,6 +35,18 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
       .every((p) => pieceDistance(p, animal) >= c.distance);
   },
   flockRequired: (state, animal) => neighborsOf(state, animal).some((n) => n.species === animal.species),
+  diagonalForbidden: (state, animal, c) => {
+    if (c.kind !== 'diagonalForbidden') return true;
+    return !diagonalNeighborsOf(state, animal).some((n) => n.species === c.with);
+  },
+  /** 上下左右とななめの計8方向。diagonalForbiddenとadjacentForbiddenの両方を満たすのと同義。 */
+  surroundForbidden: (state, animal, c) => {
+    if (c.kind !== 'surroundForbidden') return true;
+    return (
+      !neighborsOf(state, animal).some((n) => n.species === c.with) &&
+      !diagonalNeighborsOf(state, animal).some((n) => n.species === c.with)
+    );
+  },
 };
 
 export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal): boolean =>

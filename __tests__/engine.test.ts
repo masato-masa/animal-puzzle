@@ -307,6 +307,65 @@ describe('conditionCheckers', () => {
     state = placeAnimal(state, 'g1', { r: 0, c: 1 });
     expect(conditionCheckers.adjacentRequired(state, state.placed[0], condition)).toBe(true);
   });
+
+  test('diagonalForbidden fails only on a diagonal touch, not an orthogonal one', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 's2', species: 'squirrel' },
+      ],
+    });
+    const condition = { kind: 'diagonalForbidden', with: 'squirrel' } as const;
+
+    let diagonal = createGameState(stage);
+    diagonal = placeAnimal(diagonal, 's1', { r: 0, c: 0 });
+    diagonal = placeAnimal(diagonal, 's2', { r: 1, c: 1 });
+    expect(conditionCheckers.diagonalForbidden(diagonal, diagonal.placed[0], condition)).toBe(false);
+
+    let orthogonal = createGameState(stage);
+    orthogonal = placeAnimal(orthogonal, 's1', { r: 0, c: 0 });
+    orthogonal = placeAnimal(orthogonal, 's2', { r: 0, c: 1 });
+    expect(conditionCheckers.diagonalForbidden(orthogonal, orthogonal.placed[0], condition)).toBe(true);
+  });
+
+  test('surroundForbidden fails on both diagonal and orthogonal touches', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 's2', species: 'squirrel' },
+      ],
+    });
+    const condition = { kind: 'surroundForbidden', with: 'squirrel' } as const;
+
+    let diagonal = createGameState(stage);
+    diagonal = placeAnimal(diagonal, 's1', { r: 0, c: 0 });
+    diagonal = placeAnimal(diagonal, 's2', { r: 1, c: 1 });
+    expect(conditionCheckers.surroundForbidden(diagonal, diagonal.placed[0], condition)).toBe(false);
+
+    let orthogonal = createGameState(stage);
+    orthogonal = placeAnimal(orthogonal, 's1', { r: 0, c: 0 });
+    orthogonal = placeAnimal(orthogonal, 's2', { r: 0, c: 1 });
+    expect(conditionCheckers.surroundForbidden(orthogonal, orthogonal.placed[0], condition)).toBe(false);
+
+    let apart = createGameState(stage);
+    apart = placeAnimal(apart, 's1', { r: 0, c: 0 });
+    apart = placeAnimal(apart, 's2', { r: 2, c: 2 });
+    expect(conditionCheckers.surroundForbidden(apart, apart.placed[0], condition)).toBe(true);
+  });
+
+  test('diagonalForbidden uses every occupied cell of a multi-cell piece', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'e1', species: 'elephant' },
+        { instanceId: 's1', species: 'squirrel' },
+      ],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'e1', { r: 0, c: 0 });
+    state = placeAnimal(state, 's1', { r: 2, c: 2 });
+    const condition = { kind: 'diagonalForbidden', with: 'squirrel' } as const;
+    expect(conditionCheckers.diagonalForbidden(state, state.placed[0], condition)).toBe(false);
+  });
 });
 
 describe('isStageCleared', () => {

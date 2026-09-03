@@ -28,7 +28,9 @@ export type SpeciesCondition =
   | { kind: 'adjacentForbidden'; with: Species }
   | { kind: 'adjacentRequired'; with: Species }
   | { kind: 'minDistance'; from: Species; distance: number }
-  | { kind: 'flockRequired' };
+  | { kind: 'flockRequired' }
+  | { kind: 'diagonalForbidden'; with: Species }
+  | { kind: 'surroundForbidden'; with: Species };
 
 export type AnimalDef = {
   species: Species;
