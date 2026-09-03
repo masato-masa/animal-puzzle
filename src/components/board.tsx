@@ -121,18 +121,22 @@ export function Board({
 
       <Image
         source={cornerTL}
+        resizeMode="stretch"
         style={[styles.corner, { left: -cornerOffsetX, top: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
       />
       <Image
         source={cornerTR}
+        resizeMode="stretch"
         style={[styles.corner, { right: -cornerOffsetX, top: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
       />
       <Image
         source={cornerBL}
+        resizeMode="stretch"
         style={[styles.corner, { left: -cornerOffsetX, bottom: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
       />
       <Image
         source={cornerBR}
+        resizeMode="stretch"
         style={[styles.corner, { right: -cornerOffsetX, bottom: -cornerOffsetY, width: cornerWidth, height: cornerHeight }]}
       />
 
