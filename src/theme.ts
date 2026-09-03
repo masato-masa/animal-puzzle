@@ -101,6 +101,6 @@ export const speciesLabel: Record<Species, string> = {
 };
 
 export const blockLabel: Record<ConditionBlock, string> = {
-  water: '水べ',
+  water: '水辺',
   tree: '木',
 };
