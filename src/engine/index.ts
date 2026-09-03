@@ -6,3 +6,4 @@ export * from './stage-rules';
 export * from './board';
 export * from './validate';
 export * from './solver';
+export * from './propagation';

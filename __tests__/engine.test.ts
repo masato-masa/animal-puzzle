@@ -10,8 +10,10 @@ import {
   isStageRuleSatisfied,
   moveAnimal,
   placeAnimal,
+  propagateToFixation,
   resetStage,
   returnPieceAt,
+  ruleFilteredCandidateAnchors,
   shapeCells,
   solutionStatus,
   SPECIES,
@@ -840,6 +842,125 @@ describe('stage rules', () => {
 
     expect(countSolutions(stage, 5)).toBe(0);
     expect(countSolutions(stage, 5, undefined, 0)).toBe(1);
+  });
+});
+
+describe('propagation', () => {
+  test('ruleFilteredCandidateAnchors excludes an anchor that would immediately violate adjacentForbidden', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'l1', { r: 0, c: 0 });
+    // ライオンは(0,0)-(1,0)。シマウマが(0,1)アンカー(横2マス:(0,1)-(0,2))だとライオンと上下左右で接する。
+    const anchors = ruleFilteredCandidateAnchors(state, 'z1');
+    expect(anchors).not.toContainEqual({ r: 0, c: 1 });
+    // (3,0)アンカー(横2マス:(3,0)-(3,1))はライオンから離れており許される。
+    expect(anchors).toContainEqual({ r: 3, c: 0 });
+  });
+
+  test('ruleFilteredCandidateAnchors excludes anchors not adjacent to a required block, regardless of other pieces', () => {
+    const stage = makeStage({
+      terrain: [
+        ['water', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 'c1', species: 'crocodile' }],
+    });
+    const state = createGameState(stage);
+    const anchors = ruleFilteredCandidateAnchors(state, 'c1');
+    // ワニ(横2マス)はblockAdjacentRequired(water)を持つ。(0,1)は水ブロックに隣接するので候補に残る。
+    expect(anchors).toContainEqual({ r: 0, c: 1 });
+    // (3,3)は水ブロックから遠く、候補から外れる。
+    expect(anchors).not.toContainEqual({ r: 3, c: 3 });
+  });
+
+  test('ruleFilteredCandidateAnchors does not exclude anchors for a not-yet-satisfiable requiring condition', () => {
+    // adjacentRequiredのような「必要」系条件は、相手がまだ盤面にいなくても候補から除外してはいけない
+    // （将来置かれる可能性があるため）。ウシツツキ(1x1)はgiraffeのとなりが必要。
+    const stage = makeStage({ animals: [{ instanceId: 'o1', species: 'oxpecker' }] });
+    const state = createGameState(stage);
+    const anchors = ruleFilteredCandidateAnchors(state, 'o1');
+    expect(anchors.length).toBe(25);
+  });
+
+  test("ruleFilteredCandidateAnchors also excludes anchors that would break an already-placed piece's forbidding condition", () => {
+    // 種同士の禁止条件は片側（この場合シマウマ側）にしか書かれない設計。ライオン自身には
+    // 条件が無いが、既に置かれているシマウマのadjacentForbidden(lion)を破る位置には
+    // 置けないはずなので、ライオン側の候補生成でもそれを正しく除外できるかを確認する。
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'z1', species: 'zebra' },
+        { instanceId: 'l1', species: 'lion' },
+      ],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'z1', { r: 0, c: 0 }); // シマウマ(横2):(0,0)-(0,1)
+    const anchors = ruleFilteredCandidateAnchors(state, 'l1');
+    // (1,0)アンカー(縦2:(1,0)-(2,0))は(0,0)と上下で接し、シマウマの条件を破る。
+    expect(anchors).not.toContainEqual({ r: 1, c: 0 });
+    // (3,0)アンカー(縦2:(3,0)-(4,0))はシマウマから離れており許される。
+    expect(anchors).toContainEqual({ r: 3, c: 0 });
+  });
+
+  test('propagateToFixation solves a stage that only needs naked/hidden singles', () => {
+    // ライオン(縦2マス)は列0の2箇所((0,0)アンカー/(3,0)アンカー)に幾何的な候補を持つが、
+    // シマウマ(横2マス)は列3-4の(0,3)アンカーにしか幾何的に収まらない。
+    // 「シマウマはライオンより上」というステージ限定ルールにより、シマウマが行0にいる以上
+    // ライオンは行0に重なる(0,0)アンカーを取れず、(3,0)アンカーの1通りに絞られる。
+    // シマウマは最初から幾何候補が1つしかないため即決まり(naked single)、続いて
+    // このルールでライオンも1通りに絞られ、単純消去法だけで最後まで解ける。
+    const stage: Stage = {
+      id: 'propagation-l1',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['land', 'wall', 'wall', 'land', 'land'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['wall', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+      ],
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+      rules: [{ kind: 'above', a: 'zebra', b: 'lion' }],
+    };
+    const result = propagateToFixation(createGameState(stage));
+    expect(result.contradiction).toBe(false);
+    expect(result.fullySolved).toBe(true);
+  });
+
+  test('propagateToFixation reports contradiction when a species has zero candidates', () => {
+    const stage = makeStage({
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    // land が1マスも無いので、リスの置き場所がゼロ。
+    const result = propagateToFixation(createGameState(stage));
+    expect(result.contradiction).toBe(true);
+    expect(result.fullySolved).toBe(false);
+  });
+
+  test('propagateToFixation does not report fullySolved when all pieces are placed but a requiring condition is unmet', () => {
+    const stage = makeStage({
+      terrain: [
+        ['land', 'wall', 'wall', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [{ instanceId: 'o1', species: 'oxpecker' }],
+    });
+    // landが1マスしかないのでウシツツキは伝播(naked single)だけで置き切れる。
+    // しかしウシツツキのadjacentRequired(giraffe)はこのステージに満たしようがない
+    // （キリンが1体もいない）ため、全部置き終わっても実際には解けていない。
+    const result = propagateToFixation(createGameState(stage));
+    expect(result.state.tray).toHaveLength(0);
+    expect(result.fullySolved).toBe(false);
   });
 });
 
