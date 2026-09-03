@@ -4,6 +4,7 @@ import {
   conditionCheckers,
   countSolutions,
   createGameState,
+  findSolution,
   isAnimalSatisfied,
   isSpeciesConditionSatisfied,
   isStageCleared,
@@ -565,6 +566,22 @@ describe('countSolutions / solutionStatus', () => {
     });
     expect(countSolutions(stage)).toBe(1);
     expect(solutionStatus(stage)).toBe('unique');
+  });
+
+  test('findSolution returns a fully placed, cleared state for a solvable stage', () => {
+    const stage = makeStage({ animals: [{ instanceId: 's1', species: 'squirrel' }] });
+    const solution = findSolution(stage);
+    expect(solution).toBeDefined();
+    expect(solution!.tray).toHaveLength(0);
+    expect(isStageCleared(solution!)).toBe(true);
+  });
+
+  test('findSolution returns undefined for an unsatisfiable stage', () => {
+    const stage = makeStage({
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(5).fill('wall')),
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    expect(findSolution(stage)).toBeUndefined();
   });
 });
 

@@ -91,3 +91,25 @@ export const solutionStatus = (stage: Stage): SolutionStatus => {
 };
 
 export const hasUniqueSolution = (stage: Stage): boolean => solutionStatus(stage) === 'unique';
+
+/** そのステージの解を1つ探して返す（複数ある場合は探索順で最初に見つかったもの）。無ければundefined。 */
+export const findSolution = (stage: Stage): GameState | undefined => {
+  let found: GameState | undefined;
+
+  const backtrack = (state: GameState, index: number): void => {
+    if (found) return;
+    if (index === stage.animals.length) {
+      if (isStageCleared(state)) found = state;
+      return;
+    }
+    for (let r = 0; r < stage.rows && !found; r++) {
+      for (let c = 0; c < stage.cols && !found; c++) {
+        const next = placeAnimal(state, stage.animals[index].instanceId, { r, c });
+        if (next !== state) backtrack(next, index + 1);
+      }
+    }
+  };
+
+  backtrack(createGameState(stage), 0);
+  return found;
+};
