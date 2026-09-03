@@ -1,6 +1,5 @@
 import type { CellTerrain, GameState, PlacedAnimal, Pos, Stage } from './types';
 import { posEq, posKey } from './types';
-import { SPECIES } from './species';
 import { shapeCells } from './shapes';
 
 export const createGameState = (stage: Stage): GameState => ({
@@ -18,9 +17,8 @@ export const animalAt = (state: GameState, pos: Pos): PlacedAnimal | undefined =
 export const canPlace = (state: GameState, instanceId: string, anchor: Pos): boolean => {
   const inTray = state.tray.find((a) => a.instanceId === instanceId);
   if (!inTray) return false;
-  const terrain = SPECIES[inTray.species].terrain;
   const cells = shapeCells(inTray.species, anchor);
-  return cells.every((cell) => terrainAt(state.stage, cell) === terrain && !animalAt(state, cell));
+  return cells.every((cell) => terrainAt(state.stage, cell) === 'land' && !animalAt(state, cell));
 };
 
 export const placeAnimal = (state: GameState, instanceId: string, anchor: Pos): GameState => {

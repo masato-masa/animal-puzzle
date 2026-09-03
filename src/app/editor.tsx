@@ -20,8 +20,7 @@ import { buildSubmissionIssueUrl } from '@/lib/stage-submission';
 import { generateCustomStageId, saveCustomStage } from '@/storage/custom-stages';
 import { colors, speciesEmoji, speciesLabel, terrainColors, ui } from '@/theme';
 
-/** 実際に使われているのは平地の陸上種のみ（水場・空の種は現状お休み中の仕様）。エディタも実際の盤面に合わせる。 */
-const ALL_SPECIES = (Object.keys(SPECIES) as Species[]).filter((s) => SPECIES[s].terrain === 'land');
+const ALL_SPECIES = Object.keys(SPECIES) as Species[];
 
 const PAINT_OPTIONS: { terrain: CellTerrain; label: string }[] = [
   { terrain: 'land', label: '平地' },

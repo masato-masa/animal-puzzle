@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Stage } from '@/engine';
 
+import { migrateStageTerrain } from './migrate-stage';
+
 const KEY = 'animal-puzzle:custom-stages:v1';
 
 const load = async (): Promise<Stage[]> => {
@@ -9,7 +11,7 @@ const load = async (): Promise<Stage[]> => {
     const raw = await AsyncStorage.getItem(KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? (parsed as Stage[]).map(migrateStageTerrain) : [];
   } catch {
     return [];
   }

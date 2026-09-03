@@ -17,6 +17,7 @@ import {
   type Stage,
 } from '@/engine';
 import { CHAPTERS, STAGES } from '@/levels/stages';
+import { migrateStageTerrain } from '@/storage/migrate-stage';
 
 const makeStage = (overrides: Partial<Stage> = {}): Stage => ({
   id: 'test',
@@ -70,10 +71,30 @@ describe('board placement', () => {
     ]);
   });
 
-  test('canPlace rejects terrain mismatch', () => {
-    const stage = makeStage({ animals: [{ instanceId: 'c1', species: 'crocodile' }] });
+  test('canPlace rejects a water block cell', () => {
+    const stage = makeStage({
+      terrain: [
+        ['water', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 'z1', species: 'zebra' }],
+    });
     const state = createGameState(stage);
-    expect(canPlace(state, 'c1', { r: 0, c: 0 })).toBe(false);
+    expect(canPlace(state, 'z1', { r: 0, c: 0 })).toBe(false);
+    expect(canPlace(state, 'z1', { r: 0, c: 1 })).toBe(true);
+  });
+
+  test('canPlace rejects a tree block cell', () => {
+    const stage = makeStage({
+      terrain: [
+        ['tree', 'land', 'land', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+      ],
+      animals: [{ instanceId: 's1', species: 'squirrel' }],
+    });
+    const state = createGameState(stage);
+    expect(canPlace(state, 's1', { r: 0, c: 0 })).toBe(false);
+    expect(canPlace(state, 's1', { r: 0, c: 1 })).toBe(true);
   });
 
   test('canPlace rejects overlap with an already-placed piece', () => {
@@ -272,10 +293,6 @@ describe('conditionCheckers', () => {
 
   test('symbiosisRequired fails without the required neighbor and passes once adjacent', () => {
     const stage = makeStage({
-      terrain: [
-        ['sky', 'land', 'land', 'land', 'land'],
-        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
-      ],
       animals: [
         { instanceId: 'o1', species: 'oxpecker' },
         { instanceId: 'g1', species: 'giraffe' },
@@ -422,12 +439,30 @@ describe('validateStage', () => {
     expect(validateStage(bad).some((e) => e.includes('unknown species'))).toBe(true);
   });
 
-  test('flags a per-terrain cell count mismatch', () => {
+  test('flags a placeable cell count mismatch', () => {
     const bad: Stage = {
       ...validStage,
       terrain: [Array<CellTerrain>(5).fill('water'), ...validStage.terrain.slice(1)],
     };
-    expect(validateStage(bad).some((e) => e.includes('terrain "land" cell count'))).toBe(true);
+    expect(validateStage(bad).some((e) => e.includes('placeable cell count'))).toBe(true);
+  });
+
+  test('water and tree blocks are excluded from the placeable count just like wall', () => {
+    const stage: Stage = {
+      id: 'blocks',
+      name: 'x',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['water', 'tree', 'wall', 'land', 'land'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+      ],
+      animals: [
+        { instanceId: 's0', species: 'squirrel' },
+        { instanceId: 's1', species: 'squirrel' },
+      ],
+    };
+    expect(validateStage(stage)).toEqual([]);
   });
 
   test('wall cells are excluded from terrain counts just like void', () => {
@@ -467,13 +502,10 @@ describe('validateStage', () => {
       rows: 5,
       cols: 5,
       terrain: [
-        Array<CellTerrain>(5).fill('sky'),
-        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('land')),
+        ['land', 'land', 'land', 'wall', 'wall'],
+        ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
       ],
-      animals: [
-        ...Array.from({ length: 5 }, (_, i) => ({ instanceId: `o${i}`, species: 'oxpecker' as const })),
-        ...Array.from({ length: 20 }, (_, i) => ({ instanceId: `s${i}`, species: 'squirrel' as const })),
-      ],
+      animals: Array.from({ length: 3 }, (_, i) => ({ instanceId: `o${i}`, species: 'oxpecker' as const })),
     };
     expect(validateStage(stage).some((e) => e.includes('symbiosisRequired(giraffe) but no giraffe'))).toBe(true);
   });
@@ -496,5 +528,28 @@ describe('shipped stage content', () => {
   test('every stage appears in exactly one chapter', () => {
     const chapterStageIds = CHAPTERS.flatMap((c) => c.stageIds);
     expect(chapterStageIds.sort()).toEqual(STAGES.map((s) => s.id).sort());
+  });
+});
+
+describe('migrateStageTerrain', () => {
+  test('turns removed sky cells into void and leaves everything else alone', () => {
+    const legacy = {
+      id: 'custom-1',
+      name: '古いステージ',
+      rows: 5,
+      cols: 5,
+      terrain: [
+        ['sky', 'land', 'water', 'wall', 'void'],
+        ...Array.from({ length: 4 }, () => Array(5).fill('land')),
+      ],
+      animals: [{ instanceId: 's0', species: 'squirrel' }],
+    } as unknown as Stage;
+
+    expect(migrateStageTerrain(legacy).terrain[0]).toEqual(['void', 'land', 'water', 'wall', 'void']);
+  });
+
+  test('returns an equivalent stage when there is nothing to migrate', () => {
+    const stage = makeStage({ animals: [{ instanceId: 's0', species: 'squirrel' }] });
+    expect(migrateStageTerrain(stage)).toEqual(stage);
   });
 });

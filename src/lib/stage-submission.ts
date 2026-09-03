@@ -2,7 +2,7 @@ import type { CellTerrain, Species, Stage } from '@/engine';
 
 const REPO_URL = 'https://github.com/masato-masa/animal-puzzle';
 
-const TERRAIN_CODE: Record<CellTerrain, string> = { land: '.', water: '~', sky: '^', wall: '#', void: 'x' };
+const TERRAIN_CODE: Record<CellTerrain, string> = { land: '.', water: '~', tree: 'T', wall: '#', void: 'x' };
 
 const terrainSnippet = (stage: Stage): string =>
   stage.terrain.map((row) => `    '${row.map((t) => TERRAIN_CODE[t]).join('')}',`).join('\n');

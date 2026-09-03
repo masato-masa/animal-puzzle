@@ -1,8 +1,6 @@
-import type { AnimalDef, Species, Stage, Terrain } from './types';
+import type { AnimalDef, Species, Stage } from './types';
 import { SPECIES } from './species';
 import { SHAPES } from './shapes';
-
-const TERRAINS: Terrain[] = ['land', 'water', 'sky'];
 
 /** 「唯一解だが配置候補は多い」歯応えのあるパズルを作れるよう、1ステージあたりの動物数の上限を設ける。 */
 export const MAX_ANIMALS_PER_STAGE = 8;
@@ -31,31 +29,19 @@ export const validateStage = (stage: Stage): string[] => {
     if (!SPECIES[a.species]) errors.push(`${label} unknown species: ${a.species}`);
   }
 
-  const terrainCounts: Record<Terrain, number> = { land: 0, water: 0, sky: 0 };
   let totalPlaceableCells = 0;
   for (const row of stage.terrain) {
     for (const t of row) {
-      if (t === 'void' || t === 'wall') continue;
-      terrainCounts[t]++;
-      totalPlaceableCells++;
+      if (t === 'land') totalPlaceableCells++;
     }
   }
 
-  const requiredCounts: Record<Terrain, number> = { land: 0, water: 0, sky: 0 };
   let totalRequiredCells = 0;
   for (const a of stage.animals) {
     const def = SPECIES[a.species];
     if (!def) continue;
-    const size = SHAPES[def.shape]?.length ?? 0;
-    requiredCounts[def.terrain] += size;
-    totalRequiredCells += size;
+    totalRequiredCells += SHAPES[def.shape]?.length ?? 0;
   }
-
-  TERRAINS.forEach((t) => {
-    if (terrainCounts[t] !== requiredCounts[t]) {
-      errors.push(`${label} terrain "${t}" cell count (${terrainCounts[t]}) != required (${requiredCounts[t]})`);
-    }
-  });
 
   if (totalPlaceableCells !== totalRequiredCells) {
     errors.push(

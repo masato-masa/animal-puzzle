@@ -9,8 +9,8 @@ const animals = (spec: Array<[Species, number]>): AnimalInstance[] => {
   return list;
 };
 
-const TERRAIN_CHARS: Record<string, CellTerrain> = { '.': 'land', '~': 'water', '^': 'sky', '#': 'wall', x: 'void' };
-/** 1文字1マスの見取り図から地形グリッドを作る（.=平地 ~=水場 ^=空 #=壁 x=void）。 */
+const TERRAIN_CHARS: Record<string, CellTerrain> = { '.': 'land', '~': 'water', T: 'tree', '#': 'wall', x: 'void' };
+/** 1文字1マスの見取り図から地形グリッドを作る（.=平地 ~=水ブロック T=木ブロック #=壁 x=void）。 */
 const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split('').map((ch) => TERRAIN_CHARS[ch] ?? 'wall'));
 
 /**

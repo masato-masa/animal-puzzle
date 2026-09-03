@@ -11,13 +11,15 @@ export const colors = {
   landDark: '#5E8F34',
   landLight: '#B8DC8A',
 
+  /** 水ブロック。誰も乗れない。 */
   water: '#4FB8E8',
   waterDark: '#1E7BA8',
   waterLight: '#A7E3F7',
 
-  sky: '#EAF6FF',
-  skyDark: '#BFE3F5',
-  skyLight: '#F6FCFF',
+  /** 木ブロック。誰も乗れない。 */
+  tree: '#2E6B3A',
+  treeDark: '#1B4423',
+  treeLight: '#4F9160',
 
   /** 配置不可の壁（草むら）マス。 */
   wall: '#3C6B35',
@@ -52,7 +54,7 @@ export const colors = {
 export const terrainColors = {
   land: { fill: colors.land, dark: colors.landDark, light: colors.landLight },
   water: { fill: colors.water, dark: colors.waterDark, light: colors.waterLight },
-  sky: { fill: colors.sky, dark: colors.skyDark, light: colors.skyLight },
+  tree: { fill: colors.tree, dark: colors.treeDark, light: colors.treeLight },
   wall: { fill: colors.wall, dark: colors.wallDark, light: colors.wallLight },
 } as const;
 

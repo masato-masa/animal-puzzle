@@ -7,13 +7,18 @@ export type Species =
   | 'oxpecker'
   | 'squirrel';
 
-export type Terrain = 'land' | 'water' | 'sky';
+/** 動物を置けないブロック。盤面の仕切りであり、一部は条件から参照される。 */
+export type BlockKind = 'wall' | 'water' | 'tree';
+
+/** 条件から参照できるブロック。草むら(wall)は純粋な仕切りなので含めない。 */
+export type ConditionBlock = Exclude<BlockKind, 'wall'>;
+
 /**
- * 盤面グリッド上のセル種別。'wall'は盤面の内側にある配置不可マス（草むらなど装飾的な壁）、
- * 'void'は盤面の外側で「マスが存在しない」ことを表す。どちらも動物のterrainと一致しないため
- * canPlaceで自動的に配置対象から除外され、動物が乗ることはない＝隣接判定にも一切関与しない。
+ * 盤面グリッド上のセル種別。'land'だけが動物を置けるマスで、ブロックと'void'には
+ * 一切置けない＝隣接判定にも関与しない（ブロックを参照する条件を除く）。
+ * 'void'は盤面の外側で「マスが存在しない」ことを表す。
  */
-export type CellTerrain = Terrain | 'wall' | 'void';
+export type CellTerrain = 'land' | BlockKind | 'void';
 
 export type ShapeCell = { dr: number; dc: number };
 export type ShapeKey = 'single' | 'domino_h' | 'domino_v' | 'square2x2';
@@ -26,7 +31,6 @@ export type Condition =
 
 export type AnimalDef = {
   species: Species;
-  terrain: Terrain;
   shape: ShapeKey;
   conditions: Condition[];
 };
