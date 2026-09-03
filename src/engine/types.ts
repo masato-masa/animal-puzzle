@@ -80,6 +80,9 @@ export type GameState = {
   tray: AnimalInstance[];
 };
 
+/** ステージ採点用: この種のconditions配列の特定indexの条件だけを判定から除外する指定。 */
+export type ConditionSkip = { species: Species; index: number };
+
 export const posKey = (p: Pos): string => `${p.r},${p.c}`;
 export const posEq = (a: Pos, b: Pos): boolean => a.r === b.r && a.c === b.c;
 export const manhattan = (a: Pos, b: Pos): number => Math.abs(a.r - b.r) + Math.abs(a.c - b.c);

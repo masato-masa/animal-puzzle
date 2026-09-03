@@ -1,4 +1,4 @@
-import type { ConditionBlock, SpeciesCondition, GameState, PlacedAnimal, Species } from './types';
+import type { ConditionBlock, ConditionSkip, SpeciesCondition, GameState, PlacedAnimal, Species } from './types';
 import { isAdjacent, manhattan } from './types';
 import { SPECIES } from './species';
 import { terrainAt } from './board';
@@ -82,11 +82,15 @@ export const isSpeciesConditionSatisfied = (
     .filter((p) => p.species === species)
     .every((p) => conditionCheckers[condition.kind](state, p, condition));
 
-export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal): boolean =>
-  SPECIES[animal.species].conditions.every((c) => conditionCheckers[c.kind](state, animal, c));
+export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal, skip?: ConditionSkip): boolean =>
+  SPECIES[animal.species].conditions
+    .filter((_, i) => !(skip && skip.species === animal.species && skip.index === i))
+    .every((c) => conditionCheckers[c.kind](state, animal, c));
 
-export const violatingAnimals = (state: GameState): PlacedAnimal[] =>
-  state.placed.filter((a) => !isAnimalSatisfied(state, a));
+export const violatingAnimals = (state: GameState, skip?: ConditionSkip): PlacedAnimal[] =>
+  state.placed.filter((a) => !isAnimalSatisfied(state, a, skip));
 
-export const isStageCleared = (state: GameState): boolean =>
-  state.tray.length === 0 && violatingAnimals(state).length === 0 && unsatisfiedStageRules(state).length === 0;
+export const isStageCleared = (state: GameState, skip?: ConditionSkip, skipRuleIndex?: number): boolean =>
+  state.tray.length === 0 &&
+  violatingAnimals(state, skip).length === 0 &&
+  unsatisfiedStageRules(state, skipRuleIndex).length === 0;

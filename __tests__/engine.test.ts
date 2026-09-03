@@ -4,6 +4,7 @@ import {
   conditionCheckers,
   countSolutions,
   createGameState,
+  isAnimalSatisfied,
   isSpeciesConditionSatisfied,
   isStageCleared,
   isStageRuleSatisfied,
@@ -457,6 +458,29 @@ describe('conditionCheckers', () => {
     const state = createGameState(stage);
     expect(isSpeciesConditionSatisfied(state, 'zebra', { kind: 'adjacentForbidden', with: 'lion' })).toBe(true);
   });
+
+  test('isAnimalSatisfied can skip one specific condition by index', () => {
+    const stage = makeStage({
+      animals: [
+        { instanceId: 'z1', species: 'zebra' },
+        { instanceId: 'l1', species: 'lion' },
+      ],
+    });
+    let state = createGameState(stage);
+    state = placeAnimal(state, 'z1', { r: 0, c: 0 });
+    state = placeAnimal(state, 'l1', { r: 2, c: 2 });
+    // 隣接していないので通常判定でも満たされる。ここではスキップ指定そのものの配線を確認する。
+    expect(isAnimalSatisfied(state, state.placed[0])).toBe(true);
+    expect(isAnimalSatisfied(state, state.placed[0], { species: 'zebra', index: 0 })).toBe(true);
+
+    state = moveAnimal(state, 'l1', { r: 1, c: 0 });
+    // シマウマは横2マス(0,0)-(0,1)、ライオンは縦2マス(1,0)-(2,0)。上下で隣接し違反する。
+    expect(isAnimalSatisfied(state, state.placed[0])).toBe(false);
+    // zebraのconditions[0]はadjacentForbidden(lion)そのものなので、これを無視すれば満たされる扱いになる。
+    expect(isAnimalSatisfied(state, state.placed[0], { species: 'zebra', index: 0 })).toBe(true);
+    // 無関係な種を指定してもスキップされず、違反のまま。
+    expect(isAnimalSatisfied(state, state.placed[0], { species: 'lion', index: 0 })).toBe(false);
+  });
 });
 
 describe('isStageCleared', () => {
@@ -792,6 +816,30 @@ describe('stage rules', () => {
 
     const blocked: Stage = { ...base, rules: [{ kind: 'sameCol', a: 'squirrel', b: 'squirrel' }] };
     expect(countSolutions(blocked, 5)).toBe(0);
+  });
+
+  test('unsatisfiedStageRules and countSolutions can skip one rule by index', () => {
+    const stage: Stage = {
+      ...makeStage({
+        terrain: [
+          ['land', 'wall', 'land', 'wall', 'wall'],
+          ...Array.from({ length: 4 }, () => Array<CellTerrain>(5).fill('wall')),
+        ],
+        animals: [
+          { instanceId: 's1', species: 'squirrel' },
+          { instanceId: 'm1', species: 'squirrel' },
+        ],
+      }),
+      rules: [{ kind: 'sameCol', a: 'squirrel', b: 'squirrel' }],
+    };
+    let state = createGameState(stage);
+    state = placeAnimal(state, 's1', { r: 0, c: 0 });
+    state = placeAnimal(state, 'm1', { r: 0, c: 2 });
+    expect(unsatisfiedStageRules(state)).toEqual(stage.rules);
+    expect(unsatisfiedStageRules(state, 0)).toEqual([]);
+
+    expect(countSolutions(stage, 5)).toBe(0);
+    expect(countSolutions(stage, 5, undefined, 0)).toBe(1);
   });
 });
 

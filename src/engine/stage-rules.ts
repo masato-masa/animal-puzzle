@@ -35,5 +35,5 @@ export const isStageRuleSatisfied = (state: GameState, rule: StageRule): boolean
   return as.every((a) => bs.every((b) => a.instanceId === b.instanceId || pairPredicates[rule.kind](a, b, rule)));
 };
 
-export const unsatisfiedStageRules = (state: GameState): StageRule[] =>
-  (state.stage.rules ?? []).filter((r) => !isStageRuleSatisfied(state, r));
+export const unsatisfiedStageRules = (state: GameState, skipRuleIndex?: number): StageRule[] =>
+  (state.stage.rules ?? []).filter((r, i) => i !== skipRuleIndex && !isStageRuleSatisfied(state, r));
