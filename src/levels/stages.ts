@@ -102,17 +102,22 @@ export const STAGES: Stage[] = [
     animals: animals([['leopard', 4], ['lion', 2], ['zebra', 2]]),
   },
   {
-    // 手作業で組んだ試作ステージ。ステージ限定ルール(StageRule)を初めて実際の
-    // 出荷ステージで使用し、ワニ(水ブロック隣接)も初めて実際に使用する。
-    // 「ワニと同じ行にいるライオン」という手がかりから、ライオン→ヒョウ→キリンの
-    // 縦の並び順を2列とも解き明かす必要がある(L4、唯一解)。
+    // 手作業で組んだ試作ステージ(2回目)。1回目(壁で1本道を作る手法)はキリン・ヒョウ側の
+    // 置き場所が壁でほぼ一意に決まってしまい「ルールが仕事をしていない」状態だった。
+    // 今回は壁をほぼ使わず、5x4の開けた土地(幾何学的な置き方は500通り以上)を用意し、
+    // 唯一解への絞り込みを完全にルール(StageRule)側でやらせている:
+    // 「ワニと同じ列にいるライオン」「シマウマの真上にいるゾウ」という2つの手がかりを
+    // 同時に満たす配置を見つける必要がある(L4、唯一解、countRuleMoves=2)。
     id: 'stage-11',
-    name: '11. ワニのいる列を見つけろ',
-    rows: 6,
-    cols: 7,
-    terrain: terrain(['.....#.', '.~#~##.', '.#####.', '.#####.', '.#####.', '.#####.']),
-    animals: animals([['lion', 2], ['leopard', 2], ['giraffe', 2], ['crocodile', 1], ['zebra', 1]]),
-    rules: [{ kind: 'sameRow', a: 'lion', b: 'crocodile' }],
+    name: '11. ひらけた草原の推理',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['....~', '....#', '....#', '....#', '....#']),
+    animals: animals([['elephant', 2], ['lion', 2], ['leopard', 2], ['crocodile', 1], ['zebra', 1]]),
+    rules: [
+      { kind: 'sameCol', a: 'lion', b: 'crocodile' },
+      { kind: 'above', a: 'elephant', b: 'zebra' },
+    ],
   },
 ];
 
