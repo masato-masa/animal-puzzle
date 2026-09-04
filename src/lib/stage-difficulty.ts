@@ -61,10 +61,16 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
   level !== 'unsolvable' && LEVEL_ORDER.indexOf(level) <= LEVEL_ORDER.indexOf(max);
 
 /**
- * 設計書8.4節の表そのもの。1章・2〜4章・5〜6章の3段階。1章だけは「L1〜L2」
- * 「0〜3」という範囲指定（表の値そのまま）なので上限も持つ。2〜4章・5〜6章は
- * 「L3以上」のような下限のみの指定（表に上限の記載が無い）なので、maxLevelは
- * 設定しない。
+ * 設計書8.4節の表そのもの。1章・2〜4章・5〜6章の3段階。表の記載自体は
+ * 「L3以上」のような下限のみだが、実装ではあえて2〜4章にmaxLevel:'L4'は
+ * 設定せず'L3'を上限として持たせている。理由: L4は12パターン全種でも
+ * 実測で数個しか組み合わせが無いほど希少で、上限が無いと2〜4章(必要15面)の
+ * 探索が先にL4候補を消費してしまい、本来L4を必要とする5〜6章の生成が
+ * 枯渇する（分割3のTask 4完了後の再生成で実際に発生した：2〜4章にL4面が
+ * 混入し、6章が0/4しか見つからなかった）。L4面はL3以上の合格ラインを
+ * 満たすので技術的には2〜4章の要求も満たすが、章の難易度カーブを
+ * 「2〜4章はL3、5〜6章はL4」と明確に分けるため、生成器の合否判定では
+ * 2〜4章にL4面を混入させない。
  * 条件数(effectiveConditions)は章の合否には使わない。2026-09-04の分割3実装中の
  * スパイクで、生成器が作る「ぴったり敷き詰めるステージ」は構造的に実質1つしか
  * 独立した決定点を持たず、countEffectiveConditionsは種・条件の定義単位でしか
@@ -86,7 +92,7 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
  */
 const CHAPTER_BARS: ChapterBar[] = [
   { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3 },
-  { minLevel: 'L3' },
+  { minLevel: 'L3', maxLevel: 'L3' },
   { minLevel: 'L4' },
 ];
 

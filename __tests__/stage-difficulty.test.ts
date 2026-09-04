@@ -120,6 +120,14 @@ describe('meetsChapterBar', () => {
     expect(reasons.some((r) => r.includes('無駄'))).toBe(true);
   });
 
+  test('chapter 2-4 rejects a level exceeding L3 (reserves L4 for chapters 5-6)', () => {
+    // L4面が2〜4章の生成に混入すると、5〜6章向けの希少なL4プールが枯渇する
+    // (分割3のTask 4完了後の再生成で実際に発生した)。2〜4章はL3を上限とする。
+    const grade = { solutions: 1, geometricPackings: 2, level: 'L4' as const, ruleMoves: 0, effectiveConditions: 1, warnings: [] };
+    const reasons = meetsChapterBar(grade, 2, l1Stage);
+    expect(reasons.some((r) => r.includes('高すぎる'))).toBe(true);
+  });
+
   test('chapter 2+ requires at least two species sharing one shape', () => {
     // squirrelだけの1種構成 = 同じ形(single)の駒が1種類しか無い。
     const stage: Stage = {
