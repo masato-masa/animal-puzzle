@@ -7,10 +7,14 @@ test('generate 6 chapters x 5 stages and write to scripts/generated-stages.txt',
   let globalIndex = 1;
   const stageBlocks: string[] = [];
   const chapterBlocks: string[] = [];
+  // 全章で1つの重複除去セットを共有する。章ごとに別々のSetを使うと、同じ合格ライン
+  // (例: 2〜4章はL3以上)を共有する複数の章が独立に同じ小さな組み合わせのプールを
+  // 探索し、章をまたいで内容が丸ごと重複するステージが生成されてしまう。
+  const sharedSeen = new Set<string>();
 
   for (const chapter of CHAPTER_DEFS) {
     const chapterStart = Date.now();
-    const stages = generateForChapter({ chapterNumber: chapter.chapterNumber, needed: chapter.needed }, 150000, 300000);
+    const stages = generateForChapter({ chapterNumber: chapter.chapterNumber, needed: chapter.needed }, 150000, 300000, sharedSeen);
     console.log(`[gen] chapter ${chapter.chapterNumber}: ${stages.length}/${chapter.needed} in ${Date.now() - chapterStart}ms`);
     expect(stages.length).toBe(chapter.needed);
 

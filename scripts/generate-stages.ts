@@ -16,10 +16,24 @@ const compositionSignature = (patternIndex: number, stage: Stage): string =>
  * 幾何的に不成立・唯一解でない・合格ラインを満たさない候補は即座に捨てる。
  * maxAttempts/maxMillisのどちらかに達したら、集まった分だけを返して打ち切る
  * (必要数に届かない場合もある。呼び出し側で件数を確認すること)。
+ *
+ * sharedSeenを渡すと、複数回のgenerateForChapter呼び出し(章をまたぐ場合を含む)で
+ * 同じ(パターン,種構成)の組み合わせを再利用しない。省略時はこの呼び出し内だけの
+ * 重複除去になる。同じ合格ラインを共有する章(例: 2〜4章はL3以上、5〜6章はL4)で
+ * sharedSeenを渡さずに個別のSetのまま呼ぶと、各章が独立に同じ小さな組み合わせの
+ * プールを探索することになり、章をまたいで内容が丸ごと重複するステージが
+ * 生成されうる(実際に分割3のTask 4完了後のレビューでこの重複が発覚した)。
+ * 章の合格ラインを1つ実行するあいだ(このファイルの生成ランナー全体)は、
+ * 必ず同じsharedSeenを使い回すこと。
  */
-export const generateForChapter = (target: ChapterTarget, maxAttempts: number, maxMillis: number): Stage[] => {
+export const generateForChapter = (
+  target: ChapterTarget,
+  maxAttempts: number,
+  maxMillis: number,
+  sharedSeen?: Set<string>
+): Stage[] => {
   const found: Stage[] = [];
-  const seen = new Set<string>();
+  const seen = sharedSeen ?? new Set<string>();
   const start = Date.now();
   let attempts = 0;
   while (found.length < target.needed && attempts < maxAttempts && Date.now() - start < maxMillis) {
@@ -51,8 +65,7 @@ export const generateForChapter = (target: ChapterTarget, maxAttempts: number, m
  * 到達できる(パターン,種構成)の組み合わせが4通り程度が実測上の上限だった
  * （実測: cap=6で各8試行中4件）。5面を要求すると重複を許すか永久に
  * 見つからないかの二択になるため、章ごとに現実的な面数を割り当てる。
- * 合計は30(5+5+5+5+4+4=29ではなく5×4+4×2=28)ではなく設計書の「6章30面前後」の
- * 「前後」の範囲に収める。
+ * 合計は5+5+5+5+4+4=28で、設計書の「6章30面前後」の「前後」の範囲に収める。
  */
 export const CHAPTER_DEFS: { chapterNumber: number; id: string; name: string; needed: number }[] = [
   { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん', needed: 5 },

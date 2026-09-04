@@ -87,4 +87,26 @@ describe('generateForChapter', () => {
     const grade = gradeStage(stage);
     expect(meetsChapterBar(grade, 1, stage)).toEqual([]);
   }, 10000);
+
+  test('a shared seen set is not reused across two separate generateForChapter calls', () => {
+    // 章をまたいで同じ組み合わせが再登場しないことを保証する仕組みの単体テスト。
+    // sharedSeenを2回の呼び出しで使い回すと、その2回の結果を合わせた集合の中に
+    // 完全に同一の(地形×種構成)の組が存在しないはず。
+    const sharedSeen = new Set<string>();
+    const first = generateForChapter({ chapterNumber: 1, needed: 3 }, 2000, 8000, sharedSeen);
+    const second = generateForChapter({ chapterNumber: 1, needed: 3 }, 2000, 8000, sharedSeen);
+    expect(first.length).toBeGreaterThan(0);
+    expect(second.length).toBeGreaterThan(0);
+
+    const fingerprint = (s: (typeof first)[number]): string =>
+      `${s.rows}x${s.cols}:${s.terrain.map((row) => row.join('')).join('|')}:${[...s.animals]
+        .map((a) => a.species)
+        .sort()
+        .join(',')}`;
+
+    const seenFingerprints = new Set(first.map(fingerprint));
+    for (const stage of second) {
+      expect(seenFingerprints.has(fingerprint(stage))).toBe(false);
+    }
+  }, 25000);
 });
