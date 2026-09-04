@@ -1274,6 +1274,13 @@ describe('species roster', () => {
     expect(byShape.get('domino_v')!.length).toBeGreaterThanOrEqual(3);
     expect(byShape.get('square2x2')!.length).toBeGreaterThanOrEqual(3);
   });
+
+  test('squirrel avoids lion, lion is territorial, elephant avoids squirrel and monkey', () => {
+    expect(SPECIES.squirrel.conditions).toContainEqual({ kind: 'adjacentForbidden', with: 'lion' });
+    expect(SPECIES.lion.conditions).toContainEqual({ kind: 'adjacentForbidden', with: 'lion' });
+    expect(SPECIES.elephant.conditions).toContainEqual({ kind: 'adjacentForbidden', with: 'squirrel' });
+    expect(SPECIES.elephant.conditions).toContainEqual({ kind: 'adjacentForbidden', with: 'monkey' });
+  });
 });
 
 describe('stage submission snippet', () => {

@@ -10,7 +10,7 @@ export const SPECIES: Record<Species, AnimalDef> = {
   squirrel: {
     species: 'squirrel',
     shape: 'single',
-    conditions: [],
+    conditions: [{ kind: 'adjacentForbidden', with: 'lion' }],
   },
   zebra: {
     species: 'zebra',
@@ -20,7 +20,7 @@ export const SPECIES: Record<Species, AnimalDef> = {
   lion: {
     species: 'lion',
     shape: 'domino_v',
-    conditions: [],
+    conditions: [{ kind: 'adjacentForbidden', with: 'lion' }],
   },
   giraffe: {
     species: 'giraffe',
@@ -30,7 +30,10 @@ export const SPECIES: Record<Species, AnimalDef> = {
   elephant: {
     species: 'elephant',
     shape: 'square2x2',
-    conditions: [],
+    conditions: [
+      { kind: 'adjacentForbidden', with: 'squirrel' },
+      { kind: 'adjacentForbidden', with: 'monkey' },
+    ],
   },
   crocodile: {
     species: 'crocodile',
