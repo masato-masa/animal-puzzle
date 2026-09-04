@@ -1206,12 +1206,15 @@ describe('shipped stage content', () => {
     // 割り当てると「見た目が違うだけの同じパズル」になる(分割3のTask 4完了後の
     // 再レビューで実際に発覚し、生成器側はfamilyフィールドで対処済み)。出荷後の
     // stages.tsを手で書き換えてもこの不変条件が壊れないよう、ここで直接検証する。
-    const mirrorH = (rows: string[]): string[] => rows.map((r) => [...r].reverse().join(''));
-    const mirrorV = (rows: string[]): string[] => [...rows].reverse();
+    // セルの配列を反転させてから文字列化する(文字列化してから文字を反転すると、
+    // 'water'のような複数文字トークンの並びが壊れて別物になってしまうため)。
+    const mirrorH = (rows: CellTerrain[][]): CellTerrain[][] => rows.map((row) => [...row].reverse());
+    const mirrorV = (rows: CellTerrain[][]): CellTerrain[][] => [...rows].reverse();
+    const toKey = (rows: CellTerrain[][]): string => rows.map((row) => row.join(',')).join('|');
     const fingerprint = (stage: (typeof STAGES)[number]): string => {
-      const rows = stage.terrain.map((row) => row.join(','));
+      const rows = stage.terrain;
       const variants = [rows, mirrorH(rows), mirrorV(rows), mirrorH(mirrorV(rows))];
-      const canonicalTerrain = variants.map((v) => v.join('|')).sort()[0];
+      const canonicalTerrain = variants.map(toKey).sort()[0];
       const species = [...stage.animals].map((a) => a.species).sort().join(',');
       return `${canonicalTerrain}::${species}`;
     };
