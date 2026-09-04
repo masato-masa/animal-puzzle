@@ -45,7 +45,7 @@ export const gradeStage = (stage: Stage): StageGrade => {
 type ChapterBar = {
   minLevel: SolverLevel;
   maxLevel?: SolverLevel;
-  minRuleMoves: number;
+  minRuleMoves?: number;
   maxRuleMoves?: number;
 };
 
@@ -63,10 +63,8 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
 /**
  * 設計書8.4節の表そのもの。1章・2〜4章・5〜6章の3段階。1章だけは「L1〜L2」
  * 「0〜3」という範囲指定（表の値そのまま）なので上限も持つ。2〜4章・5〜6章は
- * 「L3以上」「2以上」のような下限のみの指定（表に上限の記載が無い）なので、
- * maxLevel/maxRuleMovesは設定しない。
- * ルール手数Rの下限値(2〜4章:2、5〜6章:3)は、当初案(4/5)がスパイク検証で
- * 事実上到達不能と判明したため2026-09-04に引き下げた経緯が設計書8.4節にある。
+ * 「L3以上」のような下限のみの指定（表に上限の記載が無い）なので、maxLevelは
+ * 設定しない。
  * 条件数(effectiveConditions)は章の合否には使わない。2026-09-04の分割3実装中の
  * スパイクで、生成器が作る「ぴったり敷き詰めるステージ」は構造的に実質1つしか
  * 独立した決定点を持たず、countEffectiveConditionsは種・条件の定義単位でしか
@@ -74,11 +72,22 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
  * 以上・唯一解という他の絶対条件を満たすステージは軒並みeffectiveConditions=1に
  * なることが判明した（12パターン全種・227件超の唯一解サンプルで例外なし）。
  * 章をまたいで差が出ないため、識別軸としては使わずgradeStageの参考値のみとする。
+ * ルール手数Rは2〜4章・5〜6章では合否に使わない（minRuleMoves未設定）。
+ * 当初案(2〜4章R≧4、5〜6章R≧5)は分割2完了後のスパイクでR≧4が事実上到達不能と
+ * 判明しR≧2/R≧3に引き下げ、続いてR≧1に引き下げたが、分割3のTask 4実行時、
+ * 「レベル(L3以上)とR(≧1)を同時に満たす」こと自体が構造的に不可能と判明した
+ * （唯一解サンプル597件の実測で、L3以上のステージはR=0が100%、R≧1のステージは
+ * L1〜L2が100%という完全な排反関係）。理由は、対称な駒（縄張り等）を並べて
+ * 背理法（レベルを上げる）で解決する構成と、非対称な条件で明快に絞り込んで
+ * （Rを稼ぐ）解決する構成が、この生成器の仕組み上そもそも両立しないため。
+ * このためRを2〜6章の合否条件から完全に外し、章間の差別化はレベルのみで行う。
+ * 1章はL3以上を要求しないためRとの衝突が起きず、当初のR0〜3の範囲指定をそのまま
+ * 維持できる。設計書8.4節参照。
  */
 const CHAPTER_BARS: ChapterBar[] = [
   { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3 },
-  { minLevel: 'L3', minRuleMoves: 2 },
-  { minLevel: 'L4', minRuleMoves: 3 },
+  { minLevel: 'L3' },
+  { minLevel: 'L4' },
 ];
 
 const barForChapter = (chapterNumber: number): ChapterBar => {
@@ -117,7 +126,7 @@ export const meetsChapterBar = (grade: StageGrade, chapterNumber: number, stage:
   if (bar.maxLevel && !levelAtMost(grade.level, bar.maxLevel)) {
     reasons.push(`レベルが高すぎる（上限${bar.maxLevel}、実際: ${grade.level}）`);
   }
-  if (grade.ruleMoves < bar.minRuleMoves) {
+  if (bar.minRuleMoves !== undefined && grade.ruleMoves < bar.minRuleMoves) {
     reasons.push(`ルール手数が足りない（必要${bar.minRuleMoves}以上、実際${grade.ruleMoves}）`);
   }
   if (bar.maxRuleMoves !== undefined && grade.ruleMoves > bar.maxRuleMoves) {
