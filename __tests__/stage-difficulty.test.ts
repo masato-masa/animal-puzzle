@@ -120,12 +120,36 @@ describe('meetsChapterBar', () => {
     expect(reasons.some((r) => r.includes('無駄'))).toBe(true);
   });
 
-  test('chapter 2 rejects a level exceeding L3 (reserves L4 for chapter 3)', () => {
-    // L4面が2章の生成に混入すると、3章向けの希少なL4プールが枯渇する
-    // (分割3のTask 4完了後の再生成で実際に発生した)。2章はL3を上限とする。
+  test('chapter 2 rejects a level exceeding its own bar (each of the 4 chapters maps to exactly one level)', () => {
+    // 4章構成(1章=L1,2章=L2,3章=L3,4章=L4)では、各章のバーはmaxLevelで自分の
+    // レベルに固定されている。2章にL4面が混じるとレベルが高すぎるとして弾かれる。
     const grade = { solutions: 1, geometricPackings: 2, level: 'L4' as const, ruleMoves: 0, effectiveConditions: 1, warnings: [] };
     const reasons = meetsChapterBar(grade, 2, l1Stage);
     expect(reasons.some((r) => r.includes('高すぎる'))).toBe(true);
+  });
+
+  test('chapter 4 (no maxLevel) accepts unsolvable as "harder than L4"', () => {
+    // solverLevelのunsolvableは、深さ3までの背理法探索で解けなかっただけで、
+    // 唯一解の存在自体はgrade.solutionsで別途保証されている(呼び出し元がcountSolutionsで
+    // 検証済み)。上限の無い最終章(4章)に限り、unsolvableを「L4を超える難しさ」として
+    // 合格扱いにする。l1Stage(lion+zebra、形が違う)だと4章の「同じ形の駒が2種以上」
+    // 要件に引っかかってしまうため、domino_vを共有するlion+giraffeのフィクスチャを使う。
+    const sharedShapeStage: Stage = {
+      ...l1Stage,
+      animals: [
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'g1', species: 'giraffe' },
+      ],
+      rules: [{ kind: 'above', a: 'giraffe', b: 'lion' }],
+    };
+    const grade = { solutions: 1, geometricPackings: 2, level: 'unsolvable' as const, ruleMoves: 0, effectiveConditions: 1, warnings: [] };
+    expect(meetsChapterBar(grade, 4, sharedShapeStage)).toEqual([]);
+  });
+
+  test('unsolvable still fails a bar that has a maxLevel (only the top-tier bar gets the exception)', () => {
+    const grade = { solutions: 1, geometricPackings: 2, level: 'unsolvable' as const, ruleMoves: 0, effectiveConditions: 1, warnings: [] };
+    const reasons = meetsChapterBar(grade, 3, l1Stage);
+    expect(reasons.some((r) => r.includes('届いていない'))).toBe(true);
   });
 
   test('chapter 2+ requires at least two species sharing one shape', () => {

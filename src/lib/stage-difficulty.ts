@@ -49,11 +49,18 @@ type ChapterBar = {
   maxRuleMoves?: number;
 };
 
-/** L0 < L1 < L2 < L3 < L4。unsolvableはどのバーも満たさない別枠として扱う。 */
+/** L0 < L1 < L2 < L3 < L4。unsolvableは基本的にどのバーも満たさない別枠として扱う。 */
 const LEVEL_ORDER: SolverLevel[] = ['L0', 'L1', 'L2', 'L3', 'L4'];
 
-const levelAtLeast = (level: SolverLevel, min: SolverLevel): boolean => {
-  if (level === 'unsolvable') return false;
+/**
+ * unsolvableはsolverLevelの深さ3までの背理法探索で解けなかったことを意味するだけで、
+ * 唯一解の存在自体はmeetsChapterBarの呼び出し元がgrade.solutions===1で別途保証している
+ * (countSolutionsは深さ制限の無い全探索)。つまりunsolvableは「本当に解が無い」のではなく
+ * 「L4(深さ3)の物差しを超える難しさ」を意味する。最高難度のバー(minLevel:'L4'かつ
+ * maxLevel未設定)に限っては、これを「L4以上」として合格扱いにする。
+ */
+const levelAtLeast = (level: SolverLevel, min: SolverLevel, bar: ChapterBar): boolean => {
+  if (level === 'unsolvable') return min === 'L4' && bar.maxLevel === undefined;
   return LEVEL_ORDER.indexOf(level) >= LEVEL_ORDER.indexOf(min);
 };
 
@@ -110,7 +117,7 @@ export const meetsChapterBar = (grade: StageGrade, chapterNumber: number, stage:
   }
 
   const bar = barForChapter(chapterNumber);
-  if (!levelAtLeast(grade.level, bar.minLevel)) {
+  if (!levelAtLeast(grade.level, bar.minLevel, bar)) {
     reasons.push(`必要レベル${bar.minLevel}に届いていない（実際: ${grade.level}）`);
   }
   if (bar.maxLevel && !levelAtMost(grade.level, bar.maxLevel)) {

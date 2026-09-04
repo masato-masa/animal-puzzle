@@ -43,6 +43,11 @@ const makeStage = (overrides: Partial<Stage> = {}): Stage => ({
   ...overrides,
 });
 
+const TEST_TERRAIN_CHARS: Record<string, CellTerrain> = { '.': 'land', '~': 'water', T: 'tree', '#': 'wall', x: 'void' };
+/** src/levels/stages.tsのterrain()と同じ規約(.=平地 ~=水ブロック T=木ブロック #=壁 x=void)。 */
+const terrain = (rows: string[]): CellTerrain[][] =>
+  rows.map((row) => row.split('').map((ch) => TEST_TERRAIN_CHARS[ch] ?? 'wall'));
+
 describe('shapes', () => {
   test('shapeCells offsets cells from the anchor', () => {
     expect(shapeCells('zebra', { r: 2, c: 3 })).toEqual([
@@ -1124,12 +1129,37 @@ describe('solverLevel', () => {
   });
 
   test('at least L2 when propagation makes zero forced moves from the start but a solution exists', () => {
-    // 自作フィクスチャではなく、既存の出荷ステージ stage-6（'6. はなれたライオン'）を使う。
-    // このステージはライオン1体・キリン2体で、キリンの唯一の条件はadjacentForbidden(lion)。
-    // 開始直後はライオン・キリンいずれの候補も複数かつ互いに対称なため、naked/hidden single
-    // では最初の1手も確定できず、唯一解(real=1)に到達するには背理法が要ることが
-    // 分割1以前からの分析で分かっている（ライオン・キリンの条件は分割1で変更していない）。
-    const stage = STAGES.find((s) => s.id === 'stage-6')!;
+    // 出荷ステージのIDを直接参照すると、後日の全面差し替えでそのIDが別内容を指すように
+    // なった途端この回帰テストが無意味な失敗をする(実際に2026-09-05のリライトで発生した)。
+    // そのため、自己完結したフィクスチャ(animalRulesで種ごとに位置関係ルールを1つずつ
+    // 直接指定し、開始直後は互いに対称でnaked/hidden singleでは確定できない配置)を使う。
+    const stage = makeStage({
+      rows: 5,
+      cols: 5,
+      terrain: terrain([
+        '.####',
+        '.#..#',
+        '....#',
+        '###.#',
+        '###.#',
+      ]),
+      animals: [
+        { instanceId: 'z1', species: 'zebra' },
+        { instanceId: 'l1', species: 'lion' },
+        { instanceId: 'o1', species: 'oxpecker' },
+        { instanceId: 'g1', species: 'giraffe' },
+        { instanceId: 'm1', species: 'monkey' },
+        { instanceId: 'p1', species: 'leopard' },
+      ],
+      animalRules: {
+        leopard: { kind: 'sameCol', with: 'giraffe' },
+        zebra: { kind: 'sameRow', with: 'giraffe' },
+        giraffe: { kind: 'rightOf', with: 'oxpecker' },
+        lion: { kind: 'above', with: 'leopard' },
+        oxpecker: { kind: 'exactDistance', with: 'lion', distance: 1 },
+        monkey: { kind: 'rightOf', with: 'zebra' },
+      },
+    });
     const level = solverLevel(stage);
     expect(level).not.toBe('L0');
     expect(level).not.toBe('L1');

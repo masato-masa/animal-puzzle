@@ -92,9 +92,28 @@ const carveOpenTerrain = (rows: number, cols: number, targetLand: number): Grid 
 };
 
 /**
+ * [start,end]の範囲(0-indexed)をsize未満にならないよう、originalSizeの範囲内で
+ * 外側に広げる。駒数の少ない入門ステージでは外接矩形が5未満に潰れがちだが、
+ * 5x5盤面は壁ふちがあってもstage-design-checks.tsの対象外(rows/cols>5のときだけ
+ * 判定する仕様)なので、5まで広げ戻せば安全に使える。
+ */
+const clampRange = (start: number, end: number, size: number, originalSize: number): [number, number] => {
+  let s = start;
+  let e = end;
+  while (e - s + 1 < size) {
+    if (s > 0) s--;
+    else if (e < originalSize - 1) e++;
+    else break;
+  }
+  return [s, e];
+};
+
+/**
  * 全マスが壁(land/water/tree以外)の行・列を盤の端から取り除き、盤面をぴったりの
  * サイズに詰める(stage-design-checks.tsの「全て壁の行/列」警告を生成時点で避けるため)。
- * 詰めた結果rows/colsが5未満になった場合はnullを返す(5x5〜8x8の範囲外)。
+ * 詰めた結果が5未満になる軸は、5x5盤面が壁ふちを許容する仕様を利用して5まで
+ * 広げ戻す(駒数の少ない入門ステージで外接矩形が小さくなりすぎて全滅していた
+ * 問題の対策)。8を超える場合のみnullを返す(5x5〜8x8の範囲外)。
  */
 const cropToBoundingBox = (grid: Grid): { grid: Grid; rows: number; cols: number } | null => {
   const rows = grid.length;
@@ -109,6 +128,8 @@ const cropToBoundingBox = (grid: Grid): { grid: Grid; rows: number; cols: number
   let right = cols - 1;
   while (right >= left && !Array.from({ length: rows }, (_, r) => isOccupied(r, right)).some(Boolean)) right--;
   if (bottom < top || right < left) return null;
+  if (bottom - top + 1 < 5) [top, bottom] = clampRange(top, bottom, 5, rows);
+  if (right - left + 1 < 5) [left, right] = clampRange(left, right, 5, cols);
   const newRows = bottom - top + 1;
   const newCols = right - left + 1;
   if (newRows < 5 || newRows > 8 || newCols < 5 || newCols > 8) return null;
@@ -139,18 +160,46 @@ const addAdjacentBlock = (grid: Grid, rows: number, cols: number, block: 'water'
 
 type PieceSpec = { species: Species; count: number };
 
-const pickRoster = (): PieceSpec[] => {
+export type GenerateOptions = {
+  /** ステージに登場させる種の数の範囲(両端含む)。既定は4〜6種類。 */
+  minSpecies?: number;
+  maxSpecies?: number;
+  /** ステージ全体の駒数の上限。既定はMAX_ANIMALS_PER_STAGE(8)。入門ステージ用に2〜3に絞れる。 */
+  maxPieces?: number;
+  /** 自己参照系(lion/leopardの自己回避、rhinoの自己距離、monkeyの群れ)を持てる種を
+   * count=2で選ぶ確率を上げる。通常はcount=2になりにくいため、対称駒ならではの
+   * 背理法パズルを狙って作りたいときに使う。 */
+  selfReferentialBoost?: boolean;
+  /** 盤面サイズを必要マス数ぎりぎりではなく、範囲内でより大きい方に寄せる
+   * (見た目の変化・盤面サイズのバリエーションを出すため)。 */
+  preferLargeBoard?: boolean;
+  /** ルールを付ける前に要求する幾何学的な置き方の下限。既定5。駒数2〜3の
+   * 入門ステージは土地が小さく必然的にこの数が少なくなるため下げられるようにする。 */
+  minGeometricPlacements?: number;
+};
+
+const SELF_REFERENTIAL_CAPABLE = new Set<Species>(['lion', 'leopard', 'rhino', 'monkey']);
+
+const pickRoster = (opts: GenerateOptions): PieceSpec[] => {
   const speciesPool = shuffle(ALL_SPECIES);
   const roster: PieceSpec[] = [];
   let totalPieces = 0;
-  const targetSpeciesCount = 4 + rand(3); // 4〜6種類
+  const minSpecies = opts.minSpecies ?? 4;
+  const maxSpecies = opts.maxSpecies ?? 6;
+  const pieceBudget = opts.maxPieces ?? MAX_ANIMALS_PER_STAGE;
+  const targetSpeciesCount = minSpecies + rand(Math.max(maxSpecies - minSpecies + 1, 1));
   for (const species of speciesPool) {
     if (roster.length >= targetSpeciesCount) break;
-    if (totalPieces >= MAX_ANIMALS_PER_STAGE) break;
-    // flockRequiredを使う予定が無くても、種の多様性のためにcount=1か2をランダムに選ぶ。
-    const maxCount = Math.min(2, MAX_ANIMALS_PER_STAGE - totalPieces);
-    if (maxCount < 1) continue;
-    const count = 1 + rand(maxCount);
+    if (totalPieces >= pieceBudget) break;
+    const canDouble = totalPieces + 2 <= pieceBudget;
+    let count = 1;
+    if (canDouble) {
+      // flockRequiredを使う予定が無くても、種の多様性のためにcount=1か2をランダムに選ぶ。
+      // selfReferentialBoostが立っていれば、自己参照ルールを持てる種(lion/leopard/rhino/monkey)を
+      // 積極的に2体にして、対称駒どうしの背理法パズルを狙う。
+      if (opts.selfReferentialBoost && SELF_REFERENTIAL_CAPABLE.has(species) && rand(3) > 0) count = 2;
+      else count = 1 + rand(2);
+    }
     roster.push({ species, count });
     totalPieces += count;
   }
@@ -226,28 +275,48 @@ export type GeneratedStage = { stage: Stage; level: SolverLevel; ruleMoves: numb
  * (実測: 対策前は成功率が244件→8件まで落ち込んだ)ため、面積が必要マス数の
  * 1.6倍以内に収まる5〜8角形の組み合わせだけを候補にする。
  */
-const pickBoardSize = (cells: number): { rows: number; cols: number } | null => {
+/**
+ * preferLargeを試した結果、盤面はcropToBoundingBoxで必ず外接矩形に詰められるため、
+ * 「大きい入れ物を選ぶ」だけでは最終盤面は大きくならない(むしろ間引きすぎて5x5に
+ * 戻るだけで成功率だけ落ちる)ことが判明した。最終盤面の広さはMAX_ANIMALS_PER_STAGE(8)
+ * が課す必要マス数の上限で本質的に頭打ちなので、preferLargeは「同じ必要マス数の中で
+ * 比較的面積に余裕のある候補」を弱く優先する程度にとどめる。
+ */
+const pickBoardSize = (cells: number, preferLarge = false): { rows: number; cols: number } | null => {
   const candidates: Array<{ rows: number; cols: number }> = [];
+  const ratio = preferLarge ? 2.2 : 1.6;
   for (let r = 5; r <= 8; r++) {
     for (let c = 5; c <= 8; c++) {
       const area = r * c;
       // 最小盤面(5x5=25)より必要マス数が多い場合、面積は必要マス数以上である必要がある。
-      // 上限は「必要マス数の1.6倍」または「最小盤面の面積」の大きい方(5x5自体は
+      // 上限は「必要マス数のratio倍」または「最小盤面の面積」の大きい方(5x5自体は
       // 常に候補に残す。5x5は壁ふちがあっても仕様上デザイン警告の対象外なので安全)。
       if (area < cells) continue;
-      if (area > Math.max(cells * 1.6, 25)) continue;
+      if (area > Math.max(cells * ratio, 25)) continue;
       candidates.push({ rows: r, cols: c });
     }
   }
   if (candidates.length === 0) return null;
+  if (preferLarge) {
+    const sorted = [...candidates].sort((a, b) => b.rows * b.cols - a.rows * a.cols);
+    return choice(sorted.slice(0, Math.max(1, Math.ceil(sorted.length / 2))));
+  }
   return choice(candidates);
 };
 
-const buildStageAttempt = (): GeneratedStage | null => {
-  const roster = pickRoster();
+const DEBUG = process.env.GEN_DEBUG === '1';
+const dbg = (reason: string) => {
+  if (DEBUG) console.log('reject:', reason);
+};
+
+const buildStageAttempt = (opts: GenerateOptions): GeneratedStage | null => {
+  const roster = pickRoster(opts);
   const cells = totalCells(roster);
-  const size = pickBoardSize(cells);
-  if (!size) return null;
+  const size = pickBoardSize(cells, opts.preferLargeBoard);
+  if (!size) {
+    dbg('no board size for cells=' + cells);
+    return null;
+  }
   const { rows, cols } = size;
 
   const grid = carveOpenTerrain(rows, cols, cells);
@@ -257,11 +326,20 @@ const buildStageAttempt = (): GeneratedStage | null => {
   if (species.includes('crocodile') && addAdjacentBlock(grid, rows, cols, 'water')) blocksAvailable.push('water');
   if (species.includes('gorilla') && addAdjacentBlock(grid, rows, cols, 'tree')) blocksAvailable.push('tree');
   // クロコダイル/ゴリラがいるのにブロックを置けなかった場合はこの試行を諦める。
-  if (species.includes('crocodile') && !blocksAvailable.includes('water')) return null;
-  if (species.includes('gorilla') && !blocksAvailable.includes('tree')) return null;
+  if (species.includes('crocodile') && !blocksAvailable.includes('water')) {
+    dbg('crocodile no water');
+    return null;
+  }
+  if (species.includes('gorilla') && !blocksAvailable.includes('tree')) {
+    dbg('gorilla no tree');
+    return null;
+  }
 
   const cropped = cropToBoundingBox(grid);
-  if (!cropped) return null;
+  if (!cropped) {
+    dbg('crop failed');
+    return null;
+  }
 
   const animals = buildAnimals(roster);
   const draft: Stage = {
@@ -274,12 +352,23 @@ const buildStageAttempt = (): GeneratedStage | null => {
     animalRules: {},
   };
 
-  if (validateStage(draft).length > 0) return null;
-  if (findDesignWarnings(draft).length > 0) return null;
+  if (validateStage(draft).length > 0) {
+    dbg('validateStage: ' + JSON.stringify(validateStage(draft)));
+    return null;
+  }
+  if (findDesignWarnings(draft).length > 0) {
+    dbg('designWarnings');
+    return null;
+  }
   // 「壁が正解を決めている」パズルにならないよう、ルールを付ける前の時点で幾何学的な
   // 置き方が十分に多いことを要求する(壁で1本道にした失敗作を弾くための品質ゲート)。
+  // 駒数2〜3の入門ステージは土地そのものが小さく幾何学的な組み合わせが少ないのが
+  // 自然なので、minGeometricPlacementsで下限を下げられるようにする(既定5)。
   const geometricPlacements = countGeometricPlacements(draft, 12);
-  if (geometricPlacements < 5) return null;
+  if (geometricPlacements < (opts.minGeometricPlacements ?? 5)) {
+    dbg('geometricPlacements=' + geometricPlacements);
+    return null;
+  }
 
   // 動物(種)ごとに順番にルールを1つ割り当てる。割り当てた時点で「解が0になっていないか」
   // だけを見て枝刈りする(0でなければ、残りの種で絞り込める余地がまだある)。
@@ -296,13 +385,19 @@ const buildStageAttempt = (): GeneratedStage | null => {
         break;
       }
     }
-    if (!assigned) return null;
+    if (!assigned) {
+      dbg('no rule found for ' + sp);
+      return null;
+    }
     animalRules[sp] = assigned;
   }
 
   const finalStage: Stage = { ...draft, animalRules };
   const solutions = countSolutions(finalStage, 2);
-  if (solutions !== 1) return null;
+  if (solutions !== 1) {
+    dbg('final solutions=' + solutions);
+    return null;
+  }
 
   const level = solverLevel(finalStage);
   const ruleMoves = countRuleMoves(finalStage);
@@ -323,14 +418,15 @@ export const puzzleSignature = (stage: Stage): string => {
 export const generateOpenStages = (
   maxAttempts: number,
   maxMillis: number,
-  seen: Set<string> = new Set()
+  seen: Set<string> = new Set(),
+  opts: GenerateOptions = {}
 ): GeneratedStage[] => {
   const found: GeneratedStage[] = [];
   const start = Date.now();
   let attempts = 0;
   while (attempts < maxAttempts && Date.now() - start < maxMillis) {
     attempts++;
-    const result = buildStageAttempt();
+    const result = buildStageAttempt(opts);
     if (!result) continue;
     const sig = puzzleSignature(result.stage);
     if (seen.has(sig)) continue;
