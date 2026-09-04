@@ -20,6 +20,24 @@ export const conditionText = (condition: SpeciesCondition): string => {
       return `${blockLabel[condition.block]}のとなりが必要`;
     case 'blockAdjacentForbidden':
       return `${blockLabel[condition.block]}のとなりには置けない`;
+    case 'above':
+      return `${speciesLabel[condition.with]}より上にいる`;
+    case 'below':
+      return `${speciesLabel[condition.with]}より下にいる`;
+    case 'leftOf':
+      return `${speciesLabel[condition.with]}より左にいる`;
+    case 'rightOf':
+      return `${speciesLabel[condition.with]}より右にいる`;
+    case 'sameRow':
+      return `${speciesLabel[condition.with]}と同じ行にいる`;
+    case 'sameCol':
+      return `${speciesLabel[condition.with]}と同じ列にいる`;
+    case 'differentRow':
+      return `${speciesLabel[condition.with]}と同じ行に置けない`;
+    case 'differentCol':
+      return `${speciesLabel[condition.with]}と同じ列に置けない`;
+    case 'exactDistance':
+      return `${speciesLabel[condition.with]}からちょうど${condition.distance}マスはなす`;
     default:
       return '';
   }

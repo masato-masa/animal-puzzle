@@ -1,6 +1,6 @@
 import type { ConditionBlock, ConditionSkip, SpeciesCondition, GameState, PlacedAnimal, Species } from './types';
 import { isAdjacent, manhattan } from './types';
-import { SPECIES } from './species';
+import { conditionsFor } from './species';
 import { terrainAt } from './board';
 import { unsatisfiedStageRules } from './stage-rules';
 
@@ -9,6 +9,14 @@ const piecesAdjacent = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
 
 const pieceDistance = (a: PlacedAnimal, b: PlacedAnimal): number =>
   Math.min(...a.cells.flatMap((ca) => b.cells.map((cb) => manhattan(ca, cb))));
+
+const rowsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.r);
+const colsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.c);
+const overlaps = (xs: number[], ys: number[]): boolean => xs.some((x) => ys.includes(x));
+
+/** stateに置かれている、指定した種の駒すべて。まだ1体もなければ空配列(=どの位置関係条件も暫定的にtrue)。 */
+const placedOf = (state: GameState, species: Species): PlacedAnimal[] =>
+  state.placed.filter((p) => p.species === species);
 
 const neighborsOf = (state: GameState, piece: PlacedAnimal): PlacedAnimal[] =>
   state.placed.filter((p) => p.instanceId !== piece.instanceId && piecesAdjacent(p, piece));
@@ -70,6 +78,42 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
     if (c.kind !== 'blockAdjacentForbidden') return true;
     return !touchesBlock(state, animal, c.block);
   },
+  above: (state, animal, c) => {
+    if (c.kind !== 'above') return true;
+    return placedOf(state, c.with).every((p) => Math.max(...rowsOf(animal)) < Math.min(...rowsOf(p)));
+  },
+  below: (state, animal, c) => {
+    if (c.kind !== 'below') return true;
+    return placedOf(state, c.with).every((p) => Math.min(...rowsOf(animal)) > Math.max(...rowsOf(p)));
+  },
+  leftOf: (state, animal, c) => {
+    if (c.kind !== 'leftOf') return true;
+    return placedOf(state, c.with).every((p) => Math.max(...colsOf(animal)) < Math.min(...colsOf(p)));
+  },
+  rightOf: (state, animal, c) => {
+    if (c.kind !== 'rightOf') return true;
+    return placedOf(state, c.with).every((p) => Math.min(...colsOf(animal)) > Math.max(...colsOf(p)));
+  },
+  sameRow: (state, animal, c) => {
+    if (c.kind !== 'sameRow') return true;
+    return placedOf(state, c.with).every((p) => overlaps(rowsOf(animal), rowsOf(p)));
+  },
+  sameCol: (state, animal, c) => {
+    if (c.kind !== 'sameCol') return true;
+    return placedOf(state, c.with).every((p) => overlaps(colsOf(animal), colsOf(p)));
+  },
+  differentRow: (state, animal, c) => {
+    if (c.kind !== 'differentRow') return true;
+    return placedOf(state, c.with).every((p) => !overlaps(rowsOf(animal), rowsOf(p)));
+  },
+  differentCol: (state, animal, c) => {
+    if (c.kind !== 'differentCol') return true;
+    return placedOf(state, c.with).every((p) => !overlaps(colsOf(animal), colsOf(p)));
+  },
+  exactDistance: (state, animal, c) => {
+    if (c.kind !== 'exactDistance') return true;
+    return placedOf(state, c.with).every((p) => pieceDistance(animal, p) === c.distance);
+  },
 };
 
 /** 盤上にあるその種の駒がすべてこの条件を満たしているか。1体も置いていなければtrue。 */
@@ -83,7 +127,7 @@ export const isSpeciesConditionSatisfied = (
     .every((p) => conditionCheckers[condition.kind](state, p, condition));
 
 export const isAnimalSatisfied = (state: GameState, animal: PlacedAnimal, skip?: ConditionSkip): boolean =>
-  SPECIES[animal.species].conditions
+  conditionsFor(state.stage, animal.species)
     .filter((_, i) => !(skip && skip.species === animal.species && skip.index === i))
     .every((c) => conditionCheckers[c.kind](state, animal, c));
 

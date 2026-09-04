@@ -1,5 +1,5 @@
-import type { AnimalDef, Species, Stage } from './types';
-import { SPECIES } from './species';
+import type { Species, Stage } from './types';
+import { SPECIES, conditionsFor } from './species';
 import { SHAPES } from './shapes';
 
 /** 「唯一解だが配置候補は多い」歯応えのあるパズルを作れるよう、1ステージあたりの動物数の上限を設ける。 */
@@ -53,10 +53,10 @@ export const validateStage = (stage: Stage): string[] => {
 
   const speciesCount = new Map<Species, number>();
   for (const a of stage.animals) speciesCount.set(a.species, (speciesCount.get(a.species) ?? 0) + 1);
-  for (const [species, def] of Object.entries(SPECIES) as [Species, AnimalDef][]) {
+  for (const species of Object.keys(SPECIES) as Species[]) {
     const count = speciesCount.get(species) ?? 0;
     if (count === 0) continue;
-    for (const c of def.conditions) {
+    for (const c of conditionsFor(stage, species)) {
       if (c.kind === 'flockRequired' && count < 2) {
         errors.push(`${label} ${species} has flockRequired but fewer than 2 instances in stage`);
       }

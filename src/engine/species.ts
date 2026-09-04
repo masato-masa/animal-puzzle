@@ -1,4 +1,4 @@
-import type { AnimalDef, Species } from './types';
+import type { AnimalDef, Species, SpeciesCondition, Stage } from './types';
 
 /**
  * 種同士の隣接禁止・距離制約は、判定（isAnimalSatisfied/violatingAnimals）が
@@ -71,4 +71,18 @@ export const SPECIES: Record<Species, AnimalDef> = {
     shape: 'square2x2',
     conditions: [{ kind: 'blockAdjacentRequired', block: 'tree' }],
   },
+};
+
+/**
+ * この種がこのステージで実際に使う条件の一覧を返す。stage.animalRulesが指定されている
+ * ステージでは、その種の条件はstage.animalRules[species]の1つだけ(無ければ0個)になり、
+ * AnimalDef.conditions(種に紐づく固定の性格)は完全に無視される。stage.animalRulesが
+ * 未指定のステージでは、従来どおりAnimalDef.conditionsをそのまま使う。
+ */
+export const conditionsFor = (stage: Stage, species: Species): SpeciesCondition[] => {
+  if (stage.animalRules) {
+    const rule = stage.animalRules[species];
+    return rule ? [rule] : [];
+  }
+  return SPECIES[species].conditions;
 };

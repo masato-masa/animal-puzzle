@@ -119,6 +119,51 @@ export const STAGES: Stage[] = [
       { kind: 'above', a: 'elephant', b: 'zebra' },
     ],
   },
+  {
+    // 手作業で組んだ試作ステージ(3回目)。ここからは方針を変え、種に固定で紐づく
+    // 性格(AnimalDef.conditions)を一切使わず、animalRulesでこのステージ専用に
+    // 動物1種につきルールをちょうど1つだけ直接指定している。動物の性格とステージ
+    // 限定ルールという2系統に分かれていた仕組みを、1種類のルール語彙(SpeciesCondition。
+    // above/leftOf/sameRow/sameCol/exactDistance等も含む)に統合したことで実現した。
+    // 同じキリンでも他のステージでは違うルールになりうる。
+    // 地形はstage-11と同じ(検証済みの5x4開放地)だが、動物の顔ぶれはstage-11と重ならない
+    // ものを選び、実質同じパズルにならないようにしている
+    // (__tests__/engine.test.tsの鏡像重複検出テストで機械的に確認済み)。
+    // 5つのルールをすべて満たす配置をちょうど1つ見つける(L4、唯一解、countRuleMoves=1)。
+    id: 'stage-12',
+    name: '12. 5つのやくそく',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['....~', '....#', '....#', '....#', '....#']),
+    animals: animals([['giraffe', 2], ['rhino', 2], ['monkey', 2], ['crocodile', 1], ['gorilla', 1]]),
+    animalRules: {
+      crocodile: { kind: 'blockAdjacentRequired', block: 'water' },
+      rhino: { kind: 'minDistance', from: 'rhino', distance: 2 },
+      giraffe: { kind: 'exactDistance', with: 'crocodile', distance: 2 },
+      gorilla: { kind: 'differentCol', with: 'giraffe' },
+      monkey: { kind: 'differentRow', with: 'gorilla' },
+    },
+  },
+  {
+    // 同じくanimalRules方式の試作(2面目)。種の顔ぶれを変え、いつもは「キリンの隣が必要」
+    // なオオハシチドリが、ここでは代わりに「サイからきっちり2マス」の距離条件を持つ、
+    // というように、同じ種でも通常の性格とは違うルールを試している。
+    // 木のブロックを1つだけ含む、ほぼ壁なしの土地(幾何学的な置き方48通り)から
+    // 5つのルールを満たす配置をちょうど1つ見つける(L4、唯一解、countRuleMoves=1)。
+    id: 'stage-13',
+    name: '13. もりのなかまたち',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['#...#', '#....', '..#..', '....T', '#...#']),
+    animals: animals([['rhino', 2], ['gorilla', 1], ['giraffe', 2], ['squirrel', 1], ['oxpecker', 1]]),
+    animalRules: {
+      rhino: { kind: 'minDistance', from: 'rhino', distance: 2 },
+      gorilla: { kind: 'blockAdjacentRequired', block: 'tree' },
+      giraffe: { kind: 'sameRow', with: 'gorilla' },
+      squirrel: { kind: 'exactDistance', with: 'gorilla', distance: 1 },
+      oxpecker: { kind: 'adjacentRequired', with: 'giraffe' },
+    },
+  },
 ];
 
 const stageIdsFrom = (fromId: string, toId: string): string[] => {
@@ -131,7 +176,7 @@ export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
   { id: 'savanna-basics', name: '1章 サバンナのきほん', stageIds: stageIdsFrom('stage-1', 'stage-5') },
   { id: 'savanna-thinking', name: '2章 かんがえるサバンナ', stageIds: stageIdsFrom('stage-6', 'stage-8') },
   { id: 'final-challenge', name: '3章 さいごのちょうせん', stageIds: stageIdsFrom('stage-9', 'stage-10') },
-  { id: 'special-challenge', name: '4章 とくべつなちょうせん（試作）', stageIds: stageIdsFrom('stage-11', 'stage-11') },
+  { id: 'special-challenge', name: '4章 とくべつなちょうせん（試作）', stageIds: stageIdsFrom('stage-11', 'stage-13') },
 ];
 
 export const getStage = (id: string): Stage | undefined => STAGES.find((s) => s.id === id);

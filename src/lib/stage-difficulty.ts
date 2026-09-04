@@ -1,5 +1,5 @@
 import type { ShapeKey, SolverLevel, Species, Stage } from '@/engine';
-import { SPECIES, countGeometricPlacements, countRuleMoves, countSolutions, solverLevel } from '@/engine';
+import { SPECIES, conditionsFor, countGeometricPlacements, countRuleMoves, countSolutions, solverLevel } from '@/engine';
 import { describeWarning, findDesignWarnings, type DesignWarning } from './stage-design-checks';
 
 export type StageGrade = {
@@ -20,7 +20,7 @@ const countEffectiveConditions = (stage: Stage): number => {
   let effective = 0;
   const speciesInStage = new Set<Species>(stage.animals.map((a) => a.species));
   for (const species of speciesInStage) {
-    SPECIES[species].conditions.forEach((_, index) => {
+    conditionsFor(stage, species).forEach((_, index) => {
       const withoutThis = countSolutions(stage, 2, { species, index });
       if (withoutThis !== 1) effective++;
     });

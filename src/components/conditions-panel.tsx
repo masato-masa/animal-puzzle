@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 
-import { SPECIES, isSpeciesConditionSatisfied, isStageRuleSatisfied, type GameState, type Species } from '@/engine';
+import { conditionsFor, isSpeciesConditionSatisfied, isStageRuleSatisfied, type GameState, type Species } from '@/engine';
 import { speciesArt } from '@/lib/animal-art';
 import { conditionText, stageRuleText } from '@/lib/condition-text';
 import { colors, speciesEmoji, speciesLabel, ui } from '@/theme';
@@ -23,7 +23,7 @@ export function ConditionsPanel({ species, state }: Props) {
   return (
     <View style={styles.panel}>
       {species.map((sp) => {
-        const conditions = SPECIES[sp].conditions;
+        const conditions = conditionsFor(state.stage, sp);
         const art = speciesArt[sp];
         return (
           <View key={sp} style={styles.row}>

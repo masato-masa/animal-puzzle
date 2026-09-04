@@ -27,7 +27,14 @@ export type CellTerrain = 'land' | BlockKind | 'void';
 export type ShapeCell = { dr: number; dc: number };
 export type ShapeKey = 'single' | 'domino_h' | 'domino_v' | 'square2x2';
 
-/** 動物の性格。全ステージで共通に適用される。 */
+/**
+ * 動物1体(1種)につき1つ持つ条件。AnimalDef.conditionsとして種に固定で紐づく場合と、
+ * Stage.animalRulesとしてステージごとに直接指定される場合の両方で使う(後者が
+ * 指定されたステージでは前者を完全に無視する。conditionsFor参照)。
+ * above/leftOf/sameRow/sameCol/differentRow/differentCol/exactDistanceは、
+ * かつてStage.rules(ステージ限定ルール、種ペア全体に効く別系統の仕組み)だけが
+ * 持っていた位置関係の語彙を、動物1体の条件としても使えるようにしたもの。
+ */
 export type SpeciesCondition =
   | { kind: 'adjacentForbidden'; with: Species }
   | { kind: 'adjacentRequired'; with: Species }
@@ -36,7 +43,16 @@ export type SpeciesCondition =
   | { kind: 'diagonalForbidden'; with: Species }
   | { kind: 'surroundForbidden'; with: Species }
   | { kind: 'blockAdjacentRequired'; block: ConditionBlock }
-  | { kind: 'blockAdjacentForbidden'; block: ConditionBlock };
+  | { kind: 'blockAdjacentForbidden'; block: ConditionBlock }
+  | { kind: 'above'; with: Species }
+  | { kind: 'below'; with: Species }
+  | { kind: 'leftOf'; with: Species }
+  | { kind: 'rightOf'; with: Species }
+  | { kind: 'sameRow'; with: Species }
+  | { kind: 'sameCol'; with: Species }
+  | { kind: 'differentRow'; with: Species }
+  | { kind: 'differentCol'; with: Species }
+  | { kind: 'exactDistance'; with: Species; distance: number };
 
 export type AnimalDef = {
   species: Species;
@@ -72,6 +88,13 @@ export type Stage = {
   terrain: CellTerrain[][];
   animals: AnimalInstance[];
   rules?: StageRule[];
+  /**
+   * ステージごとに動物1種につきルール1つを直接指定する仕組み。指定されたステージでは、
+   * ここに載っている種はこの1つの条件だけを使い、AnimalDef.conditions(種に紐づく
+   * 固定の性格)は一切参照しない。載っていない種はこのステージでは無条件（自由に置ける）。
+   * undefinedの場合は従来どおりAnimalDef.conditionsを使う(既存ステージへの影響なし)。
+   */
+  animalRules?: Partial<Record<Species, SpeciesCondition>>;
 };
 
 export type GameState = {

@@ -1,6 +1,6 @@
 import type { GameState, Pos, Species, SpeciesCondition } from './types';
 import { posKey } from './types';
-import { SPECIES } from './species';
+import { conditionsFor } from './species';
 import { conditionCheckers, isStageCleared } from './conditions';
 import { isStageRuleSatisfied } from './stage-rules';
 import { canPlace, placeAnimal } from './board';
@@ -18,10 +18,23 @@ const MONOTONIC_FORBIDDING: ReadonlySet<SpeciesCondition['kind']> = new Set([
   'surroundForbidden',
   'minDistance',
   'blockAdjacentForbidden',
+  // 位置関係系(above/leftOf/sameRow/sameCol/exactDistance等)も、対象種の駒が
+  // 既に条件を満たさない位置に置かれていれば、以降その種を何体置いても
+  // (everyで全個体チェックのため)違反が覆ることはない。adjacentForbiddenと
+  // 同じ理由で単調forbidding扱いにできる。
+  'above',
+  'below',
+  'leftOf',
+  'rightOf',
+  'sameRow',
+  'sameCol',
+  'differentRow',
+  'differentCol',
+  'exactDistance',
 ]);
 
 const passesMonotonicSpeciesConditions = (state: GameState, placed: GameState['placed'][number]): boolean =>
-  SPECIES[placed.species].conditions
+  conditionsFor(state.stage, placed.species)
     .filter((c) => MONOTONIC_FORBIDDING.has(c.kind) || c.kind === 'blockAdjacentRequired')
     .every((c) => conditionCheckers[c.kind](state, placed, c));
 
