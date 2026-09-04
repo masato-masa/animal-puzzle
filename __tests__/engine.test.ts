@@ -1200,6 +1200,24 @@ describe('shipped stage content', () => {
     const grade = gradeStage(stage);
     expect(meetsChapterBar(grade, chapterNumber, stage)).toEqual([]);
   });
+
+  test('no two stages are the same puzzle up to a left-right/up-down mirror', () => {
+    // 動物の形はすべて左右・上下対称なので、地形を反転しただけの盤面に同じ種構成を
+    // 割り当てると「見た目が違うだけの同じパズル」になる(分割3のTask 4完了後の
+    // 再レビューで実際に発覚し、生成器側はfamilyフィールドで対処済み)。出荷後の
+    // stages.tsを手で書き換えてもこの不変条件が壊れないよう、ここで直接検証する。
+    const mirrorH = (rows: string[]): string[] => rows.map((r) => [...r].reverse().join(''));
+    const mirrorV = (rows: string[]): string[] => [...rows].reverse();
+    const fingerprint = (stage: (typeof STAGES)[number]): string => {
+      const rows = stage.terrain.map((row) => row.join(','));
+      const variants = [rows, mirrorH(rows), mirrorV(rows), mirrorH(mirrorV(rows))];
+      const canonicalTerrain = variants.map((v) => v.join('|')).sort()[0];
+      const species = [...stage.animals].map((a) => a.species).sort().join(',');
+      return `${canonicalTerrain}::${species}`;
+    };
+    const fingerprints = STAGES.map(fingerprint);
+    expect(new Set(fingerprints).size).toBe(fingerprints.length);
+  });
 });
 
 describe('migrateStageTerrain', () => {

@@ -44,3 +44,6 @@ example
 
 # Claude Code session-runtime state
 .claude/scheduled_tasks.lock
+
+# stage generator scratch output (scripts/generate-stages.test.ts)
+scripts/generated-stages.txt

@@ -36,6 +36,9 @@ test('generate stages for every chapter tier and write to scripts/generated-stag
       const firstId = `stage-${globalIndex}`;
       for (const stage of stages) {
         const id = `stage-${globalIndex}`;
+        // ここでの名前は章名の使い回しのプレースホルダー。出荷前に stages.ts 側で
+        // 動物構成に応じた個別のステージ名へ手動で書き換えること(章名の連呼のまま
+        // 出荷しない)。
         const name = `${globalIndex}. ${chapter.name}`;
         stageBlocks.push(formatStageSnippet(stage, id, name));
         globalIndex++;

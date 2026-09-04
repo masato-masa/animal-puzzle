@@ -23,7 +23,7 @@ const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split
 export const STAGES: Stage[] = [
   {
     id: 'stage-1',
-    name: '1. 1章 サバンナのきほん',
+    name: '1. キリンとなかまたちのひろば',
     rows: 6,
     cols: 7,
     terrain: terrain(['.#..#..', '.##.##.', '###.##.', '#######', '.##.##.', '.##.##.']),
@@ -31,7 +31,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-2',
-    name: '2. 1章 サバンナのきほん',
+    name: '2. サバンナのライオンたち',
     rows: 5,
     cols: 5,
     terrain: terrain(['..###', '####.', '####.', '#.###', '#...#']),
@@ -39,7 +39,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-3',
-    name: '3. 1章 サバンナのきほん',
+    name: '3. ゾウのおさんぽみち',
     rows: 6,
     cols: 5,
     terrain: terrain(['..#..', '.##..', '.####', '#####', '.##..', '.##..']),
@@ -47,7 +47,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-4',
-    name: '4. 1章 サバンナのきほん',
+    name: '4. ヒョウ、はつとうじょう',
     rows: 5,
     cols: 5,
     terrain: terrain(['...#.', '##.#.', '###.#', '###.#', '..###']),
@@ -55,7 +55,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-5',
-    name: '5. 1章 サバンナのきほん',
+    name: '5. ヒョウとライオンのなわばり',
     rows: 5,
     cols: 5,
     terrain: terrain(['..###', '####.', '####.', '#.###', '#...#']),
@@ -63,7 +63,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-6',
-    name: '6. 2章 かんがえるサバンナ',
+    name: '6. サバンナのだいかんげい',
     rows: 5,
     cols: 7,
     terrain: terrain(['..###..', '##.#.##', '##.#.##', '.#####.', '...#...']),
@@ -71,7 +71,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-7',
-    name: '7. 2章 かんがえるサバンナ',
+    name: '7. かんがえるライオンたち',
     rows: 5,
     cols: 5,
     terrain: terrain(['...#.', '##.#.', '###.#', '###.#', '..###']),
@@ -79,7 +79,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-8',
-    name: '8. 2章 かんがえるサバンナ',
+    name: '8. ヒョウとライオンのちえくらべ',
     rows: 5,
     cols: 7,
     terrain: terrain(['...#...', '.#####.', '##.#.##', '##.#.##', '..###..']),
@@ -87,7 +87,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-9',
-    name: '9. 3章 さいごのちょうせん',
+    name: '9. ヒョウたちのちょうせん',
     rows: 6,
     cols: 7,
     terrain: terrain(['.#.....', '.#####.', '.#####.', '.#####.', '.#####.', '.#####.']),
@@ -95,7 +95,7 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-10',
-    name: '10. 3章 さいごのちょうせん',
+    name: '10. さいごのヒョウたいけつ',
     rows: 6,
     cols: 7,
     terrain: terrain(['.....#.', '.#####.', '.#####.', '.#####.', '.#####.', '.#####.']),

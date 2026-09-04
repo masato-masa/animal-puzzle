@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const KEY = 'animal-puzzle:progress:v1';
+/** v2: 分割3で出荷ステージを全面差し替えたため、stage-1〜stage-10のIDが旧内容と
+ * 衝突する（同じIDが別のパズルを指すようになった）。旧v1のまま出荷すると、
+ * 既プレイヤーが新パズルを開いた瞬間に「未プレイなのにクリア済み」と表示されて
+ * しまうため、キーをバージョンアップして進捗を確実にリセットする。 */
+const KEY = 'animal-puzzle:progress:v2';
 
 type ProgressData = { clearedStageIds: string[] };
 

@@ -8,8 +8,9 @@ import { speciesArt } from '@/lib/animal-art';
 import { loadProgress } from '@/storage/progress';
 import { colors, speciesEmoji, ui } from '@/theme';
 
-/** ピース数からざっくりした難易度の目安（★の数）を出す。 */
-const difficultyStars = (pieceCount: number): number => (pieceCount <= 2 ? 1 : pieceCount <= 5 ? 2 : 3);
+/** 章番号(1始まり)から難易度の目安（★の数）を出す。駒数と章の段階は無関係にする設計
+ * (design spec §8.4)なので、駒数ではなく章番号そのものを使う。 */
+const difficultyStars = (chapterNumber: number): number => Math.min(chapterNumber, 3);
 
 const uniqueSpecies = (species: Species[]): Species[] => Array.from(new Set(species));
 
@@ -29,7 +30,7 @@ export default function StageSelectScreen() {
     }, [])
   );
 
-  const totalCleared = clearedIds.size;
+  const totalCleared = STAGES.filter((s) => clearedIds.has(s.id)).length;
   const totalStages = STAGES.length;
   const overallRatio = totalStages === 0 ? 0 : totalCleared / totalStages;
 
@@ -44,8 +45,9 @@ export default function StageSelectScreen() {
           {totalCleared} / {totalStages} クリア
         </Text>
       </View>
-      {CHAPTERS.map((chapter) => {
+      {CHAPTERS.map((chapter, chapterIndex) => {
         const chapterClearedCount = chapter.stageIds.filter((id) => clearedIds.has(id)).length;
+        const stars = difficultyStars(chapterIndex + 1);
         return (
           <View key={chapter.id} style={styles.chapter}>
             <View style={styles.chapterHeader}>
@@ -80,8 +82,8 @@ export default function StageSelectScreen() {
                   <View style={styles.rowTextCol}>
                     <Text style={styles.rowLabel}>{stage.name}</Text>
                     <Text style={styles.rowStars}>
-                      {'★'.repeat(difficultyStars(stage.animals.length))}
-                      {'☆'.repeat(3 - difficultyStars(stage.animals.length))}
+                      {'★'.repeat(stars)}
+                      {'☆'.repeat(3 - stars)}
                     </Text>
                   </View>
                   {cleared ? <Text style={styles.rowCheck}>✓</Text> : null}
