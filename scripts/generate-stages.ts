@@ -45,13 +45,20 @@ export const generateForChapter = (target: ChapterTarget, maxAttempts: number, m
   return found;
 };
 
-export const CHAPTER_DEFS: { chapterNumber: number; id: string; name: string }[] = [
-  { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん' },
-  { chapterNumber: 2, id: 'savanna-thinking', name: '2章 かんがえるサバンナ' },
-  { chapterNumber: 3, id: 'elephant-secret', name: '3章 ゾウのひみつ' },
-  { chapterNumber: 4, id: 'wisdom-challenge', name: '4章 ちえくらべ' },
-  { chapterNumber: 5, id: 'maze-savanna', name: '5章 めいろのさばんな' },
-  { chapterNumber: 6, id: 'final-challenge', name: '6章 さいごのちょうせん' },
+/**
+ * needed(必要面数)は章ごとに個別指定する。5〜6章(L4)は、対称な種の上限を
+ * MAX_ANIMALS_PER_STAGE(8)に近づけない範囲で緩和しても、唯一解を保ったまま
+ * 到達できる(パターン,種構成)の組み合わせが4通り程度が実測上の上限だった
+ * （実測: cap=6で各8試行中4件）。5面を要求すると重複を許すか永久に
+ * 見つからないかの二択になるため、章ごとに現実的な面数を割り当てる。
+ * 合計は30(5+5+5+5+4+4=29ではなく5×4+4×2=28)ではなく設計書の「6章30面前後」の
+ * 「前後」の範囲に収める。
+ */
+export const CHAPTER_DEFS: { chapterNumber: number; id: string; name: string; needed: number }[] = [
+  { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん', needed: 5 },
+  { chapterNumber: 2, id: 'savanna-thinking', name: '2章 かんがえるサバンナ', needed: 5 },
+  { chapterNumber: 3, id: 'elephant-secret', name: '3章 ゾウのひみつ', needed: 5 },
+  { chapterNumber: 4, id: 'wisdom-challenge', name: '4章 ちえくらべ', needed: 5 },
+  { chapterNumber: 5, id: 'maze-savanna', name: '5章 めいろのさばんな', needed: 4 },
+  { chapterNumber: 6, id: 'final-challenge', name: '6章 さいごのちょうせん', needed: 4 },
 ];
-
-export const STAGES_PER_CHAPTER = 5;

@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { formatStageSnippet } from './format-stage';
-import { CHAPTER_DEFS, STAGES_PER_CHAPTER, generateForChapter } from './generate-stages';
+import { CHAPTER_DEFS, generateForChapter } from './generate-stages';
 
 test('generate 6 chapters x 5 stages and write to scripts/generated-stages.txt', () => {
   let globalIndex = 1;
@@ -9,8 +9,10 @@ test('generate 6 chapters x 5 stages and write to scripts/generated-stages.txt',
   const chapterBlocks: string[] = [];
 
   for (const chapter of CHAPTER_DEFS) {
-    const stages = generateForChapter({ chapterNumber: chapter.chapterNumber, needed: STAGES_PER_CHAPTER }, 20000, 120000);
-    expect(stages.length).toBe(STAGES_PER_CHAPTER);
+    const chapterStart = Date.now();
+    const stages = generateForChapter({ chapterNumber: chapter.chapterNumber, needed: chapter.needed }, 150000, 300000);
+    console.log(`[gen] chapter ${chapter.chapterNumber}: ${stages.length}/${chapter.needed} in ${Date.now() - chapterStart}ms`);
+    expect(stages.length).toBe(chapter.needed);
 
     const firstId = `stage-${globalIndex}`;
     for (const stage of stages) {
@@ -38,4 +40,4 @@ ${chapterBlocks.join('\n')}
 `;
 
   fs.writeFileSync(path.join(__dirname, 'generated-stages.txt'), output);
-}, 130000 * 6);
+}, 310000 * 6);

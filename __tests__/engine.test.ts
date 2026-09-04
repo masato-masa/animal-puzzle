@@ -28,7 +28,7 @@ import {
   type Stage,
 } from '@/engine';
 import { CHAPTERS, STAGES } from '@/levels/stages';
-import { gradeStage } from '@/lib/stage-difficulty';
+import { gradeStage, meetsChapterBar } from '@/lib/stage-difficulty';
 import { buildStageCodeSnippet } from '@/lib/stage-submission';
 import { migrateStageTerrain } from '@/storage/migrate-stage';
 import { speciesEmoji, speciesLabel } from '@/theme';
@@ -1054,31 +1054,12 @@ describe('propagation', () => {
     expect(result.fullySolved).toBe(true);
   });
 
-  // stage-8/stage-9はnaked-group検出だけで純粋な伝播のみで解ける
-  // （fullySolvedになる）ことを確認する。stage-13/stage-14/stage-18は
-  // 伝播だけでは行き詰まる（下のsolverLevelテストでdepth<=3のバックトラックが
-  // 必要なことを別途確認している）ため、ここではstage-8/stage-9のみを対象にする。
-  test.each(['stage-8', 'stage-9'])(
-    'propagateToFixation solves shipped %s by propagation alone (regression: needs naked-group detection)',
-    (id) => {
-      const stage = STAGES.find((s) => s.id === id)!;
-      const result = propagateToFixation(createGameState(stage));
-      expect(result.contradiction).toBe(false);
-      expect(result.fullySolved).toBe(true);
-    }
-  );
-
-  // stage-13/stage-14/stage-18はnaked-group検出が無いと伝播が全く進まず、
-  // solverLevelのdepth<=3のバックトラック予算内では解けずに'unsolvable'に
-  // 誤判定されていた（Task 7で発覚）。naked-group検出があれば、伝播で
-  // 候補が絞られた状態からバックトラックがdepth<=3で解に到達できる。
-  test.each(['stage-13', 'stage-14', 'stage-18'])(
-    'solverLevel no longer reports shipped %s as unsolvable (regression: needs naked-group detection)',
-    (id) => {
-      const stage = STAGES.find((s) => s.id === id)!;
-      expect(solverLevel(stage)).not.toBe('unsolvable');
-    }
-  );
+  // 分割3(2026-09-04)で出荷ステージのIDと内容を全面的に作り直したため、
+  // 特定の出荷ステージID(旧stage-8/9/13/14/18)にnaked-group検出の回帰を
+  // 結びつけたテストは意味を失った。回帰そのもの(naked-group検出の有無で
+  // 伝播/solverLevelの結果が変わること)は、上のstage-8/9互換の独立した
+  // フィクスチャ("hidden-single-l1"等)と、下のsolverLevel describeブロックの
+  // 専用フィクスチャで引き続きカバーされている。
 });
 
 describe('solverLevel', () => {
@@ -1212,13 +1193,12 @@ describe('shipped stage content', () => {
     expect(chapterStageIds.sort()).toEqual(STAGES.map((s) => s.id).sort());
   });
 
-  test.each(STAGES)('$id ($name) grades consistently with its known unique solution', (stage) => {
-    // 章の合格ライン(L3以上・R≧4など)は分割3(生成器＋全ステージ作り直し)で満たす対象。
-    // ここではgradeStageが既存の唯一解判定と矛盾しないことだけを確認する。
+  test.each(STAGES)('$id ($name) meets its chapter difficulty bar', (stage) => {
+    const chapterIndex = CHAPTERS.findIndex((c) => c.stageIds.includes(stage.id));
+    expect(chapterIndex).toBeGreaterThanOrEqual(0);
+    const chapterNumber = chapterIndex + 1;
     const grade = gradeStage(stage);
-    expect(grade.solutions).toBe(1);
-    expect(grade.geometricPackings).toBeGreaterThanOrEqual(1);
-    expect(grade.level).not.toBe('unsolvable');
+    expect(meetsChapterBar(grade, chapterNumber, stage)).toEqual([]);
   });
 });
 

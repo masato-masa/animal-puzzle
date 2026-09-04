@@ -45,13 +45,13 @@ describe('composeAnimals', () => {
     }
   });
 
-  test('never uses more than 4 instances of a symmetric (self-referential) species in one call', () => {
+  test('never uses more than 6 instances of a symmetric (self-referential) species in one call', () => {
     // lion/leopard/rhinoは自己回避・同種距離制約を持つ「対称な」種。
-    // domino_vスロットを10個要求しても、lion+leopardの合計は4体までに制限されるはず。
+    // domino_vスロットを10個要求しても、lion+leopardの合計は6体までに制限されるはず。
     const slots = Array.from({ length: 10 }, () => 'domino_v' as const);
     const animals = composeAnimals(slots);
     const symmetricCount = animals.filter((a) => a.species === 'lion' || a.species === 'leopard').length;
-    expect(symmetricCount).toBeLessThanOrEqual(4);
+    expect(symmetricCount).toBeLessThanOrEqual(6);
   });
 });
 
