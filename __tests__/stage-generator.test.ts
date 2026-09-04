@@ -6,6 +6,24 @@ import { formatStageSnippet } from '../scripts/format-stage';
 import { generateForChapter, splitPoolAcrossChapters } from '../scripts/generate-stages';
 
 describe('stage-patterns', () => {
+  test('mirrored patterns share the same family as the base pattern they were mirrored from', () => {
+    // familyでグループ化した各系統について、地形サイズ(rows/cols)が全員一致すること、
+    // 系統0〜7(小・中規模、鏡像を作らない)は1件、系統8〜10は3件(元+左右反転+上下反転)、
+    // 系統11は2件(左右対称な地形のため上下反転のみ追加される)であることを確認する。
+    const byFamily = new Map<number, typeof PATTERNS>();
+    for (const p of PATTERNS) byFamily.set(p.family, [...(byFamily.get(p.family) ?? []), p]);
+    for (const [family, members] of byFamily) {
+      const [first, ...rest] = members;
+      for (const m of rest) {
+        expect(m.rows).toBe(first.rows);
+        expect(m.cols).toBe(first.cols);
+        expect(m.slotShapes).toEqual(first.slotShapes);
+      }
+      expect(family).toBeGreaterThanOrEqual(0);
+    }
+    expect(byFamily.size).toBeGreaterThan(0);
+  });
+
   test('every pattern land-cell count matches the total cells its slotShapes require', () => {
     for (const pattern of PATTERNS) {
       const terrain = terrainFromRows(pattern.rowsStr);

@@ -7,9 +7,17 @@ const rand = (n: number): number => Math.floor(Math.random() * n);
 
 export type ChapterTarget = { chapterNumber: number; needed: number };
 
-/** 同じ地形×同じ動物構成(種の多重集合)の重複を避けるための署名。 */
-const compositionSignature = (patternIndex: number, stage: Stage): string =>
-  `${patternIndex}:${[...stage.animals].map((a) => a.species).sort().join(',')}`;
+/**
+ * 同じ地形×同じ動物構成(種の多重集合)の重複を避けるための署名。
+ * パターンの配列indexではなくfamily(反転バリエーションどうしで共有する系統番号)を
+ * 使う。動物の形はすべて左右・上下対称なので、あるパターンとその反転版は
+ * 「見た目が違うだけの同じパズル」であり、同じ種構成を両方に割り当てると
+ * 実質同じパズルを2枚出荷してしまう(分割3のTask 4完了後の再々レビューで
+ * 実際に発覚した)。familyでまとめることで、同じ系統×同じ種構成の組み合わせは
+ * 反転の有無によらず1回しか採用されない。
+ */
+const compositionSignature = (patternFamily: number, stage: Stage): string =>
+  `${patternFamily}:${[...stage.animals].map((a) => a.species).sort().join(',')}`;
 
 /**
  * 指定した章の合格ラインを満たすステージを、必要数集まるまでランダムに探索する。
@@ -51,7 +59,7 @@ export const generateForChapter = (
     const grade = gradeStage(stage);
     if (meetsChapterBar(grade, target.chapterNumber, stage).length > 0) continue;
 
-    const sig = compositionSignature(patternIndex, stage);
+    const sig = compositionSignature(pattern.family, stage);
     if (seen.has(sig)) continue;
     seen.add(sig);
     found.push(stage);
