@@ -47,7 +47,6 @@ type ChapterBar = {
   maxLevel?: SolverLevel;
   minRuleMoves: number;
   maxRuleMoves?: number;
-  conditionRange: [number, number];
 };
 
 /** L0 < L1 < L2 < L3 < L4。unsolvableはどのバーも満たさない別枠として扱う。 */
@@ -68,11 +67,18 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
  * maxLevel/maxRuleMovesは設定しない。
  * ルール手数Rの下限値(2〜4章:2、5〜6章:3)は、当初案(4/5)がスパイク検証で
  * 事実上到達不能と判明したため2026-09-04に引き下げた経緯が設計書8.4節にある。
+ * 条件数(effectiveConditions)は章の合否には使わない。2026-09-04の分割3実装中の
+ * スパイクで、生成器が作る「ぴったり敷き詰めるステージ」は構造的に実質1つしか
+ * 独立した決定点を持たず、countEffectiveConditionsは種・条件の定義単位でしか
+ * 数えない（同じ条件を複数個体が共有していても1としか数えない）ため、幾何解2通り
+ * 以上・唯一解という他の絶対条件を満たすステージは軒並みeffectiveConditions=1に
+ * なることが判明した（12パターン全種・227件超の唯一解サンプルで例外なし）。
+ * 章をまたいで差が出ないため、識別軸としては使わずgradeStageの参考値のみとする。
  */
 const CHAPTER_BARS: ChapterBar[] = [
-  { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3, conditionRange: [2, 3] },
-  { minLevel: 'L3', minRuleMoves: 2, conditionRange: [3, 6] },
-  { minLevel: 'L4', minRuleMoves: 3, conditionRange: [5, 8] },
+  { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3 },
+  { minLevel: 'L3', minRuleMoves: 2 },
+  { minLevel: 'L4', minRuleMoves: 3 },
 ];
 
 const barForChapter = (chapterNumber: number): ChapterBar => {
@@ -116,11 +122,6 @@ export const meetsChapterBar = (grade: StageGrade, chapterNumber: number, stage:
   }
   if (bar.maxRuleMoves !== undefined && grade.ruleMoves > bar.maxRuleMoves) {
     reasons.push(`ルール手数が多すぎる（上限${bar.maxRuleMoves}、実際${grade.ruleMoves}）`);
-  }
-  if (grade.effectiveConditions < bar.conditionRange[0] || grade.effectiveConditions > bar.conditionRange[1]) {
-    reasons.push(
-      `条件数が範囲外（${bar.conditionRange[0]}〜${bar.conditionRange[1]}が必要、実際${grade.effectiveConditions}）`
-    );
   }
   return reasons;
 };

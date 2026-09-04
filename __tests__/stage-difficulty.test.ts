@@ -70,12 +70,14 @@ describe('gradeStage', () => {
 });
 
 describe('meetsChapterBar', () => {
-  test('a grade with too few effective conditions for chapter 1 reports a condition-count reason', () => {
+  test('effectiveConditions is informational only and never appears in the reasons', () => {
+    // l1Stageの効いている条件数は1。設計書8.4節の改訂(2026-09-04)により、条件数は
+    // 章の合否判定には使わない(gradeStageの参考値のみ)。理由に「条件数」が
+    // 含まれないことを確認する。
     const grade = gradeStage(l1Stage);
-    // l1Stageの効いている条件数は1(ステージ限定ルールのみ)で、1章の必要範囲2〜3本に
-    // 届かない。ここでは合否理由に条件数の指摘が含まれることを確認する。
+    expect(grade.effectiveConditions).toBeGreaterThanOrEqual(1);
     const reasons = meetsChapterBar(grade, 1, l1Stage);
-    expect(reasons.some((r) => r.includes('条件数'))).toBe(true);
+    expect(reasons.some((r) => r.includes('条件数'))).toBe(false);
   });
 
   test('an unsolvable grade fails every chapter bar with a solutions reason', () => {
