@@ -24,7 +24,7 @@ export const terrainFromRows = (rowsStr: string[]): CellTerrain[][] =>
  * すべて左右対称なので、タイル張り可能性は反転しても保たれる。
  * これにより盤面のバリエーション(=生成器が拾える(パターン,種構成)の組み合わせ数)を
  * 増やせる。分割3のTask 4完了後のレビューで、8スロットの大規模パターンが
- * 少なすぎて2〜6章間で唯一解の組み合わせが枯渇し、章をまたいで内容が丸ごと
+ * 少なすぎて章をまたいで唯一解の組み合わせが枯渇し、内容が丸ごと
  * 重複するステージが大量に発生したことが判明したため追加した。
  */
 const mirrorHorizontal = (pattern: PatternTemplate): PatternTemplate => ({
@@ -53,11 +53,11 @@ const BASE_PATTERNS_RAW: BasePattern[] = [
   { rows: 5, cols: 5, rowsStr: ['..###', '####.', '####.', '#.###', '#...#'], slotShapes: ['domino_h', 'domino_h', 'domino_v', 'domino_v'] },
   { rows: 5, cols: 5, rowsStr: ['..###', '..###', '#####', '###.#', '###.#'], slotShapes: ['domino_v', 'domino_v', 'domino_v'] },
   { rows: 5, cols: 5, rowsStr: ['...#.', '##.#.', '###.#', '###.#', '..###'], slotShapes: ['domino_h', 'domino_h', 'domino_v', 'domino_v', 'domino_v'] },
-  // 中規模(2〜4章向け、2x2を含む)
+  // 中規模(2章向け、2x2を含む)
   { rows: 6, cols: 5, rowsStr: ['..#..', '.##..', '.####', '#####', '.##..', '.##..'], slotShapes: ['domino_h', 'domino_v', 'domino_v', 'square2x2', 'square2x2'] },
   { rows: 7, cols: 5, rowsStr: ['..#..', '.##..', '.####', '###..', '.##..', '.####', '###..'], slotShapes: ['domino_h', 'domino_h', 'domino_v', 'domino_v', 'square2x2', 'square2x2'] },
   { rows: 7, cols: 5, rowsStr: ['..#..', '..##.', '####.', '..###', '..##.', '####.', '..###'], slotShapes: ['domino_h', 'domino_h', 'domino_v', 'single', 'single', 'square2x2', 'square2x2'] },
-  // 大規模(2〜6章向け、駒数多め)
+  // 大規模(2〜3章向け、駒数多め)
   { rows: 6, cols: 7, rowsStr: ['.....#.', '.#####.', '.#####.', '.#####.', '.#####.', '.#####.'], slotShapes: ['domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_h', 'domino_h'] },
   { rows: 7, cols: 5, rowsStr: ['..#.#', '..#.#', '###..', '#####', '..#.#', '..#.#', '###..'], slotShapes: ['domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_h', 'domino_h'] },
   { rows: 6, cols: 7, rowsStr: ['..#..#.', '.##.##.', '.##.###', '#######', '.##.##.', '.##.##.'], slotShapes: ['domino_h', 'domino_h', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v', 'domino_v'] },
