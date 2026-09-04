@@ -280,7 +280,7 @@ describe('conditionCheckers', () => {
     });
     let state = createGameState(stage);
     state = placeAnimal(state, 'l1', { r: 0, c: 0 }); // cells (0,0),(1,0)
-    state = placeAnimal(state, 'g1', { r: 0, c: 3 }); // cells (0,3),(1,3) -> min distance 3
+    state = placeAnimal(state, 'g1', { r: 0, c: 4 }); // cells (0,4),(1,4) -> 3 empty squares between them
     const lion = state.placed.find((p) => p.instanceId === 'l1')!;
     expect(
       conditionCheckers.minDistance(state, lion, { kind: 'minDistance', from: 'giraffe', distance: 3 })
@@ -782,15 +782,25 @@ describe('stage rules', () => {
   });
 
   test('exactDistance requires the minimum distance to match exactly', () => {
-    const stage = twoPieceStage([{ kind: 'exactDistance', a: 'squirrel', b: 'zebra', distance: 2 }]);
+    // distance:2 means exactly 2 empty squares between them (gap count, not raw step count).
+    const stage = makeStage({
+      rows: 5,
+      cols: 8,
+      terrain: Array.from({ length: 5 }, () => Array<CellTerrain>(8).fill('land')),
+      animals: [
+        { instanceId: 's1', species: 'squirrel' },
+        { instanceId: 'z1', species: 'zebra' },
+      ],
+      rules: [{ kind: 'exactDistance', a: 'squirrel', b: 'zebra', distance: 2 }],
+    });
     let exact = createGameState(stage);
     exact = placeAnimal(exact, 's1', { r: 0, c: 0 });
-    exact = placeAnimal(exact, 'z1', { r: 0, c: 2 });
+    exact = placeAnimal(exact, 'z1', { r: 0, c: 3 }); // cells (0,3),(0,4); 2 empty cells (0,1)/(0,2) between them
     expect(isStageRuleSatisfied(exact, stage.rules![0])).toBe(true);
 
     let tooFar = createGameState(stage);
     tooFar = placeAnimal(tooFar, 's1', { r: 0, c: 0 });
-    tooFar = placeAnimal(tooFar, 'z1', { r: 0, c: 3 });
+    tooFar = placeAnimal(tooFar, 'z1', { r: 0, c: 4 }); // cells (0,4),(0,5); 3 empty cells between them
     expect(isStageRuleSatisfied(tooFar, stage.rules![0])).toBe(false);
   });
 

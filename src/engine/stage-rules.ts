@@ -1,5 +1,4 @@
 import type { GameState, PlacedAnimal, Species, StageRule } from './types';
-import { manhattan } from './types';
 
 const piecesOf = (state: GameState, species: Species): PlacedAnimal[] =>
   state.placed.filter((p) => p.species === species);
@@ -7,8 +6,17 @@ const piecesOf = (state: GameState, species: Species): PlacedAnimal[] =>
 const rowsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.r);
 const colsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.c);
 
-const minDistance = (a: PlacedAnimal, b: PlacedAnimal): number =>
-  Math.min(...a.cells.flatMap((ca) => b.cells.map((cb) => manhattan(ca, cb))));
+/** conditions.tsのgapDistanceと同じ数え方(上下左右に並ぶ組だけを見て、間の空きマス数)。 */
+const gapDistance = (a: PlacedAnimal, b: PlacedAnimal): number => {
+  let best = Infinity;
+  for (const ca of a.cells) {
+    for (const cb of b.cells) {
+      if (ca.r === cb.r) best = Math.min(best, Math.abs(ca.c - cb.c) - 1);
+      else if (ca.c === cb.c) best = Math.min(best, Math.abs(ca.r - cb.r) - 1);
+    }
+  }
+  return best;
+};
 
 const overlaps = (xs: number[], ys: number[]): boolean => xs.some((x) => ys.includes(x));
 
@@ -22,7 +30,7 @@ const pairPredicates: Record<StageRule['kind'], PairPredicate> = {
   sameCol: (a, b) => overlaps(colsOf(a), colsOf(b)),
   differentRow: (a, b) => !overlaps(rowsOf(a), rowsOf(b)),
   differentCol: (a, b) => !overlaps(colsOf(a), colsOf(b)),
-  exactDistance: (a, b, rule) => (rule.kind === 'exactDistance' ? minDistance(a, b) === rule.distance : true),
+  exactDistance: (a, b, rule) => (rule.kind === 'exactDistance' ? gapDistance(a, b) === rule.distance : true),
 };
 
 /**

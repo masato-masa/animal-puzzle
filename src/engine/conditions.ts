@@ -1,5 +1,5 @@
 import type { ConditionBlock, ConditionSkip, SpeciesCondition, GameState, PlacedAnimal, Species } from './types';
-import { isAdjacent, manhattan } from './types';
+import { isAdjacent } from './types';
 import { conditionsFor } from './species';
 import { terrainAt } from './board';
 import { unsatisfiedStageRules } from './stage-rules';
@@ -7,8 +7,23 @@ import { unsatisfiedStageRules } from './stage-rules';
 const piecesAdjacent = (a: PlacedAnimal, b: PlacedAnimal): boolean =>
   a.cells.some((ca) => b.cells.some((cb) => isAdjacent(ca, cb)));
 
-const pieceDistance = (a: PlacedAnimal, b: PlacedAnimal): number =>
-  Math.min(...a.cells.flatMap((ca) => b.cells.map((cb) => manhattan(ca, cb))));
+/**
+ * 「〇マスはなす」の数え方: 上下左右(同じ行または同じ列)に並んでいるマスの組だけを見て、
+ * 一番近い組の「間にある空きマスの数」を返す。くっついている(となり)なら0。
+ * 斜めにしか対応する組が無い場合は「はなす」という関係自体が定義できないため、
+ * どんな距離条件も満たさない(Infinityを返す)。honestly斜めの位置関係は
+ * adjacentForbidden/diagonalForbidden等、別の条件で扱う。
+ */
+const gapDistance = (a: PlacedAnimal, b: PlacedAnimal): number => {
+  let best = Infinity;
+  for (const ca of a.cells) {
+    for (const cb of b.cells) {
+      if (ca.r === cb.r) best = Math.min(best, Math.abs(ca.c - cb.c) - 1);
+      else if (ca.c === cb.c) best = Math.min(best, Math.abs(ca.r - cb.r) - 1);
+    }
+  }
+  return best;
+};
 
 const rowsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.r);
 const colsOf = (p: PlacedAnimal): number[] => p.cells.map((c) => c.c);
@@ -55,7 +70,7 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
     if (c.kind !== 'minDistance') return true;
     return state.placed
       .filter((p) => p.species === c.from && p.instanceId !== animal.instanceId)
-      .every((p) => pieceDistance(p, animal) >= c.distance);
+      .every((p) => gapDistance(p, animal) >= c.distance);
   },
   flockRequired: (state, animal) => neighborsOf(state, animal).some((n) => n.species === animal.species),
   diagonalForbidden: (state, animal, c) => {
@@ -112,7 +127,7 @@ export const conditionCheckers: Record<SpeciesCondition['kind'], ConditionChecke
   },
   exactDistance: (state, animal, c) => {
     if (c.kind !== 'exactDistance') return true;
-    return placedOf(state, c.with).every((p) => pieceDistance(animal, p) === c.distance);
+    return placedOf(state, c.with).every((p) => gapDistance(animal, p) === c.distance);
   },
 };
 

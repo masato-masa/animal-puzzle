@@ -7,7 +7,7 @@ export const conditionText = (condition: SpeciesCondition): string => {
     case 'adjacentForbidden':
       return `${speciesLabel[condition.with]}のとなりには置けない`;
     case 'minDistance':
-      return `${speciesLabel[condition.from]}から${condition.distance}マス以上はなす`;
+      return `${speciesLabel[condition.from]}との間を${condition.distance}マス以上あける（上下左右で数える）`;
     case 'flockRequired':
       return 'おなじなかまととなり合わせる';
     case 'adjacentRequired':
@@ -37,7 +37,7 @@ export const conditionText = (condition: SpeciesCondition): string => {
     case 'differentCol':
       return `${speciesLabel[condition.with]}と同じ列に置けない`;
     case 'exactDistance':
-      return `${speciesLabel[condition.with]}からちょうど${condition.distance}マスはなす`;
+      return `${speciesLabel[condition.with]}との間をちょうど${condition.distance}マスあける（上下左右で数える）`;
     default:
       return '';
   }
@@ -61,6 +61,6 @@ export const stageRuleText = (rule: StageRule): string => {
     case 'differentCol':
       return `${a}と${b}は同じ列に置けない`;
     case 'exactDistance':
-      return `${a}と${b}はちょうど${rule.distance}マスはなす`;
+      return `${a}と${b}の間をちょうど${rule.distance}マスあける（上下左右で数える）`;
   }
 };

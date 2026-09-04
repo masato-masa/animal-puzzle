@@ -61,48 +61,29 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
   level !== 'unsolvable' && LEVEL_ORDER.indexOf(level) <= LEVEL_ORDER.indexOf(max);
 
 /**
- * 設計書8.4節の表そのもの。当初は「1章・2〜4章・5〜6章」の6章構成だったが、
- * 分割3のTask 4完了後の再々レビューで、鏡像パターンによる見かけ上の重複
- * （反転しただけの同一パズル）を正しく除外すると、L3以上の面は実質3種類、
- * L4の面は実質2種類しか作れないことが判明した（現行12種の地形テンプレート・
- * 11種の動物という語彙の下での実測上の天井）。5〜6章分の面数を確保できない
- * ため、章数そのものを「1章(導入)・2章(L3)・3章(L4)」の3章に統合した
- * （ユーザー承認済み）。CHAPTER_BARSは3要素になり、barForChapterは
- * 章番号にそのまま対応する。
- * 2〜4章→L3のみ(2章)にmaxLevel:'L3'を設定しているのは、L4面が「L3以上」の
- * 合格ラインも技術的に満たしてしまい、上限が無いとL4面が2章の探索に混入して
- * 3章(L4)向けの希少なプールを枯渇させるため（分割3のTask 4完了後の再生成で
- * 実際に発生した）。
- * 条件数(effectiveConditions)は章の合否には使わない。2026-09-04の分割3実装中の
- * スパイクで、生成器が作る「ぴったり敷き詰めるステージ」は構造的に実質1つしか
- * 独立した決定点を持たず、countEffectiveConditionsは種・条件の定義単位でしか
- * 数えない（同じ条件を複数個体が共有していても1としか数えない）ため、幾何解2通り
- * 以上・唯一解という他の絶対条件を満たすステージは軒並みeffectiveConditions=1に
- * なることが判明した（12パターン全種・227件超の唯一解サンプルで例外なし）。
- * 章をまたいで差が出ないため、識別軸としては使わずgradeStageの参考値のみとする。
- * ルール手数Rは2〜4章・5〜6章では合否に使わない（minRuleMoves未設定）。
- * 当初案(2〜4章R≧4、5〜6章R≧5)は分割2完了後のスパイクでR≧4が事実上到達不能と
- * 判明しR≧2/R≧3に引き下げ、続いてR≧1に引き下げたが、分割3のTask 4実行時、
- * 「レベル(L3以上)とR(≧1)を同時に満たす」こと自体が構造的に不可能と判明した
- * （唯一解サンプル597件の実測で、L3以上のステージはR=0が100%、R≧1のステージは
- * L1〜L2が100%という完全な排反関係）。理由は、対称な駒（縄張り等）を並べて
- * 背理法（レベルを上げる）で解決する構成と、非対称な条件で明快に絞り込んで
- * （Rを稼ぐ）解決する構成が、この生成器の仕組み上そもそも両立しないため。
- * このためRを2〜6章の合否条件から完全に外し、章間の差別化はレベルのみで行う。
- * 1章はL3以上を要求しないためRとの衝突が起きず、当初のR0〜3の範囲指定をそのまま
- * 維持できる。設計書8.4節参照。
+ * 2026-09-04、分割3完了後にステージ生成の方針そのものを刷新した
+ * （壁で1本道を作る旧方式→開けた土地+animalRulesで唯一解に絞る新方式。
+ * docs/superpowers/specs/2026-09-03-rules-and-difficulty-design.md参照）。
+ * 新方式は旧方式よりはるかに高い確率でL1〜L4いずれの面も作れるため
+ * （scripts/generate-open-stages.tsで数百面規模の実測済み）、章数を
+ * 4章(各章1レベルに対応)に戻せた。CHAPTER_BARSは4要素になり、
+ * barForChapterは章番号にそのまま対応する。
+ * ルール手数Rは章の合否には使わない(旧方式時代にL3以上とR≧1が構造的に
+ * 排反すると判明した経緯があり、新方式でも安定した相関は確認できていない
+ * ため、識別軸としては採用せずgradeStageの参考値のみとする)。
+ * 条件数(effectiveConditions)も同様の理由で章の合否には使わない。
  */
 const CHAPTER_BARS: ChapterBar[] = [
-  { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3 },
+  { minLevel: 'L1', maxLevel: 'L1' },
+  { minLevel: 'L2', maxLevel: 'L2' },
   { minLevel: 'L3', maxLevel: 'L3' },
   { minLevel: 'L4' },
 ];
 
-/** 3章構成(1章=導入, 2章=L3, 3章=L4)に対応する。章番号がCHAPTER_BARSのindex+1に直接対応する。 */
+/** 4章構成(1章=L1, 2章=L2, 3章=L3, 4章=L4)に対応する。章番号がCHAPTER_BARSのindex+1に直接対応する。 */
 const barForChapter = (chapterNumber: number): ChapterBar => {
-  if (chapterNumber <= 1) return CHAPTER_BARS[0];
-  if (chapterNumber === 2) return CHAPTER_BARS[1];
-  return CHAPTER_BARS[2];
+  const index = Math.min(chapterNumber, CHAPTER_BARS.length) - 1;
+  return CHAPTER_BARS[Math.max(index, 0)];
 };
 
 /** そのステージの動物の中に、同じ形(shape)を持つ種が2種以上含まれるか。
