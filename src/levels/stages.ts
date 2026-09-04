@@ -101,6 +101,19 @@ export const STAGES: Stage[] = [
     terrain: terrain(['.....#.', '.#####.', '.#####.', '.#####.', '.#####.', '.#####.']),
     animals: animals([['leopard', 4], ['lion', 2], ['zebra', 2]]),
   },
+  {
+    // 手作業で組んだ試作ステージ。ステージ限定ルール(StageRule)を初めて実際の
+    // 出荷ステージで使用し、ワニ(水ブロック隣接)も初めて実際に使用する。
+    // 「ワニと同じ行にいるライオン」という手がかりから、ライオン→ヒョウ→キリンの
+    // 縦の並び順を2列とも解き明かす必要がある(L4、唯一解)。
+    id: 'stage-11',
+    name: '11. ワニのいる列を見つけろ',
+    rows: 6,
+    cols: 7,
+    terrain: terrain(['.....#.', '.~#~##.', '.#####.', '.#####.', '.#####.', '.#####.']),
+    animals: animals([['lion', 2], ['leopard', 2], ['giraffe', 2], ['crocodile', 1], ['zebra', 1]]),
+    rules: [{ kind: 'sameRow', a: 'lion', b: 'crocodile' }],
+  },
 ];
 
 const stageIdsFrom = (fromId: string, toId: string): string[] => {
@@ -113,6 +126,7 @@ export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
   { id: 'savanna-basics', name: '1章 サバンナのきほん', stageIds: stageIdsFrom('stage-1', 'stage-5') },
   { id: 'savanna-thinking', name: '2章 かんがえるサバンナ', stageIds: stageIdsFrom('stage-6', 'stage-8') },
   { id: 'final-challenge', name: '3章 さいごのちょうせん', stageIds: stageIdsFrom('stage-9', 'stage-10') },
+  { id: 'special-challenge', name: '4章 とくべつなちょうせん（試作）', stageIds: stageIdsFrom('stage-11', 'stage-11') },
 ];
 
 export const getStage = (id: string): Stage | undefined => STAGES.find((s) => s.id === id);
