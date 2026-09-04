@@ -1,6 +1,9 @@
 import { validateStage, countGeometricPlacements, SHAPES, SPECIES, type Stage } from '@/engine';
+import { gradeStage, meetsChapterBar } from '@/lib/stage-difficulty';
 import { PATTERNS, terrainFromRows } from '../scripts/stage-patterns';
 import { composeAnimals } from '../scripts/compose-animals';
+import { formatStageSnippet } from '../scripts/format-stage';
+import { generateForChapter } from '../scripts/generate-stages';
 
 describe('stage-patterns', () => {
   test('every pattern land-cell count matches the total cells its slotShapes require', () => {
@@ -50,4 +53,38 @@ describe('composeAnimals', () => {
     const symmetricCount = animals.filter((a) => a.species === 'lion' || a.species === 'leopard').length;
     expect(symmetricCount).toBeLessThanOrEqual(2);
   });
+});
+
+describe('formatStageSnippet', () => {
+  test('produces a stages.ts-pasteable object literal', () => {
+    const stage: Stage = {
+      id: 'draft',
+      name: 'draft',
+      rows: 5,
+      cols: 5,
+      terrain: terrainFromRows(['##.##', '##.##', '.....', '##.##', '##.##']),
+      animals: [
+        { instanceId: 'squirrel-0', species: 'squirrel' },
+        { instanceId: 'squirrel-1', species: 'squirrel' },
+      ],
+    };
+    const snippet = formatStageSnippet(stage, 'stage-1', '1. てすと');
+    expect(snippet).toContain(`id: 'stage-1'`);
+    expect(snippet).toContain(`name: '1. てすと'`);
+    expect(snippet).toContain(`terrain(['##.##', '##.##', '.....', '##.##', '##.##'])`);
+    expect(snippet).toContain(`['squirrel', 2]`);
+  });
+});
+
+describe('generateForChapter', () => {
+  test('finds a stage meeting chapter 1 bar within a bounded search', () => {
+    // このテストはnpm test全体の実行時間に直接乗るため、予算を小さく保つ。
+    // 1章のバー(L1〜L2, R0〜3)は最も緩いので、数百試行・数秒あれば十分見つかるはず。
+    const stages = generateForChapter({ chapterNumber: 1, needed: 1 }, 500, 8000);
+    expect(stages.length).toBe(1);
+    const [stage] = stages;
+    expect(validateStage(stage)).toEqual([]);
+    const grade = gradeStage(stage);
+    expect(meetsChapterBar(grade, 1, stage)).toEqual([]);
+  }, 10000);
 });
