@@ -64,13 +64,15 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
 /**
  * 設計書8.4節の表そのもの。1章・2〜4章・5〜6章の3段階。1章だけは「L1〜L2」
  * 「0〜3」という範囲指定（表の値そのまま）なので上限も持つ。2〜4章・5〜6章は
- * 「L3以上」「4以上」のような下限のみの指定（表に上限の記載が無い）なので、
+ * 「L3以上」「2以上」のような下限のみの指定（表に上限の記載が無い）なので、
  * maxLevel/maxRuleMovesは設定しない。
+ * ルール手数Rの下限値(2〜4章:2、5〜6章:3)は、当初案(4/5)がスパイク検証で
+ * 事実上到達不能と判明したため2026-09-04に引き下げた経緯が設計書8.4節にある。
  */
 const CHAPTER_BARS: ChapterBar[] = [
   { minLevel: 'L1', maxLevel: 'L2', minRuleMoves: 0, maxRuleMoves: 3, conditionRange: [2, 3] },
-  { minLevel: 'L3', minRuleMoves: 4, conditionRange: [3, 6] },
-  { minLevel: 'L4', minRuleMoves: 5, conditionRange: [5, 8] },
+  { minLevel: 'L3', minRuleMoves: 2, conditionRange: [3, 6] },
+  { minLevel: 'L4', minRuleMoves: 3, conditionRange: [5, 8] },
 ];
 
 const barForChapter = (chapterNumber: number): ChapterBar => {
