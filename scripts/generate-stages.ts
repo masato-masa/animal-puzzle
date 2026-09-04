@@ -59,19 +59,41 @@ export const generateForChapter = (
   return found;
 };
 
-/**
- * needed(必要面数)は章ごとに個別指定する。5〜6章(L4)は、対称な種の上限を
- * MAX_ANIMALS_PER_STAGE(8)に近づけない範囲で緩和しても、唯一解を保ったまま
- * 到達できる(パターン,種構成)の組み合わせが4通り程度が実測上の上限だった
- * （実測: cap=6で各8試行中4件）。5面を要求すると重複を許すか永久に
- * 見つからないかの二択になるため、章ごとに現実的な面数を割り当てる。
- * 合計は5+5+5+5+4+4=28で、設計書の「6章30面前後」の「前後」の範囲に収める。
- */
-export const CHAPTER_DEFS: { chapterNumber: number; id: string; name: string; needed: number }[] = [
-  { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん', needed: 5 },
-  { chapterNumber: 2, id: 'savanna-thinking', name: '2章 かんがえるサバンナ', needed: 5 },
-  { chapterNumber: 3, id: 'elephant-secret', name: '3章 ゾウのひみつ', needed: 5 },
-  { chapterNumber: 4, id: 'wisdom-challenge', name: '4章 ちえくらべ', needed: 5 },
-  { chapterNumber: 5, id: 'maze-savanna', name: '5章 めいろのさばんな', needed: 4 },
-  { chapterNumber: 6, id: 'final-challenge', name: '6章 さいごのちょうせん', needed: 4 },
+export type ChapterDef = { chapterNumber: number; id: string; name: string };
+
+export const CHAPTER_DEFS: ChapterDef[] = [
+  { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん' },
+  { chapterNumber: 2, id: 'savanna-thinking', name: '2章 かんがえるサバンナ' },
+  { chapterNumber: 3, id: 'elephant-secret', name: '3章 ゾウのひみつ' },
+  { chapterNumber: 4, id: 'wisdom-challenge', name: '4章 ちえくらべ' },
+  { chapterNumber: 5, id: 'maze-savanna', name: '5章 めいろのさばんな' },
+  { chapterNumber: 6, id: 'final-challenge', name: '6章 さいごのちょうせん' },
 ];
+
+/**
+ * 同じ合格ラインを共有する章はまとめて1プールとして生成し、後から均等に分配する。
+ * 章ごとに逐次generateForChapterを呼ぶと、先に実行される章が共有プールを
+ * (自分の必要数だけ)先取りしてしまい、後続の章が足りなくなる(分割3のTask 4完了後の
+ * 再生成で、2〜4章の合計消費によって5〜6章向けのL4プールが枯渇する事例が実際に
+ * 発生した)。プール単位でまとめて集めてから章に割り振ることで、同じ合格ラインの
+ * 章どうしで面数を公平に分配できる。
+ */
+export const CHAPTER_TIERS: { chapterNumbers: number[] }[] = [
+  { chapterNumbers: [1] },
+  { chapterNumbers: [2, 3, 4] },
+  { chapterNumbers: [5, 6] },
+];
+
+/** poolを章の数でできるだけ均等に分配する(余りは前の章から1つずつ多く割り当てる)。 */
+export const splitPoolAcrossChapters = <T,>(pool: T[], chapterCount: number): T[][] => {
+  const base = Math.floor(pool.length / chapterCount);
+  const remainder = pool.length % chapterCount;
+  const result: T[][] = [];
+  let index = 0;
+  for (let i = 0; i < chapterCount; i++) {
+    const size = base + (i < remainder ? 1 : 0);
+    result.push(pool.slice(index, index + size));
+    index += size;
+  }
+  return result;
+};

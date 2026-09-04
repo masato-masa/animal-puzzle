@@ -3,7 +3,7 @@ import { gradeStage, meetsChapterBar } from '@/lib/stage-difficulty';
 import { PATTERNS, terrainFromRows } from '../scripts/stage-patterns';
 import { composeAnimals } from '../scripts/compose-animals';
 import { formatStageSnippet } from '../scripts/format-stage';
-import { generateForChapter } from '../scripts/generate-stages';
+import { generateForChapter, splitPoolAcrossChapters } from '../scripts/generate-stages';
 
 describe('stage-patterns', () => {
   test('every pattern land-cell count matches the total cells its slotShapes require', () => {
@@ -109,4 +109,25 @@ describe('generateForChapter', () => {
       expect(seenFingerprints.has(fingerprint(stage))).toBe(false);
     }
   }, 25000);
+});
+
+describe('splitPoolAcrossChapters', () => {
+  test('splits evenly when the pool divides exactly', () => {
+    const pool = [1, 2, 3, 4, 5, 6];
+    const result = splitPoolAcrossChapters(pool, 3);
+    expect(result).toEqual([[1, 2], [3, 4], [5, 6]]);
+  });
+
+  test('gives the remainder to the earliest chapters, one each', () => {
+    const pool = [1, 2, 3, 4, 5, 6, 7];
+    const result = splitPoolAcrossChapters(pool, 3);
+    expect(result.map((r) => r.length)).toEqual([3, 2, 2]);
+    expect(result.flat()).toEqual(pool);
+  });
+
+  test('produces empty arrays for trailing chapters when the pool is smaller than the chapter count', () => {
+    const pool = [1, 2];
+    const result = splitPoolAcrossChapters(pool, 5);
+    expect(result.map((r) => r.length)).toEqual([1, 1, 0, 0, 0]);
+  });
 });
