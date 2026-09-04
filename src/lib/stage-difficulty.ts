@@ -61,16 +61,18 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
   level !== 'unsolvable' && LEVEL_ORDER.indexOf(level) <= LEVEL_ORDER.indexOf(max);
 
 /**
- * 設計書8.4節の表そのもの。1章・2〜4章・5〜6章の3段階。表の記載自体は
- * 「L3以上」のような下限のみだが、実装ではあえて2〜4章にmaxLevel:'L4'は
- * 設定せず'L3'を上限として持たせている。理由: L4は12パターン全種でも
- * 実測で数個しか組み合わせが無いほど希少で、上限が無いと2〜4章(必要15面)の
- * 探索が先にL4候補を消費してしまい、本来L4を必要とする5〜6章の生成が
- * 枯渇する（分割3のTask 4完了後の再生成で実際に発生した：2〜4章にL4面が
- * 混入し、6章が0/4しか見つからなかった）。L4面はL3以上の合格ラインを
- * 満たすので技術的には2〜4章の要求も満たすが、章の難易度カーブを
- * 「2〜4章はL3、5〜6章はL4」と明確に分けるため、生成器の合否判定では
- * 2〜4章にL4面を混入させない。
+ * 設計書8.4節の表そのもの。当初は「1章・2〜4章・5〜6章」の6章構成だったが、
+ * 分割3のTask 4完了後の再々レビューで、鏡像パターンによる見かけ上の重複
+ * （反転しただけの同一パズル）を正しく除外すると、L3以上の面は実質3種類、
+ * L4の面は実質2種類しか作れないことが判明した（現行12種の地形テンプレート・
+ * 11種の動物という語彙の下での実測上の天井）。5〜6章分の面数を確保できない
+ * ため、章数そのものを「1章(導入)・2章(L3)・3章(L4)」の3章に統合した
+ * （ユーザー承認済み）。CHAPTER_BARSは3要素になり、barForChapterは
+ * 章番号にそのまま対応する。
+ * 2〜4章→L3のみ(2章)にmaxLevel:'L3'を設定しているのは、L4面が「L3以上」の
+ * 合格ラインも技術的に満たしてしまい、上限が無いとL4面が2章の探索に混入して
+ * 3章(L4)向けの希少なプールを枯渇させるため（分割3のTask 4完了後の再生成で
+ * 実際に発生した）。
  * 条件数(effectiveConditions)は章の合否には使わない。2026-09-04の分割3実装中の
  * スパイクで、生成器が作る「ぴったり敷き詰めるステージ」は構造的に実質1つしか
  * 独立した決定点を持たず、countEffectiveConditionsは種・条件の定義単位でしか
@@ -96,9 +98,10 @@ const CHAPTER_BARS: ChapterBar[] = [
   { minLevel: 'L4' },
 ];
 
+/** 3章構成(1章=導入, 2章=L3, 3章=L4)に対応する。章番号がCHAPTER_BARSのindex+1に直接対応する。 */
 const barForChapter = (chapterNumber: number): ChapterBar => {
   if (chapterNumber <= 1) return CHAPTER_BARS[0];
-  if (chapterNumber <= 4) return CHAPTER_BARS[1];
+  if (chapterNumber === 2) return CHAPTER_BARS[1];
   return CHAPTER_BARS[2];
 };
 

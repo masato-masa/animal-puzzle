@@ -69,27 +69,29 @@ export const generateForChapter = (
 
 export type ChapterDef = { chapterNumber: number; id: string; name: string };
 
+/**
+ * 当初は6章構成だったが、鏡像パターンの重複を正しく除外すると、L3以上の面は
+ * 実質3種類・L4の面は実質2種類しか作れないことが判明した(現行の地形・動物の
+ * 語彙での実測上の天井)。5〜6章分の面数を確保できないため、章数そのものを
+ * 「1章(導入)・2章(L3)・3章(L4)」の3章に統合した(ユーザー承認済み)。
+ */
 export const CHAPTER_DEFS: ChapterDef[] = [
   { chapterNumber: 1, id: 'savanna-basics', name: '1章 サバンナのきほん' },
   { chapterNumber: 2, id: 'savanna-thinking', name: '2章 かんがえるサバンナ' },
-  { chapterNumber: 3, id: 'elephant-secret', name: '3章 ゾウのひみつ' },
-  { chapterNumber: 4, id: 'wisdom-challenge', name: '4章 ちえくらべ' },
-  { chapterNumber: 5, id: 'maze-savanna', name: '5章 めいろのさばんな' },
-  { chapterNumber: 6, id: 'final-challenge', name: '6章 さいごのちょうせん' },
+  { chapterNumber: 3, id: 'final-challenge', name: '3章 さいごのちょうせん' },
 ];
 
 /**
  * 同じ合格ラインを共有する章はまとめて1プールとして生成し、後から均等に分配する。
  * 章ごとに逐次generateForChapterを呼ぶと、先に実行される章が共有プールを
  * (自分の必要数だけ)先取りしてしまい、後続の章が足りなくなる(分割3のTask 4完了後の
- * 再生成で、2〜4章の合計消費によって5〜6章向けのL4プールが枯渇する事例が実際に
- * 発生した)。プール単位でまとめて集めてから章に割り振ることで、同じ合格ラインの
- * 章どうしで面数を公平に分配できる。
+ * 再生成で実際に発生した)。3章構成では各章がそれぞれ独立した合格ラインを持つため、
+ * ティアは章と1:1に対応する。
  */
 export const CHAPTER_TIERS: { chapterNumbers: number[] }[] = [
   { chapterNumbers: [1] },
-  { chapterNumbers: [2, 3, 4] },
-  { chapterNumbers: [5, 6] },
+  { chapterNumbers: [2] },
+  { chapterNumbers: [3] },
 ];
 
 /** poolを章の数でできるだけ均等に分配する(余りは前の章から1つずつ多く割り当てる)。 */
