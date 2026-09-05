@@ -2,10 +2,7 @@ import type { ImageSourcePropType } from 'react-native';
 
 import type { Species } from '@/engine';
 
-/**
- * 実写風イラストを持つ動物のみここに登録する。未登録の種（ウシツツキ）は
- * theme.tsのspeciesEmojiにフォールバックする。
- */
+/** イラストを持つ動物のみここに登録する。未登録の種はtheme.tsのspeciesEmojiにフォールバックする。 */
 export const speciesArt: Partial<Record<Species, ImageSourcePropType>> = {
   squirrel: require('@/assets/images/animals/squirrel.png'),
   zebra: require('@/assets/images/animals/zebra.png'),
@@ -17,4 +14,5 @@ export const speciesArt: Partial<Record<Species, ImageSourcePropType>> = {
   leopard: require('@/assets/images/animals/leopard.png'),
   rhino: require('@/assets/images/animals/rhino.png'),
   gorilla: require('@/assets/images/animals/gorilla.png'),
+  oxpecker: require('@/assets/images/animals/oxpecker.png'),
 };
