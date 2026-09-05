@@ -611,7 +611,9 @@ describe('validateStage', () => {
   });
 
   test('flags board size out of range', () => {
-    const bad: Stage = { ...validStage, rows: 3, terrain: Array.from({ length: 3 }, () => Array<CellTerrain>(5).fill('land')) };
+    // 端の壁行/列を詰めた小さめの盤面(例: 3x5)も許容する方針のため、下限は1。
+    // 上限8を超えるケースで範囲外エラーを確認する。
+    const bad: Stage = { ...validStage, rows: 9, terrain: Array.from({ length: 9 }, () => Array<CellTerrain>(5).fill('land')) };
     expect(validateStage(bad).some((e) => e.includes('board size out of range'))).toBe(true);
   });
 

@@ -9,7 +9,7 @@ export const validateStage = (stage: Stage): string[] => {
   const errors: string[] = [];
   const label = `[${stage.id}]`;
 
-  if (stage.rows < 5 || stage.rows > 8 || stage.cols < 5 || stage.cols > 8) {
+  if (stage.rows < 1 || stage.rows > 8 || stage.cols < 1 || stage.cols > 8) {
     errors.push(`${label} board size out of range: ${stage.rows}x${stage.cols}`);
   }
   if (stage.terrain.length !== stage.rows || stage.terrain.some((row) => row.length !== stage.cols)) {

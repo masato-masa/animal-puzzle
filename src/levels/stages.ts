@@ -28,9 +28,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-1',
     name: '1. ワニのそばのリス',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#####', '#####', '####~', '#....']),
+    rows: 2,
+    cols: 4,
+    terrain: terrain(['###~', '....']),
     animals: animals([['oxpecker', 1], ['crocodile', 1], ['squirrel', 1]]),
     animalRules: {
       crocodile: { kind: 'blockAdjacentRequired', block: 'water' },
@@ -41,9 +41,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-2',
     name: '2. ヒョウとウシツツキ',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#####', '#...#', '###.#', '#####']),
+    rows: 2,
+    cols: 3,
+    terrain: terrain(['...', '##.']),
     animals: animals([['oxpecker', 1], ['leopard', 1], ['squirrel', 1]]),
     animalRules: {
       leopard: { kind: 'differentCol', with: 'oxpecker' },
@@ -54,9 +54,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-3',
     name: '3. シマウマとキリンとヒョウ',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#.###', '#..##', '##.##', '#..##']),
+    rows: 4,
+    cols: 2,
+    terrain: terrain(['.#', '..', '#.', '..']),
     animals: animals([['zebra', 1], ['giraffe', 1], ['leopard', 1]]),
     animalRules: {
       leopard: { kind: 'above', with: 'zebra' },
@@ -67,9 +67,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-4',
     name: '4. 水辺のなかまたち',
-    rows: 5,
+    rows: 3,
     cols: 5,
-    terrain: terrain(['#####', '#####', '....~', '.##.#', '.##..']),
+    terrain: terrain(['....~', '.##.#', '.##..']),
     animals: animals([['lion', 1], ['oxpecker', 1], ['zebra', 1], ['crocodile', 1], ['squirrel', 1], ['monkey', 1]]),
     animalRules: {
       squirrel: { kind: 'blockAdjacentRequired', block: 'water' },
@@ -83,9 +83,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-5',
     name: '5. キリンと水辺のなかよし',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#....', '####.', '###~.', '#####', '#####']),
+    rows: 3,
+    cols: 4,
+    terrain: terrain(['....', '###.', '##~.']),
     animals: animals([['squirrel', 1], ['giraffe', 1], ['monkey', 1], ['crocodile', 1]]),
     animalRules: {
       giraffe: { kind: 'blockAdjacentRequired', block: 'water' },
@@ -98,8 +98,8 @@ export const STAGES: Stage[] = [
     id: 'stage-6',
     name: '6. サイのいるサバンナ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#..##', '#.###', '#.#..', '#....', '##.#.']),
+    cols: 4,
+    terrain: terrain(['..##', '.###', '.#..', '....', '#.#.']),
     animals: animals([['leopard', 1], ['zebra', 1], ['rhino', 1], ['lion', 1], ['oxpecker', 1], ['monkey', 1]]),
     animalRules: {
       oxpecker: { kind: 'below', with: 'lion' },
@@ -113,9 +113,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-7',
     name: '7. キリンとのきょり',
-    rows: 5,
+    rows: 4,
     cols: 5,
-    terrain: terrain(['#####', '..##.', '#....', '#..##', '##..#']),
+    terrain: terrain(['..##.', '#....', '#..##', '##..#']),
     animals: animals([['squirrel', 1], ['elephant', 1], ['giraffe', 1], ['oxpecker', 1], ['monkey', 1], ['zebra', 1]]),
     animalRules: {
       elephant: { kind: 'below', with: 'squirrel' },
@@ -130,8 +130,8 @@ export const STAGES: Stage[] = [
     id: 'stage-8',
     name: '8. ゾウのまわり',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#..##', '#...#', '..#.#', '#.#.#', '#.#.#']),
+    cols: 4,
+    terrain: terrain(['#..#', '#...', '..#.', '#.#.', '#.#.']),
     animals: animals([['monkey', 1], ['leopard', 1], ['lion', 1], ['oxpecker', 1], ['zebra', 1], ['elephant', 1]]),
     animalRules: {
       elephant: { kind: 'sameRow', with: 'leopard' },
@@ -162,9 +162,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-10',
     name: '10. となりのサル',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['##...', '#..#.', '#.##.', '#.###', '#####']),
+    rows: 4,
+    cols: 4,
+    terrain: terrain(['#...', '..#.', '.##.', '.###']),
     animals: animals([['squirrel', 1], ['lion', 1], ['monkey', 1], ['leopard', 1], ['oxpecker', 1], ['zebra', 1]]),
     animalRules: {
       zebra: { kind: 'exactDistance', with: 'squirrel', distance: 1 },
@@ -179,8 +179,8 @@ export const STAGES: Stage[] = [
     id: 'stage-11',
     name: '11. 水辺のキリン',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#.###', '#.###', '#.###', '#..##', '#~..#']),
+    cols: 3,
+    terrain: terrain(['.##', '.##', '.##', '..#', '~..']),
     animals: animals([['crocodile', 1], ['squirrel', 1], ['giraffe', 1], ['monkey', 1], ['oxpecker', 1]]),
     animalRules: {
       squirrel: { kind: 'blockAdjacentRequired', block: 'water' },
@@ -194,8 +194,8 @@ export const STAGES: Stage[] = [
     id: 'stage-12',
     name: '12. キリンをさがして',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#..##', '#.###', '#.###', '#.###', '#..##']),
+    cols: 2,
+    terrain: terrain(['..', '.#', '.#', '.#', '..']),
     animals: animals([['squirrel', 1], ['monkey', 1], ['giraffe', 1], ['leopard', 1], ['oxpecker', 1]]),
     animalRules: {
       squirrel: { kind: 'differentCol', with: 'oxpecker' },
@@ -224,9 +224,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-14',
     name: '14. ライオンとワニ',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '...##', '##.##', '##..#', '#..~#']),
+    rows: 4,
+    cols: 4,
+    terrain: terrain(['...#', '##.#', '##..', '#..~']),
     animals: animals([['monkey', 1], ['zebra', 1], ['squirrel', 1], ['crocodile', 1], ['lion', 1]]),
     animalRules: {
       zebra: { kind: 'diagonalForbidden', with: 'lion' },
@@ -293,9 +293,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-17',
     name: '17. 水辺のシマウマとキリン',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '..###', '#...#', '#~#.#', '##..#']),
+    rows: 4,
+    cols: 4,
+    terrain: terrain(['..##', '#...', '#~#.', '##..']),
     animals: animals([['squirrel', 1], ['crocodile', 1], ['zebra', 1], ['giraffe', 1], ['oxpecker', 1]]),
     animalRules: {
       oxpecker: { kind: 'exactDistance', with: 'zebra', distance: 1 },
@@ -309,8 +309,8 @@ export const STAGES: Stage[] = [
     id: 'stage-18',
     name: '18. ライオンとサル',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#.###', '#...#', '##.##', '#..~#', '#.###']),
+    cols: 3,
+    terrain: terrain(['.##', '...', '#.#', '..~', '.##']),
     animals: animals([['leopard', 1], ['monkey', 1], ['crocodile', 1], ['lion', 1], ['squirrel', 1]]),
     animalRules: {
       lion: { kind: 'diagonalForbidden', with: 'leopard' },
@@ -324,8 +324,8 @@ export const STAGES: Stage[] = [
     id: 'stage-19',
     name: '19. 3びきのちえくらべ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['.####', '.####', '.####', '.####', '.####']),
+    cols: 1,
+    terrain: terrain(['.', '.', '.', '.', '.']),
     animals: animals([['squirrel', 1], ['leopard', 1], ['giraffe', 1]]),
     animalRules: {
       giraffe: { kind: 'above', with: 'squirrel' },
@@ -338,8 +338,8 @@ export const STAGES: Stage[] = [
     id: 'stage-20',
     name: '20. ななめのひみつ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#..##', '#..##', '##.#.', '##...', '####.']),
+    cols: 4,
+    terrain: terrain(['..##', '..##', '#.#.', '#...', '###.']),
     animals: animals([['zebra', 1], ['giraffe', 1], ['leopard', 1], ['lion', 1], ['oxpecker', 1], ['squirrel', 1]]),
     animalRules: {
       leopard: { kind: 'exactDistance', with: 'squirrel', distance: 1 },
@@ -353,9 +353,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-21',
     name: '21. ゾウとワニ',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['.#..#', '.#.~#', '....#', '..###', '#####']),
+    rows: 4,
+    cols: 4,
+    terrain: terrain(['.#..', '.#.~', '....', '..##']),
     animals: animals([['crocodile', 1], ['oxpecker', 1], ['squirrel', 1], ['leopard', 1], ['monkey', 1], ['elephant', 1]]),
     animalRules: {
       elephant: { kind: 'surroundForbidden', with: 'crocodile' },
@@ -369,9 +369,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-22',
     name: '22. サイとサル',
-    rows: 5,
+    rows: 4,
     cols: 5,
-    terrain: terrain(['#####', '###..', '..##.', '..#..', '~....']),
+    terrain: terrain(['###..', '..##.', '..#..', '~....']),
     animals: animals([['squirrel', 1], ['elephant', 1], ['oxpecker', 1], ['rhino', 1], ['crocodile', 1], ['monkey', 1]]),
     animalRules: {
       squirrel: { kind: 'below', with: 'rhino' },
@@ -386,8 +386,8 @@ export const STAGES: Stage[] = [
     id: 'stage-23',
     name: '23. ライオンとゾウ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#..#.', '#....', '#.#..', '#.###', '#.~##']),
+    cols: 4,
+    terrain: terrain(['..#.', '....', '.#..', '.###', '.~##']),
     animals: animals([['monkey', 1], ['squirrel', 1], ['lion', 1], ['elephant', 1], ['leopard', 1], ['crocodile', 1]]),
     animalRules: {
       squirrel: { kind: 'adjacentForbidden', with: 'elephant' },
@@ -401,9 +401,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-24',
     name: '24. キリンとライオン',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#####', '###.#', '.##.#', '....#']),
+    rows: 3,
+    cols: 4,
+    terrain: terrain(['###.', '.##.', '....']),
     animals: animals([['giraffe', 1], ['lion', 1], ['oxpecker', 1], ['monkey', 1], ['squirrel', 1]]),
     animalRules: {
       oxpecker: { kind: 'minDistance', from: 'giraffe', distance: 2 },
@@ -470,9 +470,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-27',
     name: '27. サルとキリンの推理',
-    rows: 5,
+    rows: 4,
     cols: 5,
-    terrain: terrain(['#####', '#....', '~..#.', '#.##.', '#.###']),
+    terrain: terrain(['#....', '~..#.', '#.##.', '#.###']),
     animals: animals([['monkey', 1], ['giraffe', 1], ['crocodile', 1], ['oxpecker', 1], ['lion', 1], ['leopard', 1]]),
     animalRules: {
       leopard: { kind: 'sameCol', with: 'crocodile' },
@@ -487,8 +487,8 @@ export const STAGES: Stage[] = [
     id: 'stage-28',
     name: '28. シマウマのれつ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['##.##', '##.##', '...##', '##.##', '##.##']),
+    cols: 3,
+    terrain: terrain(['##.', '##.', '...', '##.', '##.']),
     animals: animals([['zebra', 1], ['oxpecker', 1], ['monkey', 1], ['squirrel', 1], ['giraffe', 1]]),
     animalRules: {
       giraffe: { kind: 'minDistance', from: 'squirrel', distance: 3 },
@@ -502,8 +502,8 @@ export const STAGES: Stage[] = [
     id: 'stage-29',
     name: '29. 4ひきのなぞ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['###.#', '###.#', '##..#', '##.##', '##.##']),
+    cols: 2,
+    terrain: terrain(['#.', '#.', '..', '.#', '.#']),
     animals: animals([['lion', 1], ['oxpecker', 1], ['squirrel', 1], ['giraffe', 1]]),
     animalRules: {
       giraffe: { kind: 'differentCol', with: 'oxpecker' },
@@ -515,9 +515,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-30',
     name: '30. さいしょのちょうせん',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#.###', '#.###', '#.###', '#..##', '#####']),
+    rows: 4,
+    cols: 2,
+    terrain: terrain(['.#', '.#', '.#', '..']),
     animals: animals([['squirrel', 1], ['oxpecker', 1], ['leopard', 1], ['monkey', 1]]),
     animalRules: {
       squirrel: { kind: 'adjacentForbidden', with: 'leopard' },
@@ -531,8 +531,8 @@ export const STAGES: Stage[] = [
     id: 'stage-31',
     name: '31. シマウマとキリンの決着',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['.####', '.#..#', '....#', '###.#', '###.#']),
+    cols: 4,
+    terrain: terrain(['.###', '.#..', '....', '###.', '###.']),
     animals: animals([['zebra', 1], ['lion', 1], ['oxpecker', 1], ['giraffe', 1], ['monkey', 1], ['leopard', 1]]),
     animalRules: {
       leopard: { kind: 'sameCol', with: 'giraffe' },
@@ -546,9 +546,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-32',
     name: '32. ライオンとキリンのきずな',
-    rows: 5,
+    rows: 4,
     cols: 5,
-    terrain: terrain(['#####', '..#..', '#...#', '#.###', '#.###']),
+    terrain: terrain(['..#..', '#...#', '#.###', '#.###']),
     animals: animals([['oxpecker', 1], ['giraffe', 1], ['squirrel', 1], ['zebra', 1], ['monkey', 1], ['lion', 1]]),
     animalRules: {
       zebra: { kind: 'differentRow', with: 'monkey' },
@@ -562,9 +562,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-33',
     name: '33. 水辺のライオン',
-    rows: 5,
+    rows: 4,
     cols: 5,
-    terrain: terrain(['..###', '#.##.', '~....', '#.###', '#####']),
+    terrain: terrain(['..###', '#.##.', '~....', '#.###']),
     animals: animals([['lion', 1], ['monkey', 1], ['zebra', 1], ['crocodile', 1], ['leopard', 1]]),
     animalRules: {
       lion: { kind: 'minDistance', from: 'crocodile', distance: 3 },
@@ -577,9 +577,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-34',
     name: '34. ワニとヒョウのやくそく',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#####', '#..##', '#.#~.', '#....']),
+    rows: 3,
+    cols: 4,
+    terrain: terrain(['..##', '.#~.', '....']),
     animals: animals([['crocodile', 1], ['leopard', 1], ['monkey', 1], ['oxpecker', 1], ['zebra', 1]]),
     animalRules: {
       monkey: { kind: 'above', with: 'zebra' },
@@ -609,8 +609,8 @@ export const STAGES: Stage[] = [
     id: 'stage-36',
     name: '36. サイなきサバンナ',
     rows: 5,
-    cols: 5,
-    terrain: terrain(['#...#', '#.#.#', '#.#..', '####.', '####.']),
+    cols: 4,
+    terrain: terrain(['...#', '.#.#', '.#..', '###.', '###.']),
     animals: animals([['lion', 1], ['zebra', 1], ['squirrel', 1], ['giraffe', 1], ['leopard', 1], ['monkey', 1]]),
     animalRules: {
       zebra: { kind: 'below', with: 'monkey' },
@@ -651,9 +651,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-38',
     name: '38. 3つの水辺',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#...#', '#.~##', '#...#', '#####']),
+    rows: 3,
+    cols: 3,
+    terrain: terrain(['...', '.~#', '...']),
     animals: animals([['monkey', 1], ['oxpecker', 1], ['zebra', 1], ['squirrel', 1], ['crocodile', 1]]),
     animalRules: {
       zebra: { kind: 'exactDistance', with: 'crocodile', distance: 1 },
@@ -666,9 +666,9 @@ export const STAGES: Stage[] = [
   {
     id: 'stage-39',
     name: '39. キリンとワニの一直線',
-    rows: 5,
-    cols: 5,
-    terrain: terrain(['#####', '#####', '#####', '.~.##', '....#']),
+    rows: 2,
+    cols: 4,
+    terrain: terrain(['.~.#', '....']),
     animals: animals([['giraffe', 1], ['crocodile', 1], ['oxpecker', 1], ['squirrel', 1]]),
     animalRules: {
       squirrel: { kind: 'leftOf', with: 'oxpecker' },
