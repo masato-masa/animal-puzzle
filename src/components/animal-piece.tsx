@@ -24,17 +24,16 @@ export function AnimalPiece({ species, violating, hidden, size }: Props) {
 
   if (art) {
     return (
-      <View style={[styles.artWrap, hidden && styles.hidden]}>
-        <Image
-          source={art}
-          resizeMode="stretch"
-          style={[
-            { width: size.w, height: size.h },
-            styles.artImage,
-            violating && styles.artViolating,
-          ]}
-        />
-      </View>
+      <Image
+        source={art}
+        resizeMode="stretch"
+        style={[
+          { width: size.w, height: size.h },
+          styles.artImage,
+          violating && styles.artViolating,
+          hidden && styles.hidden,
+        ]}
+      />
     );
   }
 
@@ -55,9 +54,6 @@ export function AnimalPiece({ species, violating, hidden, size }: Props) {
 }
 
 const styles = StyleSheet.create({
-  artWrap: {
-    ...ui.shadow,
-  },
   artImage: {
     borderRadius: 8,
     borderWidth: 0,

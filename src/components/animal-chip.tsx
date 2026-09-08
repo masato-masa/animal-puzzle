@@ -29,7 +29,7 @@ export function AnimalChip({ species, cell, hidden, onDragStart, onDragMove, onD
     <View style={[styles.wrapper, hidden && styles.hidden]}>
       <Draggable onDragStart={onDragStart} onDragMove={onDragMove} onDragEnd={onDragEnd}>
         {art ? (
-          <Image source={art} resizeMode="stretch" style={[{ width, height }, styles.art, ui.shadow]} />
+          <Image source={art} resizeMode="stretch" style={[{ width, height }, styles.art]} />
         ) : (
           <View style={[styles.chip, { width, height }]}>
             <Text style={styles.icon}>{speciesEmoji[species]}</Text>
