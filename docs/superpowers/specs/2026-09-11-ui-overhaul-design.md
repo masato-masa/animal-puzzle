@@ -186,24 +186,37 @@ CSS には `oklch()` をそのまま書く（`--sp-lion: oklch(0.70 0.12 90)`）
 ### 5.2 寸法（JS を使わない）
 
 参考アプリは正方形固定だが、動物パズルの盤面は 2×4 〜 8×8 と縦横比が変わる。
-CSS の `aspect-ratio` で完結させ、セルサイズの JS 計算を廃止する。
+
+**`aspect-ratio: cols / rows` をカードに掛けてはいけない。** 余白と gap は
+縦横で本数が違うため、セルが正方形にならない。8 列 × 2 行・幅 460px で実測すると
+セルは 48.25px × 38.5px となり、20% ずれる。
+
+正しくは **セルの一辺 `--cell` を起点に組む**。盤の大きさはその結果として決まる。
 
 ```css
-.board {
-  --ar: calc(var(--cols) / var(--rows));
-  width: min(92vw, 460px, calc(var(--board-max-h) * var(--ar)));
-  aspect-ratio: var(--ar);
+.grid {
+  --cell: min(
+    calc((min(92vw, 460px) - var(--pad) * 2 - var(--gap) * (var(--cols) - 1)) / var(--cols)),
+    calc((52dvh - var(--gap) * (var(--rows) - 1)) / var(--rows))
+  );
+  display: grid;
+  grid-template-columns: repeat(var(--cols), var(--cell));
+  grid-template-rows: repeat(var(--rows), var(--cell));
+  gap: var(--gap);
+  position: relative;
 }
 ```
 
-`--board-max-h` は `52dvh`。縦長の盤面（2 列 × 8 行）でも高さが先に効いて収まる。
+セルは常に完全な正方形になり、横幅と高さのどちらが厳しくても収まる。
+カード（`.board`）は `width: fit-content` でこれを包み、`--pad` を padding として持つ。
 
-駒の位置も CSS だけで出す。セル幅を式として持つ。
+駒の位置も CSS だけで出す。基準は**カードではなく `.grid`** なので、padding が式に入らない。
 
 ```css
---cw: calc((100% - var(--pad) * 2 - var(--gap) * (var(--cols) - 1)) / var(--cols));
-left: calc(var(--pad) + var(--c) * (var(--cw) + var(--gap)));
-width: calc(var(--w) * var(--cw) + (var(--w) - 1) * var(--gap));
+left:   calc(var(--c) * (var(--cell) + var(--gap)));
+top:    calc(var(--r) * (var(--cell) + var(--gap)));
+width:  calc(var(--w) * var(--cell) + (var(--w) - 1) * var(--gap));
+height: calc(var(--h) * var(--cell) + (var(--h) - 1) * var(--gap));
 ```
 
 複数マスの駒（ドミノ・2×2）は **gap をまたぐ 1 枚の角丸ブロック**になる。
@@ -211,15 +224,19 @@ width: calc(var(--w) * var(--cw) + (var(--w) - 1) * var(--gap));
 
 ### 5.3 当たり判定
 
-JS が座標を持つのはここだけ。**毎イベント `getBoundingClientRect()` を取り直す。**
+JS が座標を持つのはここだけ。**毎イベント `.grid` の `getBoundingClientRect()` を
+取り直す。** `.grid` を基準にするので padding が式から消える。
 
 ```
-inner = rect.width - PAD * 2
-step  = (inner - GAP * (cols - 1)) / cols + GAP
-col   = clamp(floor((clientX - rect.left - PAD) / step), 0, cols - 1)
+cell = (rect.width - GAP * (cols - 1)) / cols
+col  = clamp(floor((clientX - rect.left) / (cell + GAP)), 0, cols - 1)
+row  = clamp(floor((clientY - rect.top)  / (cell + GAP)), 0, rows - 1)
 ```
 
 値をキャッシュしないので、スクロール・回転・リサイズ・フォント読み込みのいずれでもずれない。
+
+`GAP` と `PAD` は **TypeScript 側の定数を唯一の出どころ**とし、`.grid` に
+インラインの CSS 変数として流し込む。CSS と JS に同じ数字を二重に書かない。
 
 ## 6. 動物の表現
 
