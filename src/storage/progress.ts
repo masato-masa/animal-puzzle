@@ -26,3 +26,12 @@ export const recordClear = async (stageId: string): Promise<void> => {
 export const clearProgress = async (): Promise<void> => {
   removeKey(KEY);
 };
+
+/**
+ * 出荷ステージを一括でクリア済みにする。動作確認用で、開発者メニューからだけ呼ぶ。
+ * 自作ステージの記録には触らない（別のキーで持っているため、ここでは何もしない）。
+ */
+export const unlockAllForTesting = async (): Promise<void> => {
+  const { STAGES } = await import('@/levels/stages');
+  writeJson(KEY, { clearedStageIds: STAGES.map((s) => s.id) });
+};

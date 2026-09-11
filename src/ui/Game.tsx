@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { AnimatePresence } from 'motion/react';
 
 import {
   boundingBox,
@@ -12,14 +13,15 @@ import {
   type Species,
   type Stage,
 } from '@/engine';
-import { sfx, vibrate } from '@/core/sfx';
+import { isMuted, setMuted, sfx, vibrate } from '@/core/sfx';
 
 import { AnimalCards } from './AnimalCards';
 import { Board, BOUNCE_STEP, type FreePositions } from './Board';
 import { ClearOverlay } from './ClearOverlay';
 import { anchorFromPiecePoint, cellSize, GAP } from './geometry';
-import { BackIcon, ResetIcon } from './icons';
+import { BackIcon, GearIcon, HelpIcon, ToolResetIcon } from './icons';
 import { Piece } from './Piece';
+import { HelpSheet, SettingsSheet } from './Sheets';
 
 /** ドラッグ中の駒。left/top はつかんだ瞬間の駒の左上（画面座標）。 */
 type Drag = { instanceId: string; species: Species; left: number; top: number; dx: number; dy: number };
@@ -59,6 +61,8 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   const [free, setFree] = useState<FreePositions>({});
   /** 盤面の1マスの辺長。カードからつかんだ駒を盤面と同じ大きさで追従させるのに使う。 */
   const [boardCell, setBoardCell] = useState(40);
+  const [sheet, setSheet] = useState<'none' | 'help' | 'settings'>('none');
+  const [muted, setMutedState] = useState(isMuted);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // ステージが変わったら作り直す。同じコンポーネントが使い回されるため。
@@ -182,31 +186,54 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
     setDrag(null);
   };
 
+  const toggleMute = () => {
+    const v = !muted;
+    setMuted(v);
+    setMutedState(v);
+    if (!v) sfx.select();
+  };
+
   const placedCount = state.placed.length;
   const total = stage.animals.length;
 
   return (
     <div className="app app-game">
+      {/* 行 1 はナビゲーションだけ。置いた数は必ず行 2 に置く。 */}
       <header className="header">
-        <div className="header-left">
-          <button type="button" className="icon-btn" onClick={onBack} aria-label="もどる">
-            <BackIcon />
-          </button>
-        </div>
+        <div className="header-row">
+          <div className="header-left">
+            <button type="button" className="icon-btn" onClick={onBack} aria-label="もどる">
+              <BackIcon />
+            </button>
+          </div>
 
-        <div className="title-block">
           <h1 className="title">{stage.name}</h1>
-          <p className="progress">
-            <span className="progress-now">{placedCount}</span>
-            <span className="progress-slash">/</span>
-            <span className="progress-total">{total}</span>
-          </p>
+
+          <div className="header-actions">
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setSheet('settings')}
+              aria-label="設定">
+              <GearIcon />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setSheet('help')}
+              aria-label="遊びかた">
+              <HelpIcon />
+            </button>
+          </div>
         </div>
 
-        <div className="header-right">
-          <button type="button" className="icon-btn" onClick={handleReset} aria-label="やり直す">
-            <ResetIcon />
-          </button>
+        <div className="status-bar">
+          <span className="stat">
+            <span className="stat-label">おいた</span>
+            <span className="stat-num stat-now">{placedCount}</span>
+            <span className="stat-slash">/</span>
+            <span className="stat-num stat-total">{total}</span>
+          </span>
         </div>
       </header>
 
@@ -234,6 +261,13 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           onDragEnd={handleDragEnd}
           boardCell={boardCell}
         />
+
+        {/* 操作のボタンはどのゲームでも盤面の下に置く。 */}
+        <footer className="footer">
+          <button type="button" className="tool" onClick={handleReset} aria-label="やり直す">
+            <ToolResetIcon />
+          </button>
+        </footer>
       </div>
 
       {/* 指に追従する駒。画面全体を覆う固定レイヤーに描くので、
@@ -256,6 +290,18 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           />
         </div>
       )}
+
+      <AnimatePresence>
+        {sheet === 'help' && <HelpSheet key="help" onClose={() => setSheet('none')} />}
+        {sheet === 'settings' && (
+          <SettingsSheet
+            key="settings"
+            muted={muted}
+            onToggleMute={toggleMute}
+            onClose={() => setSheet('none')}
+          />
+        )}
+      </AnimatePresence>
 
       {cleared && (
         <ClearOverlay

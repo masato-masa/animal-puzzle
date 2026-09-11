@@ -31,14 +31,14 @@ export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList }: Props)
           <p>すべての動物が条件を満たしました</p>
           <div className="overlay-buttons">
             {hasNext && (
-              <button type="button" className="overlay-btn" onClick={onNext}>
+              <button type="button" className="sheet-btn" onClick={onNext}>
                 つぎのステージ
               </button>
             )}
-            <button type="button" className="overlay-btn overlay-btn-quiet" onClick={onRetry}>
+            <button type="button" className="sheet-btn quiet" onClick={onRetry}>
               もういちど
             </button>
-            <button type="button" className="overlay-btn overlay-btn-quiet" onClick={onList}>
+            <button type="button" className="sheet-btn quiet" onClick={onList}>
               ステージ一覧
             </button>
           </div>

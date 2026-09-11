@@ -127,18 +127,19 @@ export function Editor() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-left">
-          <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
-            <BackIcon />
-          </button>
-        </div>
-        <div className="title-block">
+        <div className="header-row">
+          <div className="header-left">
+            <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
+              <BackIcon />
+            </button>
+          </div>
           <h1 className="title">ステージエディタ</h1>
+          <div className="header-actions" />
         </div>
-        <div className="header-right" />
+        <div className="status-bar" />
       </header>
 
-      <div className="sheet">
+      <div className="panel">
         <section className="field">
           <h2 className="field-label">盤面サイズ</h2>
           <div className="field-row">
@@ -187,7 +188,7 @@ export function Editor() {
           })}
         </section>
 
-        <button type="button" className="overlay-btn" onClick={runCheck}>
+        <button type="button" className="sheet-btn" onClick={runCheck}>
           検証する
         </button>
 
@@ -205,14 +206,14 @@ export function Editor() {
 
         <button
           type="button"
-          className="overlay-btn"
+          className="sheet-btn"
           disabled={!canSave}
           onClick={() => void handleSave()}>
           保存してあそぶ
         </button>
 
         {result?.kind === 'unique' && (
-          <button type="button" className="overlay-btn overlay-btn-quiet" onClick={handleSubmit}>
+          <button type="button" className="sheet-btn quiet" onClick={handleSubmit}>
             GitHub に投稿する
           </button>
         )}

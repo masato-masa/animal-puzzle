@@ -36,18 +36,19 @@ export function MyStages() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-left">
-          <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
-            <BackIcon />
-          </button>
-        </div>
-        <div className="title-block">
+        <div className="header-row">
+          <div className="header-left">
+            <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
+              <BackIcon />
+            </button>
+          </div>
           <h1 className="title">マイステージ</h1>
+          <div className="header-actions" />
         </div>
-        <div className="header-right" />
+        <div className="status-bar" />
       </header>
 
-      <div className="sheet">
+      <div className="panel">
         {stages.length === 0 ? (
           <p className="empty">まだステージがありません。エディタで作ってみましょう。</p>
         ) : (
@@ -86,7 +87,7 @@ export function MyStages() {
           </div>
         )}
 
-        <button type="button" className="overlay-btn" onClick={() => navigate({ name: 'editor' })}>
+        <button type="button" className="sheet-btn" onClick={() => navigate({ name: 'editor' })}>
           ＋ 新しいステージを作る
         </button>
       </div>
@@ -97,12 +98,12 @@ export function MyStages() {
             <h2>削除しますか？</h2>
             <p>{deleting.name}</p>
             <div className="overlay-buttons">
-              <button type="button" className="overlay-btn" onClick={() => void confirmDelete()}>
+              <button type="button" className="sheet-btn" onClick={() => void confirmDelete()}>
                 削除する
               </button>
               <button
                 type="button"
-                className="overlay-btn overlay-btn-quiet"
+                className="sheet-btn quiet"
                 onClick={() => setDeleting(null)}>
                 やめる
               </button>

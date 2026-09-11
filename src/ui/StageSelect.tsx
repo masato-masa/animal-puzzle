@@ -25,23 +25,27 @@ export function StageSelect() {
   return (
     <div className="app">
       <header className="header">
-        <div className="header-left">
-          <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
-            <BackIcon />
-          </button>
+        <div className="header-row">
+          <div className="header-left">
+            <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
+              <BackIcon />
+            </button>
+          </div>
+          <h1 className="title">ステージ</h1>
+          <div className="header-actions" />
         </div>
-        <div className="title-block">
-          <h1 className="title">動物パズル</h1>
-          <p className="progress">
-            <span className="progress-now">{clearedCount}</span>
-            <span className="progress-slash">/</span>
-            <span className="progress-total">{STAGES.length}</span>
-          </p>
+
+        <div className="status-bar">
+          <span className="stat">
+            <span className="stat-label">クリア</span>
+            <span className="stat-num stat-now">{clearedCount}</span>
+            <span className="stat-slash">/</span>
+            <span className="stat-num stat-total">{STAGES.length}</span>
+          </span>
         </div>
-        <div className="header-right" />
       </header>
 
-      <div className="sheet">
+      <div className="panel">
         {CHAPTERS.map((chapter) => {
           const done = chapter.stageIds.filter((id) => cleared.has(id)).length;
           return (
