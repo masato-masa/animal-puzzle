@@ -73,13 +73,9 @@ export const sfx = {
   select: () => play([{ freq: 880, dur: 0.05, type: 'triangle', gain: 0.09 }]),
   /** 配置。木質のポン。 */
   place: () => play([{ freq: 320, to: 180, dur: 0.13, type: 'triangle', gain: 0.2 }]),
-  /** 却下。低い2音。 */
-  reject: () =>
-    play([
-      { freq: 200, dur: 0.09, type: 'square', gain: 0.09 },
-      { freq: 150, dur: 0.12, type: 'square', gain: 0.09, delay: 0.1 },
-    ]),
-  /** トレイに戻す。置くより軽く、下がる音。 */
+  /* 却下音は持たない。盤の上ならどこで離してもその場に置けるので、
+     弾かれる場面が無くなった。 */
+  /** マスにはまらずその場に置いた、またはリストに戻した。置くより軽く、下がる音。 */
   lift: () => play([{ freq: 420, to: 300, dur: 0.09, type: 'sine', gain: 0.1 }]),
   /** クリア。上行アルペジオ。 */
   clear: () =>

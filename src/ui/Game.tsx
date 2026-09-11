@@ -12,17 +12,27 @@ import {
   type Species,
   type Stage,
 } from '@/engine';
-import { sfx, isMuted, setMuted, vibrate } from '@/core/sfx';
+import { sfx, vibrate } from '@/core/sfx';
 
 import { AnimalCards } from './AnimalCards';
-import { Board, BOUNCE_STEP } from './Board';
+import { Board, BOUNCE_STEP, type FreePositions } from './Board';
 import { ClearOverlay } from './ClearOverlay';
 import { anchorFromPiecePoint, cellSize, GAP } from './geometry';
-import { BackIcon, ListIcon, ResetIcon, SoundIcon } from './icons';
+import { BackIcon, ResetIcon } from './icons';
 import { Piece } from './Piece';
 
 /** ドラッグ中の駒。left/top はつかんだ瞬間の駒の左上（画面座標）。 */
 type Drag = { instanceId: string; species: Species; left: number; top: number; dx: number; dy: number };
+
+/**
+ * 駒の左上が、いちばん近いマスの正しい位置からこの割合（セル1辺に対する比）
+ * より近ければ、そのマスに吸着させる。離れていればその場に置いたままにする。
+ *
+ * 0.5 を超えると「隣のマスの領域」に入るので、それより小さくする。
+ * 小さくしすぎると狙って置いてもはまらず、大きくしすぎると
+ * 「マスとマスの間に置いたつもり」が勝手にはまってしまう。
+ */
+const SNAP_RATIO = 0.38;
 
 export type GameProps = {
   stage: Stage;
@@ -41,9 +51,12 @@ export type GameProps = {
  */
 export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: GameProps) {
   const [state, setState] = useState(() => createGameState(stage));
-  const [rejectToken, setRejectToken] = useState(0);
-  const [muted, setMutedState] = useState(isMuted);
   const [drag, setDrag] = useState<Drag | null>(null);
+  /**
+   * 盤の上に自由に置かれている駒。マスにはまっていないので engine の
+   * placed ではなく tray に居る。座標は .grid の左上を原点とした px。
+   */
+  const [free, setFree] = useState<FreePositions>({});
   /** 盤面の1マスの辺長。カードからつかんだ駒を盤面と同じ大きさで追従させるのに使う。 */
   const [boardCell, setBoardCell] = useState(40);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -51,7 +64,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   // ステージが変わったら作り直す。同じコンポーネントが使い回されるため。
   useEffect(() => {
     setState(createGameState(stage));
-    setRejectToken(0);
+    setFree({});
     setDrag(null);
   }, [stage]);
 
@@ -94,6 +107,14 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   const speciesOf = (instanceId: string): Species | undefined =>
     stage.animals.find((a) => a.instanceId === instanceId)?.species;
 
+  const dropFree = (instanceId: string) =>
+    setFree((f) => {
+      if (!(instanceId in f)) return f;
+      const next = { ...f };
+      delete next[instanceId];
+      return next;
+    });
+
   const handleDragStart = (instanceId: string, left: number, top: number) => {
     const species = speciesOf(instanceId);
     if (!species) return;
@@ -125,41 +146,40 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
       centerY >= rect.top &&
       centerY <= rect.top + rect.height;
 
-    if (insideBoard) {
-      // アンカーの算出も置けるかの判定も、既存の経路にそのまま流す。
-      const onBoard = state.placed.some((p) => p.instanceId === d.instanceId);
-      const anchor = anchorFromPiecePoint(rect, left, top, stage.cols);
-      const next = (onBoard ? moveAnimal : placeAnimal)(state, d.instanceId, anchor);
-      if (next === state) {
-        setRejectToken((t) => t + 1);
-        sfx.reject();
-        vibrate([12, 40, 12]);
-        return;
-      }
-      setState(next);
+    // 盤の外で離した ＝ 動物リストへ返す。
+    if (!insideBoard) {
+      setState(returnToTray(state, d.instanceId));
+      dropFree(d.instanceId);
+      sfx.lift();
+      return;
+    }
+
+    // いちばん近いマスに、ぴったり近ければ吸着させる。
+    const anchor = anchorFromPiecePoint(rect, left, top, stage.cols);
+    const step = cell + GAP;
+    const offset = Math.hypot(left - (rect.left + anchor.c * step), top - (rect.top + anchor.r * step));
+    const onBoard = state.placed.some((p) => p.instanceId === d.instanceId);
+    const snapped = (onBoard ? moveAnimal : placeAnimal)(state, d.instanceId, anchor);
+
+    if (snapped !== state && offset <= cell * SNAP_RATIO) {
+      setState(snapped);
+      dropFree(d.instanceId);
       sfx.place();
       vibrate(8);
       return;
     }
 
-    // 盤の外で離した。盤上の駒ならトレイに戻す。
-    const back = returnToTray(state, d.instanceId);
-    if (back !== state) {
-      setState(back);
-      sfx.lift();
-    }
+    // はまらなかった（置けないマス、またはマスとマスの間）。
+    // 弾かずに、離したその場所へそのまま置く。
+    setState(returnToTray(state, d.instanceId));
+    setFree((f) => ({ ...f, [d.instanceId]: { x: left - rect.left, y: top - rect.top } }));
+    sfx.lift();
   };
 
   const handleReset = () => {
     setState(createGameState(stage));
-    setRejectToken(0);
-  };
-
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    setMutedState(next);
-    if (!next) sfx.select();
+    setFree({});
+    setDrag(null);
   };
 
   const placedCount = state.placed.length;
@@ -187,16 +207,6 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           <button type="button" className="icon-btn" onClick={handleReset} aria-label="やり直す">
             <ResetIcon />
           </button>
-          <button type="button" className="icon-btn" onClick={onList} aria-label="ステージ一覧">
-            <ListIcon />
-          </button>
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={toggleMute}
-            aria-label={muted ? '音を出す' : '音を消す'}>
-            <SoundIcon muted={muted} />
-          </button>
         </div>
       </header>
 
@@ -207,8 +217,8 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           validAnchors={validAnchors}
           violatingIds={violatingIds}
           draggingId={draggingId}
+          free={free}
           gridRef={gridRef}
-          rejectToken={rejectToken}
           won={cleared}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
@@ -217,6 +227,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
 
         <AnimalCards
           state={state}
+          free={free}
           draggingId={draggingId}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}

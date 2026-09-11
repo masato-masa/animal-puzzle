@@ -3,10 +3,14 @@ import { describe, expect, test } from 'vitest';
 import { hashFor, parseRoute, type Route } from '@/core/router';
 
 describe('parseRoute', () => {
-  test('空・ルートは一覧', () => {
-    expect(parseRoute('')).toEqual({ name: 'stages' });
-    expect(parseRoute('#')).toEqual({ name: 'stages' });
-    expect(parseRoute('#/')).toEqual({ name: 'stages' });
+  test('空・ルートはホーム', () => {
+    expect(parseRoute('')).toEqual({ name: 'home' });
+    expect(parseRoute('#')).toEqual({ name: 'home' });
+    expect(parseRoute('#/')).toEqual({ name: 'home' });
+  });
+
+  test('ステージ一覧', () => {
+    expect(parseRoute('#/stages')).toEqual({ name: 'stages' });
   });
 
   test('ゲーム', () => {
@@ -24,9 +28,9 @@ describe('parseRoute', () => {
     expect(parseRoute('#/game/a%20b')).toEqual({ name: 'game', stageId: 'a b' });
   });
 
-  test('stageId が無い game は一覧に落とす', () => {
-    expect(parseRoute('#/game')).toEqual({ name: 'stages' });
-    expect(parseRoute('#/game/')).toEqual({ name: 'stages' });
+  test('stageId が無い game はホームに落とす', () => {
+    expect(parseRoute('#/game')).toEqual({ name: 'home' });
+    expect(parseRoute('#/game/')).toEqual({ name: 'home' });
   });
 
   test('マイステージとエディタ', () => {
@@ -34,8 +38,8 @@ describe('parseRoute', () => {
     expect(parseRoute('#/editor')).toEqual({ name: 'editor' });
   });
 
-  test('知らないハッシュは一覧に落とす', () => {
-    expect(parseRoute('#/nope/nope')).toEqual({ name: 'stages' });
+  test('知らないハッシュはホームに落とす', () => {
+    expect(parseRoute('#/nope/nope')).toEqual({ name: 'home' });
   });
 
   test('クエリが付いていても読める', () => {
@@ -46,6 +50,7 @@ describe('parseRoute', () => {
 describe('hashFor', () => {
   test('往復して同じになる', () => {
     const routes: Route[] = [
+      { name: 'home' },
       { name: 'stages' },
       { name: 'game', stageId: 'stage-7' },
       { name: 'my-stages' },

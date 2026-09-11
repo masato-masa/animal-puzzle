@@ -8,6 +8,7 @@ import { recordClear } from '@/storage/progress';
 
 import { Editor } from './ui/Editor';
 import { Game } from './ui/Game';
+import { Home } from './ui/Home';
 import { MyStages } from './ui/MyStages';
 import { StageSelect } from './ui/StageSelect';
 
@@ -67,11 +68,13 @@ export function App() {
   switch (route.name) {
     case 'game':
       return <GameRoute stageId={route.stageId} />;
+    case 'stages':
+      return <StageSelect />;
     case 'my-stages':
       return <MyStages />;
     case 'editor':
       return <Editor />;
     default:
-      return <StageSelect />;
+      return <Home />;
   }
 }

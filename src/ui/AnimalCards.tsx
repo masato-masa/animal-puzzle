@@ -11,6 +11,7 @@ import {
 import { speciesLabel } from '@/art/palette';
 import { conditionText, stageRuleText } from '@/lib/condition-text';
 
+import type { FreePositions } from './Board';
 import { StatusMark } from './icons';
 import { Piece } from './Piece';
 import { usePieceDrag } from './use-piece-drag';
@@ -25,6 +26,9 @@ const CARD_SLOT = CARD_CELL * 2 + CARD_GAP;
 
 type Props = {
   state: GameState;
+  /** 盤の上に自由に置かれている駒。リストの残数からは除く
+   *  （すでに盤に出ているのに「のこり」に数えると数が合わなく見える）。 */
+  free: FreePositions;
   draggingId: string | null;
   /** ドラッグ開始。追従表示の左上（画面座標）を渡す。 */
   onDragStart: (instanceId: string, left: number, top: number) => void;
@@ -44,7 +48,7 @@ const speciesOrder = (state: GameState): Species[] =>
  * 残数が 0 になってもカードは消さない。条件は最後まで見え続ける必要があるので、
  * 薄くするだけにとどめる。違反中は赤くし、盤上の赤い駒と対応させる。
  */
-export function AnimalCards({ state, draggingId, onDragStart, onDragMove, onDragEnd, boardCell }: Props) {
+export function AnimalCards({ state, free, draggingId, onDragStart, onDragMove, onDragEnd, boardCell }: Props) {
   const rules = state.stage.rules ?? [];
 
   const order = speciesOrder(state);
@@ -58,6 +62,7 @@ export function AnimalCards({ state, draggingId, onDragStart, onDragMove, onDrag
           key={sp}
           species={sp}
           state={state}
+          free={free}
           draggingId={draggingId}
           onDragStart={onDragStart}
           onDragMove={onDragMove}
@@ -89,13 +94,15 @@ export function AnimalCards({ state, draggingId, onDragStart, onDragMove, onDrag
 function AnimalCard({
   species,
   state,
+  free,
   draggingId,
   onDragStart,
   onDragMove,
   onDragEnd,
   boardCell,
 }: { species: Species; state: GameState } & Omit<Props, 'state'>) {
-  const remaining = state.tray.filter((a) => a.species === species);
+  // 盤の上に自由に置かれている駒は、もうリストには居ない扱いにする。
+  const remaining = state.tray.filter((a) => a.species === species && !(a.instanceId in free));
   const conditions = conditionsFor(state.stage, species);
   const violating = state.placed.some(
     (p) => p.species === species && conditions.some((c) => !isSpeciesConditionSatisfied(state, species, c))

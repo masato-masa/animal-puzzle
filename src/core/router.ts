@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react';
  * 生む。ハッシュならサーバ設定が一切要らない。
  */
 export type Route =
+  | { name: 'home' }
   | { name: 'stages' }
   | { name: 'game'; stageId: string }
   | { name: 'my-stages' }
@@ -15,15 +16,18 @@ export const parseRoute = (hash: string): Route => {
   const path = hash.replace(/^#/, '').split('?')[0];
   const seg = path.split('/').filter(Boolean).map(decodeURIComponent);
   if (seg[0] === 'game' && seg[1]) return { name: 'game', stageId: seg[1] };
+  if (seg[0] === 'stages') return { name: 'stages' };
   if (seg[0] === 'my-stages') return { name: 'my-stages' };
   if (seg[0] === 'editor') return { name: 'editor' };
-  return { name: 'stages' };
+  return { name: 'home' };
 };
 
 export const hashFor = (route: Route): string => {
   switch (route.name) {
     case 'game':
       return `#/game/${encodeURIComponent(route.stageId)}`;
+    case 'stages':
+      return '#/stages';
     case 'my-stages':
       return '#/my-stages';
     case 'editor':

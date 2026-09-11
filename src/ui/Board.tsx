@@ -1,5 +1,5 @@
-import { useEffect, type CSSProperties, type RefObject } from 'react';
-import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from 'motion/react';
+import type { CSSProperties, RefObject } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 import { animalAt, boundingBox, posKey, terrainAt, type GameState, type Pos } from '@/engine';
 import { blockSprite } from '@/art/sprites';
@@ -7,6 +7,9 @@ import { blockSprite } from '@/art/sprites';
 import { cellFromPoint, cellSize, GAP, PAD } from './geometry';
 import { Piece } from './Piece';
 import { usePieceDrag } from './use-piece-drag';
+
+/** マスにはまっていない駒の位置。.grid の左上を原点とした px。 */
+export type FreePositions = Record<string, { x: number; y: number }>;
 
 /** クリア時に駒が1つずつ跳ねる間隔（秒）。オーバーレイを出す時刻もこれで決まる。 */
 export const BOUNCE_STEP = 0.08;
@@ -18,10 +21,10 @@ export type BoardProps = {
   violatingIds: Set<string>;
   /** ドラッグ中の駒。本体は隠し、追従表示は Game が描く。 */
   draggingId: string | null;
+  /** マスにはまっていない、盤の上に自由に置かれた駒。 */
+  free: FreePositions;
   /** 当たり判定に使う .grid の実体。値は保持せず、イベントのたびに測り直す。 */
   gridRef: RefObject<HTMLDivElement | null>;
-  /** 値が変わるたびに盤を1回振る。置けない場所で離したことを伝える。 */
-  rejectToken: number;
   /** クリアした。駒を置いた順に跳ねさせる。 */
   won: boolean;
   /** つかんだ瞬間の駒の左上（画面座標）を渡す。 */
@@ -46,37 +49,45 @@ export function Board({
   validAnchors,
   violatingIds,
   draggingId,
+  free,
   gridRef,
-  rejectToken,
   won,
   onDragStart,
   onDragMove,
   onDragEnd,
 }: BoardProps) {
-  const { stage, placed } = state;
-  const controls = useAnimationControls();
+  const { stage, placed, tray } = state;
   const still = useReducedMotion();
 
-  // 置けない場所に置こうとした。左右に短く振って弾かれたことを伝える。
-  useEffect(() => {
-    if (rejectToken === 0 || still) return;
-    void controls.start({
-      x: [0, -5, 5, -3.5, 3.5, 0],
-      transition: { duration: 0.34, ease: 'easeInOut' },
-    });
-  }, [rejectToken, controls, still]);
+  /** マスにはまっていない駒。tray に居るが盤の上に置かれている。 */
+  const freePieces = tray.filter((a) => a.instanceId in free);
 
   /** 押した座標から、そのマスを覆っている駒を探す。矩形は毎回測り直すので
    *  スクロールやリサイズでずれない。 */
   const grabAt = (x: number, y: number) => {
     const rect = gridRef.current?.getBoundingClientRect();
     if (!rect) return null;
+    const cell = cellSize(rect, stage.cols);
+
+    // 自由に置かれた駒が上に乗っているので先に見る。手前にあるものから順に。
+    for (let i = freePieces.length - 1; i >= 0; i--) {
+      const a = freePieces[i];
+      const p = free[a.instanceId];
+      const { w, h } = boundingBox(a.species);
+      const left = rect.left + p.x;
+      const top = rect.top + p.y;
+      const width = w * cell + (w - 1) * GAP;
+      const height = h * cell + (h - 1) * GAP;
+      if (x >= left && x <= left + width && y >= top && y <= top + height) {
+        return { instanceId: a.instanceId, left, top };
+      }
+    }
+
     const pos = cellFromPoint(rect, stage.rows, stage.cols, x, y);
     // アンカーのマスだけでなく cells 全体を見るので、2x2 の駒はどのマスを
     // つかんでも掴める。
     const piece = pos ? animalAt(state, pos) : undefined;
     if (!piece) return null;
-    const cell = cellSize(rect, stage.cols);
     return {
       instanceId: piece.instanceId,
       left: rect.left + piece.anchor.c * (cell + GAP),
@@ -92,9 +103,7 @@ export function Board({
   }
 
   return (
-    /* 揺れはカード側に掛ける。ジェスチャを載せた要素に motion を重ねると、
-       framer-motion のパン用 onDragStart と自前のハンドラが同名 prop で衝突する。 */
-    <motion.div className="board" animate={controls} style={{ '--pad': `${PAD}px` } as CSSProperties}>
+    <div className="board" style={{ '--pad': `${PAD}px` } as CSSProperties}>
       <div
         {...handlers}
         ref={gridRef}
@@ -163,7 +172,23 @@ export function Board({
             );
           })}
         </AnimatePresence>
+
+        {/* マスにはまっていない駒。離した場所にそのまま残る。
+            はまっている駒より手前に出して、掴み直せることを見た目でも示す。 */}
+        {freePieces.map((a) => {
+          const { w, h } = boundingBox(a.species);
+          const p = free[a.instanceId];
+          return (
+            <div
+              key={a.instanceId}
+              className="piece-slot piece-slot-free"
+              data-dragging={a.instanceId === draggingId ? 'true' : undefined}
+              style={{ '--w': w, '--h': h, left: p.x, top: p.y } as CSSProperties}>
+              <Piece species={a.species} w={w} h={h} />
+            </div>
+          );
+        })}
       </div>
-    </motion.div>
+    </div>
   );
 }

@@ -12,7 +12,6 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
-  server: { port: 5174, strictPort: true },
   test: {
     globals: true,
     // storage と router のテストが localStorage / location を使う。

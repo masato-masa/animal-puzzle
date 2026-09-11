@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
 
 import { CHAPTERS, getStage, STAGES } from '@/levels/stages';
-import { navigate } from '@/core/router';
-import { isMuted, setMuted, sfx } from '@/core/sfx';
+import { goBack, navigate } from '@/core/router';
 import { loadProgress } from '@/storage/progress';
 
-import { SoundIcon } from './icons';
+import { BackIcon } from './icons';
 
 /** 章ごとに番号タイルを並べる。40面を縦に並べるとスクロールが長すぎるため。 */
 export function StageSelect() {
   const [cleared, setCleared] = useState<Set<string>>(new Set());
-  const [muted, setMutedState] = useState(isMuted);
 
   useEffect(() => {
     let active = true;
@@ -24,17 +22,14 @@ export function StageSelect() {
 
   const clearedCount = STAGES.filter((s) => cleared.has(s.id)).length;
 
-  const toggleMute = () => {
-    const next = !muted;
-    setMuted(next);
-    setMutedState(next);
-    if (!next) sfx.select();
-  };
-
   return (
     <div className="app">
       <header className="header">
-        <div className="header-left" />
+        <div className="header-left">
+          <button type="button" className="icon-btn" onClick={goBack} aria-label="もどる">
+            <BackIcon />
+          </button>
+        </div>
         <div className="title-block">
           <h1 className="title">動物パズル</h1>
           <p className="progress">
@@ -43,15 +38,7 @@ export function StageSelect() {
             <span className="progress-total">{STAGES.length}</span>
           </p>
         </div>
-        <div className="header-right">
-          <button
-            type="button"
-            className="icon-btn"
-            onClick={toggleMute}
-            aria-label={muted ? '音を出す' : '音を消す'}>
-            <SoundIcon muted={muted} />
-          </button>
-        </div>
+        <div className="header-right" />
       </header>
 
       <div className="sheet">
@@ -87,9 +74,6 @@ export function StageSelect() {
         })}
       </div>
 
-      <button type="button" className="text-btn" onClick={() => navigate({ name: 'my-stages' })}>
-        マイステージ / ステージを作る
-      </button>
     </div>
   );
 }

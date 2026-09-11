@@ -236,6 +236,16 @@ body {
   opacity: 0;
 }
 
+/* マスにはまっていない駒。離した場所にそのまま残る。少し浮かせて、
+   「まだ収まっていない」ことを影で伝える。 */
+.piece-slot-free {
+  z-index: 3;
+}
+
+.piece-slot-free .piece {
+  filter: drop-shadow(0 3px 5px rgb(74 46 20 / 0.3));
+}
+
 /* 指に追従する駒。固定レイヤーなのでレイアウトに影響しない。
    カードから引き出した瞬間に少し大きくなることで、「小さなカードから
    盤面サイズの駒を取り出した」という手応えを出す。 */
@@ -369,8 +379,15 @@ body {
   color: var(--pill-fg);
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: grab;
   transition: transform 0.14s var(--ease), background-color 0.14s var(--ease);
+  /* これが無いと、触った瞬間にブラウザが「スクロールか否か」を判定しに行き、
+     指を動かし始めてもしばらく駒が付いてこない。長押しが要るように感じるのは
+     これが原因なので、カードでもブラウザのジェスチャを完全に止める。 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .card:active:not(:disabled) {
@@ -893,4 +910,105 @@ body {
   50% {
     transform: scale(1.035);
   }
+}
+
+/* ---- ホーム ---- */
+.home {
+  position: relative;
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+}
+
+.home-sound {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+/* 主役を真ん中に、脇の2匹を少し下げて重ねる。大きさの違う種を選んで
+   「形がいろいろある」ことを1枚で伝える。 */
+.home-art {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 140px;
+  margin-bottom: 4px;
+}
+
+.home-art img {
+  display: block;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+.home-art img:nth-child(1) {
+  width: 76px;
+  height: 76px;
+  margin-right: -14px;
+  animation-delay: -1.2s;
+}
+
+.home-art img:nth-child(2) {
+  width: 116px;
+  height: 116px;
+  z-index: 1;
+}
+
+.home-art img:nth-child(3) {
+  width: 70px;
+  height: 140px;
+  margin-left: -14px;
+  animation-delay: -2.4s;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--title);
+}
+
+.home-sub {
+  margin: 6px 0 26px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pill-fg);
+}
+
+.home-buttons {
+  display: grid;
+  gap: 10px;
+  width: min(86vw, 300px);
+}
+
+.home-buttons .overlay-btn {
+  padding: 13px 20px;
+}
+
+.home-progress {
+  margin: 22px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pill-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-progress strong {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+.ghost-btn {
+  margin-top: 10px;
+  border: 0;
+  background: none;
+  color: #b9a49e;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
