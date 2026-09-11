@@ -1,7 +1,8 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
 
-/** タップとドラッグの分かれ目。画面全体で同じ値を使う。
- *  小さすぎると普通のタップが誤ってドラッグになり、大きすぎると掴み始めが鈍る。 */
+/** この距離を超えて指が動いたらドラッグを開始する。画面全体で同じ値を使う。
+ *  小さすぎると画面のスクロールのつもりが駒を掴んでしまい、
+ *  大きすぎると掴み始めが鈍く感じる。 */
 export const DRAG_THRESHOLD = 7;
 
 export type Grab = {
@@ -15,8 +16,6 @@ export type Grab = {
 type Options = {
   /** 押した座標から「何をつかんだか」を返す。何も無ければ null。 */
   onGrab: (x: number, y: number) => Grab | null;
-  /** 指が閾値まで動かなかったとき。押した座標を渡す。 */
-  onTap: (x: number, y: number, grabbed: Grab | null) => void;
   onDragStart: (instanceId: string, left: number, top: number) => void;
   onDragMove: (dx: number, dy: number) => void;
   onDragEnd: () => void;
@@ -26,11 +25,13 @@ type Options = {
 /**
  * つまんで動かす操作。ポインタイベントで自前に組む。
  *
- * ジェスチャライブラリに載せると、タップまでそのライブラリの状態機械を通る。
- * タップはこのゲームの主操作なので、外部の挙動に左右されないようにしてある。
+ * **操作はドラッグだけ。** タップで選んでタップで置く方式は直感的でないため
+ * 廃止した。指を離した場所がそのまま結果になるので、いま何が選ばれているかを
+ * 覚えておく必要がない。
+ *
  * 座標は毎回イベントから取り、何も保持しない。
  */
-export function usePieceDrag({ onGrab, onTap, onDragStart, onDragMove, onDragEnd, enabled = true }: Options) {
+export function usePieceDrag({ onGrab, onDragStart, onDragMove, onDragEnd, enabled = true }: Options) {
   const start = useRef<{ x: number; y: number } | null>(null);
   const grabbed = useRef<Grab | null>(null);
   const dragging = useRef(false);
@@ -44,8 +45,12 @@ export function usePieceDrag({ onGrab, onTap, onDragStart, onDragMove, onDragEnd
   return {
     onPointerDown: (e: ReactPointerEvent) => {
       if (!enabled || !e.isPrimary) return;
+      const grab = onGrab(e.clientX, e.clientY);
+      // つかむものが無い場所は素通りさせる。盤の余白でページを
+      // スクロールできなくなるのを防ぐ。
+      if (!grab) return;
       start.current = { x: e.clientX, y: e.clientY };
-      grabbed.current = onGrab(e.clientX, e.clientY);
+      grabbed.current = grab;
       dragging.current = false;
       // 指が要素の外へ出ても追い続ける。無いと盤の外へ運ぶ操作が途中で切れる。
       try {
@@ -57,26 +62,25 @@ export function usePieceDrag({ onGrab, onTap, onDragStart, onDragMove, onDragEnd
 
     onPointerMove: (e: ReactPointerEvent) => {
       const s = start.current;
-      if (!s) return;
+      const grab = grabbed.current;
+      if (!s || !grab) return;
       const dx = e.clientX - s.x;
       const dy = e.clientY - s.y;
-      if (!dragging.current && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+      if (!dragging.current) {
+        if (Math.hypot(dx, dy) <= DRAG_THRESHOLD) return;
         dragging.current = true;
-        if (grabbed.current) onDragStart(grabbed.current.instanceId, grabbed.current.left, grabbed.current.top);
+        onDragStart(grab.instanceId, grab.left, grab.top);
       }
-      if (dragging.current && grabbed.current) onDragMove(dx, dy);
+      onDragMove(dx, dy);
     },
 
     onPointerUp: () => {
-      const s = start.current;
-      if (!s) return;
-      if (dragging.current && grabbed.current) onDragEnd();
-      else onTap(s.x, s.y, grabbed.current);
+      if (dragging.current) onDragEnd();
       reset();
     },
 
     // 指が途中で無効化された（通知・電話・ブラウザのジェスチャ）。
-    // 何もせずに畳む。掴んだままの状態を残さないことが大事。
+    // 掴んだままの状態を残さないことが大事。
     onPointerCancel: () => {
       if (dragging.current) onDragEnd();
       reset();

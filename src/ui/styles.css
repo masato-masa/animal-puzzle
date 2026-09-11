@@ -18,9 +18,10 @@
      区別する。こうすると種の 11 色とマスの色が競合しない。 */
   --land: #ebe4dc;
   --land-valid: #f5efe6;
-  --wall: oklch(0.42 0.02 60);
-  --water: oklch(0.45 0.05 230);
-  --tree: oklch(0.45 0.05 145);
+  /* 置けないマスの地。絵が主役なので、地は種別をうっすら示す程度に留める。 */
+  --wall: #d8e2cc;
+  --tree: #d8e2cc;
+  --water: #cfe7f2;
 
   --ok: #3fa845;
   --ng: #d9453c;
@@ -49,9 +50,16 @@ body {
   padding: 16px 16px 20px;
 }
 
-/* 盤面とカードを、ヘッダーの下に残った高さの中央に置く。
-   .app が min-height なので、内容が画面より高いときは中央寄せのまま
-   全体が伸びてページごとスクロールする（上が切れない）。 */
+/* ゲーム画面だけは画面の高さに固定する。盤面を常に見える位置に留めたまま、
+   あふれるぶんはカード列の中だけをスクロールさせるため。
+   一覧やエディタは内容の分だけ伸びてページごとスクロールしてよい。 */
+.app-game {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 盤面とカードを、ヘッダーの下に残った高さの中央に置く。 */
 .play {
   flex: 1;
   min-height: 0;
@@ -130,6 +138,51 @@ body {
   background: transparent;
 }
 
+/* 置けないマスの絵。マスいっぱいに敷き、少しはみ出させて詰まって見せる。 */
+.cell-art {
+  width: 108%;
+  height: 108%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/* 草木は根元を軸に揺らす。中心で回すと宙に浮いて見えるので、
+   transform-origin を下端に置くのが要点。 */
+.cell[data-terrain='wall'] .cell-art,
+.cell[data-terrain='tree'] .cell-art {
+  transform-origin: 50% 94%;
+  animation: sway 4.2s ease-in-out infinite;
+  animation-delay: calc(var(--phase, 0s) * -4.2);
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-1.8deg);
+  }
+  50% {
+    transform: rotate(1.8deg);
+  }
+}
+
+/* 水面はゆっくり上下に膨らませて、波打っているように見せる。 */
+.cell[data-terrain='water'] .cell-art {
+  animation: ripple 5.4s ease-in-out infinite;
+  animation-delay: calc(var(--phase, 0s) * -5.4);
+}
+
+@keyframes ripple {
+  0%,
+  100% {
+    transform: scaleY(0.97) translateY(1%);
+  }
+  50% {
+    transform: scaleY(1.03) translateY(-1%);
+  }
+}
+
 /* 置けるマスの合図は「色」ではなく「形」にする。種の11色がすでに全色相を
    使っているため、黄色などで光らせると種の色と競合する。 */
 .cell[data-valid='true'] {
@@ -183,12 +236,24 @@ body {
   opacity: 0;
 }
 
-/* 指に追従する駒。固定レイヤーなのでレイアウトに影響しない。 */
+/* 指に追従する駒。固定レイヤーなのでレイアウトに影響しない。
+   カードから引き出した瞬間に少し大きくなることで、「小さなカードから
+   盤面サイズの駒を取り出した」という手応えを出す。 */
 .drag-layer {
   position: fixed;
   z-index: 50;
   pointer-events: none;
-  filter: drop-shadow(0 6px 10px rgb(74 46 20 / 0.28));
+  filter: drop-shadow(0 8px 12px rgb(74 46 20 / 0.3));
+  animation: pick-up 0.16s var(--ease) both;
+}
+
+@keyframes pick-up {
+  from {
+    transform: scale(0.72);
+  }
+  to {
+    transform: scale(1);
+  }
 }
 
 .piece-slot[data-selected='true'] .piece {
@@ -279,11 +344,20 @@ body {
   width: min(92vw, 460px);
   display: grid;
   gap: 5px;
+  align-content: start;
+  /* 万一あふれたときの逃げ道。2列にしてあるので通常は働かない。 */
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.cards[data-dense='true'] {
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .card {
   display: grid;
-  grid-template-columns: 38px 1fr;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 9px;
   /* 8種が同時に出るステージ（5面ある）でも 375x812 に収まる寸法。
@@ -327,15 +401,32 @@ body {
   grid-template-columns: 1fr;
 }
 
-/* カードの中の駒は盤面と同じ描き方をする。つまんだ瞬間に姿が変わらないように、
-   1マスあたりの大きさだけを小さくする。 */
-.card-piece {
-  --cell: calc(30px / max(var(--w), var(--h)));
-  --gap: 2px;
+/* カードの中の駒。1マスの大きさは全カード共通なので、2x2 の駒は 1x1 の駒の
+   4倍の面積で出る。ここを種ごとに正規化すると形も大きさも読み取れなくなる。 */
+.card-slot {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 32px;
+  height: 50px;
+  flex: none;
+}
+
+/* 残り数。サムネイルの隅に小さく重ねる。本文の幅を条件に明け渡すため。 */
+.card-count {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--title);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .card-body {
@@ -348,9 +439,6 @@ body {
   font-size: 12px;
   font-weight: 700;
   color: var(--title);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
 }
 
 .card[data-violating='true'] .card-name {
@@ -782,4 +870,27 @@ body {
 .overlay-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* 駒の絵。footprint と同じ縦横比のキャンバスに収めてあるので敷き詰めるだけ。 */
+.piece-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  /* 動いている生き物に見せるための、ごく浅い呼吸。気づかれるほど
+     大きく動かすと目障りになる。 */
+  animation: breathe 3.6s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
 }

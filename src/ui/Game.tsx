@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import {
-  animalAt,
   boundingBox,
   createGameState,
   isStageCleared,
@@ -10,7 +9,6 @@ import {
   returnToTray,
   validAnchorCells,
   violatingAnimals,
-  type Pos,
   type Species,
   type Stage,
 } from '@/engine';
@@ -43,7 +41,6 @@ export type GameProps = {
  */
 export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: GameProps) {
   const [state, setState] = useState(() => createGameState(stage));
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rejectToken, setRejectToken] = useState(0);
   const [muted, setMutedState] = useState(isMuted);
   const [drag, setDrag] = useState<Drag | null>(null);
@@ -54,7 +51,6 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   // ステージが変わったら作り直す。同じコンポーネントが使い回されるため。
   useEffect(() => {
     setState(createGameState(stage));
-    setSelectedId(null);
     setRejectToken(0);
     setDrag(null);
   }, [stage]);
@@ -77,14 +73,16 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   const cleared = isStageCleared(state);
 
   /**
-   * 選択中の駒が実際に置けるアンカー。盤上の駒を選んでいる場合は、いったん
-   * トレイに戻した状態で聞く（自分自身との重なりで全部ふさがってしまうため）。
+   * ドラッグ中の駒が実際に置けるアンカー。つかんでいる間だけ光らせる。
+   * 盤上の駒なら、いったんトレイに戻した状態で聞く（自分自身との重なりで
+   * 置き先が全部ふさがってしまうため）。
    */
+  const draggingId = drag?.instanceId ?? null;
   const validAnchors = useMemo(() => {
-    if (!selectedId) return new Set<string>();
-    const onBoard = state.placed.some((p) => p.instanceId === selectedId);
-    return validAnchorCells(onBoard ? returnToTray(state, selectedId) : state, selectedId);
-  }, [selectedId, state]);
+    if (!draggingId) return new Set<string>();
+    const onBoard = state.placed.some((p) => p.instanceId === draggingId);
+    return validAnchorCells(onBoard ? returnToTray(state, draggingId) : state, draggingId);
+  }, [draggingId, state]);
 
   useEffect(() => {
     if (!cleared) return;
@@ -93,55 +91,6 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
     vibrate([18, 60, 18, 60, 30]);
   }, [cleared, stage.id, onCleared]);
 
-  const tryPlace = (anchor: Pos) => {
-    if (!selectedId) return;
-    const onBoard = state.placed.some((p) => p.instanceId === selectedId);
-    const next = (onBoard ? moveAnimal : placeAnimal)(state, selectedId, anchor);
-    if (next === state) {
-      setRejectToken((t) => t + 1);
-      sfx.reject();
-      vibrate([12, 40, 12]);
-      return;
-    }
-    setState(next);
-    setSelectedId(null);
-    sfx.place();
-    vibrate(8);
-  };
-
-  const handleCellPress = (pos: Pos) => {
-    if (selectedId) {
-      tryPlace(pos);
-      return;
-    }
-    // 何も選んでいないときにマスを押したら、そこにある駒を選ぶ。
-    const here = animalAt(state, pos);
-    if (here) {
-      setSelectedId(here.instanceId);
-      sfx.select();
-    }
-  };
-
-  const handlePiecePress = (instanceId: string) => {
-    if (selectedId === instanceId) {
-      setSelectedId(null);
-      return;
-    }
-    if (selectedId) {
-      // 別の駒を選んだ状態でこの駒を押した ＝ そこへ置こうとしている。
-      const target = state.placed.find((p) => p.instanceId === instanceId);
-      if (target) tryPlace(target.anchor);
-      return;
-    }
-    setSelectedId(instanceId);
-    sfx.select();
-  };
-
-  const handleSelectFromCard = (instanceId: string) => {
-    setSelectedId((cur) => (cur === instanceId ? null : instanceId));
-    sfx.select();
-  };
-
   const speciesOf = (instanceId: string): Species | undefined =>
     stage.animals.find((a) => a.instanceId === instanceId)?.species;
 
@@ -149,7 +98,6 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
     const species = speciesOf(instanceId);
     if (!species) return;
     setDrag({ instanceId, species, left, top, dx: 0, dy: 0 });
-    setSelectedId(instanceId);
   };
 
   const handleDragMove = (dx: number, dy: number) => {
@@ -189,7 +137,6 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
         return;
       }
       setState(next);
-      setSelectedId(null);
       sfx.place();
       vibrate(8);
       return;
@@ -201,21 +148,10 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
       setState(back);
       sfx.lift();
     }
-    setSelectedId(null);
-  };
-
-  const handleReturn = () => {
-    if (!selectedId) return;
-    const next = returnToTray(state, selectedId);
-    if (next === state) return;
-    setState(next);
-    setSelectedId(null);
-    sfx.lift();
   };
 
   const handleReset = () => {
     setState(createGameState(stage));
-    setSelectedId(null);
     setRejectToken(0);
   };
 
@@ -228,10 +164,9 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
 
   const placedCount = state.placed.length;
   const total = stage.animals.length;
-  const selectedOnBoard = selectedId !== null && state.placed.some((p) => p.instanceId === selectedId);
 
   return (
-    <div className="app">
+    <div className="app app-game">
       <header className="header">
         <div className="header-left">
           <button type="button" className="icon-btn" onClick={onBack} aria-label="もどる">
@@ -270,30 +205,19 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
         <Board
           state={state}
           validAnchors={validAnchors}
-          selectedId={selectedId}
           violatingIds={violatingIds}
-          draggingId={drag?.instanceId ?? null}
+          draggingId={draggingId}
           gridRef={gridRef}
           rejectToken={rejectToken}
           won={cleared}
-          onCellPress={handleCellPress}
-          onPiecePress={handlePiecePress}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}
         />
 
-        {selectedOnBoard && !drag && (
-          <button type="button" className="return-btn" onClick={handleReturn}>
-            この動物をもどす
-          </button>
-        )}
-
         <AnimalCards
           state={state}
-          selectedId={selectedId}
-          draggingId={drag?.instanceId ?? null}
-          onSelect={handleSelectFromCard}
+          draggingId={draggingId}
           onDragStart={handleDragStart}
           onDragMove={handleDragMove}
           onDragEnd={handleDragEnd}

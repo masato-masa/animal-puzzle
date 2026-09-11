@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 
 import type { Species } from '@/engine';
 import { speciesVars } from '@/art/palette';
-import { SpeciesSilhouette } from '@/art/species';
+import { speciesSprite } from '@/art/sprites';
 
 type Props = {
   species: Species;
@@ -28,7 +28,9 @@ export function Piece({ species, w, h, violating, dimmed, hidden }: Props) {
       data-violating={violating ? 'true' : undefined}
       data-dimmed={dimmed ? 'true' : undefined}
       data-hidden={hidden ? 'true' : undefined}>
-      <SpeciesSilhouette species={species} />
+      {/* 画像は footprint と同じ縦横比のキャンバスに収めてあるので、
+          そのまま敷けば位置合わせが要らない。 */}
+      <img className="piece-art" src={speciesSprite[species]} alt="" draggable={false} />
     </div>
   );
 }

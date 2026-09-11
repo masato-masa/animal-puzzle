@@ -18,7 +18,7 @@ import { describeWarning, findDesignWarnings, type DesignWarning } from '@/lib/s
 import { buildSubmissionIssueUrl } from '@/lib/stage-submission';
 import { generateCustomStageId, saveCustomStage } from '@/storage/custom-stages';
 
-import { TreeIcon, WaterIcon } from '@/art/blocks';
+import { blockSprite } from '@/art/sprites';
 import { GAP } from './geometry';
 import { BackIcon } from './icons';
 import { Piece } from './Piece';
@@ -172,7 +172,7 @@ export function Editor() {
             const { w, h } = boundingBox(species);
             return (
               <div key={species} className="animal-row">
-                <span className="card-piece" style={{ '--w': w, '--h': h } as CSSProperties}>
+                <span className="card-slot" style={{ '--cell': '24px', '--gap': '2px', width: 50 } as CSSProperties}>
                   <Piece species={species} w={w} h={h} dimmed={counts[species] === 0} />
                 </span>
                 <span className="animal-name">{speciesLabel[species]}</span>
@@ -264,8 +264,9 @@ function PaintGrid({
       {terrain.flatMap((row, r) =>
         row.map((t, c) => (
           <div key={`${r},${c}`} className="cell" data-terrain={t} data-r={r} data-c={c}>
-            {t === 'water' && <WaterIcon />}
-            {t === 'tree' && <TreeIcon />}
+            {(t === 'wall' || t === 'tree' || t === 'water') && (
+              <img className="cell-art" src={blockSprite[t]} alt="" draggable={false} />
+            )}
           </div>
         ))
       )}

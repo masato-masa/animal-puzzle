@@ -2,7 +2,7 @@ import { useEffect, type CSSProperties, type RefObject } from 'react';
 import { AnimatePresence, motion, useAnimationControls, useReducedMotion } from 'motion/react';
 
 import { animalAt, boundingBox, posKey, terrainAt, type GameState, type Pos } from '@/engine';
-import { TreeIcon, WaterIcon } from '@/art/blocks';
+import { blockSprite } from '@/art/sprites';
 
 import { cellFromPoint, cellSize, GAP, PAD } from './geometry';
 import { Piece } from './Piece';
@@ -15,18 +15,15 @@ export type BoardProps = {
   state: GameState;
   /** 選択中の駒が置けるアンカー。posKey の集合。ここだけ光らせる。 */
   validAnchors: Set<string>;
-  selectedId: string | null;
   violatingIds: Set<string>;
   /** ドラッグ中の駒。本体は隠し、追従表示は Game が描く。 */
   draggingId: string | null;
   /** 当たり判定に使う .grid の実体。値は保持せず、イベントのたびに測り直す。 */
   gridRef: RefObject<HTMLDivElement | null>;
-  /** 値が変わるたびに盤を1回振る。置けない場所を押したことを伝える。 */
+  /** 値が変わるたびに盤を1回振る。置けない場所で離したことを伝える。 */
   rejectToken: number;
   /** クリアした。駒を置いた順に跳ねさせる。 */
   won: boolean;
-  onCellPress: (pos: Pos) => void;
-  onPiecePress: (instanceId: string) => void;
   /** つかんだ瞬間の駒の左上（画面座標）を渡す。 */
   onDragStart: (instanceId: string, left: number, top: number) => void;
   onDragMove: (dx: number, dy: number) => void;
@@ -36,8 +33,10 @@ export type BoardProps = {
 /**
  * 盤面の描画と、盤上のジェスチャ。
  *
- * useDrag は .grid に 1 つだけ付ける。駒ごとに付けると入れ子でイベントを
+ * ジェスチャは .grid に 1 つだけ付ける。駒ごとに付けると入れ子でイベントを
  * 奪い合い、これが旧実装で「掴めなくなる」一因だった。
+ *
+ * **操作はドラッグだけ。** タップで選ぶ方式は廃止した。
  *
  * 駒は grid に一切参加させず、絶対配置で重ねる。こうすると駒を置いても
  * 消しても grid の計算結果が変わらないので、盤面が 1px も動かない。
@@ -45,14 +44,11 @@ export type BoardProps = {
 export function Board({
   state,
   validAnchors,
-  selectedId,
   violatingIds,
   draggingId,
   gridRef,
   rejectToken,
   won,
-  onCellPress,
-  onPiecePress,
   onDragStart,
   onDragMove,
   onDragEnd,
@@ -88,22 +84,7 @@ export function Board({
     };
   };
 
-  const handlers = usePieceDrag({
-    onGrab: grabAt,
-    onTap: (x, y, grabbed) => {
-      if (grabbed) {
-        onPiecePress(grabbed.instanceId);
-        return;
-      }
-      const rect = gridRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const pos = cellFromPoint(rect, stage.rows, stage.cols, x, y);
-      if (pos) onCellPress(pos);
-    },
-    onDragStart,
-    onDragMove,
-    onDragEnd,
-  });
+  const handlers = usePieceDrag({ onGrab: grabAt, onDragStart, onDragMove, onDragEnd });
 
   const cells: Pos[] = [];
   for (let r = 0; r < stage.rows; r++) {
@@ -131,16 +112,18 @@ export function Board({
         aria-label={`${stage.cols}×${stage.rows} の盤面`}>
         {cells.map((pos) => {
           const terrain = terrainAt(stage, pos);
+          const block = terrain === 'wall' || terrain === 'tree' || terrain === 'water' ? terrain : null;
           return (
             <div
               key={posKey(pos)}
               className="cell"
               data-terrain={terrain}
               data-valid={validAnchors.has(posKey(pos)) ? 'true' : undefined}
-              role="gridcell"
-            >
-              {terrain === 'water' && <WaterIcon />}
-              {terrain === 'tree' && <TreeIcon />}
+              // 揺れの位相をマスごとにずらす。全部が同じ拍で動くと、風ではなく
+              // 画面全体が揺れているように見えてしまう。
+              style={{ '--phase': `${((pos.r * 7 + pos.c * 13) % 10) / 10}s` } as CSSProperties}
+              role="gridcell">
+              {block && <img className="cell-art" src={blockSprite[block]} alt="" draggable={false} />}
             </div>
           );
         })}
@@ -152,7 +135,6 @@ export function Board({
               <motion.div
                 key={animal.instanceId}
                 className="piece-slot"
-                data-selected={animal.instanceId === selectedId ? 'true' : undefined}
                 data-dragging={animal.instanceId === draggingId ? 'true' : undefined}
                 style={{ '--r': animal.anchor.r, '--c': animal.anchor.c } as CSSProperties}
                 // 参考アプリより damping を上げ、回転も浅くしてある。あちらは
