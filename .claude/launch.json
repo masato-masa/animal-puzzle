@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "animal-puzzle-web",
+      "name": "animal-puzzle",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "web"],
-      "port": 8081
+      "runtimeArgs": ["run", "dev"],
+      "port": 5174
     }
   ]
 }

@@ -1,5 +1,5 @@
 import type { SpeciesCondition, StageRule } from '@/engine';
-import { blockLabel, speciesLabel } from '@/theme';
+import { blockLabel, speciesLabel } from '@/art/palette';
 
 /** 条件を短い日本語の説明文にする（じょうけんパネル表示用）。 */
 export const conditionText = (condition: SpeciesCondition): string => {
