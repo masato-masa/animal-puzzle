@@ -1,41 +1,75 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { createGameState, placeAnimal, posKey, type Stage } from '@/engine';
-import { getStage, STAGES } from '@/levels/stages';
-import { Board } from '@/ui/Board';
+import type { Stage } from '@/engine';
+import { getNextStage, getStage } from '@/levels/stages';
+import { goBack, navigate, useRoute } from '@/core/router';
+import { getCustomStage } from '@/storage/custom-stages';
+import { recordClear } from '@/storage/progress';
 
-/** 駒を1つ置いた状態も見る（置いても盤面がずれないことの確認用）。 */
-const withOnePiece = (stage: Stage) => {
-  const empty = createGameState(stage);
-  const first = empty.tray[0];
-  if (!first) return empty;
-  for (let r = 0; r < stage.rows; r++) {
-    for (let c = 0; c < stage.cols; c++) {
-      const next = placeAnimal(empty, first.instanceId, { r, c });
-      if (next !== empty) return next;
-    }
+import { Game } from './ui/Game';
+import { StageSelect } from './ui/StageSelect';
+
+/**
+ * 出荷ステージは同期で引ける。自作ステージだけ localStorage から読むので
+ * 一瞬だけ「読み込み中」を挟む。
+ */
+function GameRoute({ stageId }: { stageId: string }) {
+  const shipped = getStage(stageId);
+  const [custom, setCustom] = useState<Stage | null | undefined>(shipped ? null : undefined);
+
+  useEffect(() => {
+    if (shipped) return;
+    let active = true;
+    void getCustomStage(stageId).then((s) => {
+      if (active) setCustom(s ?? null);
+    });
+    return () => {
+      active = false;
+    };
+  }, [stageId, shipped]);
+
+  const handleCleared = useCallback((id: string) => {
+    void recordClear(id);
+  }, []);
+
+  const stage = shipped ?? custom;
+  if (stage === undefined) return <p className="app notice">読み込み中…</p>;
+  if (!stage) {
+    return (
+      <div className="app notice">
+        <p>そのステージは見つかりませんでした。</p>
+        <button type="button" className="text-btn" onClick={() => navigate({ name: 'stages' })}>
+          ステージ一覧へ
+        </button>
+      </div>
+    );
   }
-  return empty;
-};
 
-/** Task 6 の目視確認用。次のタスクで本物の画面に差し替える。 */
-export function App() {
-  const ref = useRef<HTMLDivElement>(null);
-  const wide = getStage('stage-1')!;
-  const tall = STAGES.find((s) => s.rows > s.cols)!;
-  const square = STAGES.find((s) => s.rows === s.cols && s.rows >= 6)!;
+  const next = getNextStage(stage.id);
   return (
-    <div className="app">
-      {[wide, tall, square].map((stage) => (
-        <Board
-          key={stage.id}
-          state={withOnePiece(stage)}
-          validAnchors={new Set([posKey({ r: 1, c: 1 })])}
-          selectedId={null}
-          violatingIds={new Set()}
-          gridRef={ref}
-        />
-      ))}
-    </div>
+    <Game
+      key={stage.id}
+      stage={stage}
+      hasNext={!!next}
+      onBack={goBack}
+      onNext={() => next && navigate({ name: 'game', stageId: next.id })}
+      onList={() => navigate({ name: 'stages' })}
+      onCleared={handleCleared}
+    />
   );
+}
+
+export function App() {
+  const route = useRoute();
+
+  switch (route.name) {
+    case 'game':
+      return <GameRoute stageId={route.stageId} />;
+    case 'my-stages':
+      return <p className="app notice">マイステージは準備中です。</p>;
+    case 'editor':
+      return <p className="app notice">エディタは準備中です。</p>;
+    default:
+      return <StageSelect />;
+  }
 }

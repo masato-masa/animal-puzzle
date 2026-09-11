@@ -49,6 +49,20 @@ body {
   padding: 20px 16px 28px;
 }
 
+/* 盤面とカードを、ヘッダーの下に残った高さの中央に置く。
+   .app が min-height なので、内容が画面より高いときは中央寄せのまま
+   全体が伸びてページごとスクロールする（上が切れない）。 */
+.play {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
 .silhouette {
   width: 76%;
   height: 76%;
@@ -162,4 +176,303 @@ body {
 .piece-slot[data-selected='true'] .piece {
   outline: 3px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ---- ヘッダー ---- */
+.header {
+  width: min(92vw, 460px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.header-left {
+  justify-self: start;
+  display: flex;
+  gap: 8px;
+}
+
+.header-right {
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+}
+
+.title-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--title);
+  text-align: center;
+  line-height: 1.25;
+}
+
+.progress {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-now {
+  color: #22c55e;
+}
+.progress-slash {
+  color: #a1a1aa;
+  margin: 0 3px;
+}
+.progress-total {
+  color: #71717a;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+}
+
+.icon-btn:active {
+  transform: scale(0.9);
+}
+
+/* ---- 動物カード ---- */
+.cards {
+  width: min(92vw, 460px);
+  display: grid;
+  gap: 6px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease), background-color 0.14s var(--ease);
+}
+
+.card:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.card:disabled {
+  cursor: default;
+}
+
+.card[data-selected='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: #ece4fa;
+}
+
+.card[data-violating='true'] {
+  background: #fbe9e7;
+  color: #a2352d;
+}
+
+.card[data-dimmed='true'] {
+  opacity: 0.6;
+}
+
+.card-static {
+  cursor: default;
+  grid-template-columns: 1fr;
+}
+
+/* カードの中の駒は盤面と同じ描き方をする。つまんだ瞬間に姿が変わらないように、
+   1マスあたりの大きさだけを小さくする。 */
+.card-piece {
+  --cell: calc(36px / max(var(--w), var(--h)));
+  --gap: 2px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+}
+
+.card-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--title);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.card[data-violating='true'] .card-name {
+  color: #a2352d;
+}
+
+.card-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pill-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-cond {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.status-mark {
+  width: 13px;
+  height: 13px;
+  flex: none;
+  display: block;
+}
+
+/* ---- ステージ一覧 ---- */
+.sheet {
+  width: min(92vw, 460px);
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  background: var(--surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-xs);
+}
+
+.chapter {
+  display: grid;
+  gap: 8px;
+}
+
+.chapter-head {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pill-fg);
+}
+
+.chapter-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.tile {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pill-bg);
+  box-shadow: var(--shadow-xs);
+  color: var(--pill-fg);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease);
+}
+
+.tile:active {
+  transform: scale(0.94);
+}
+
+.tile[data-cleared='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* ---- 汎用のボタン・表示 ---- */
+.text-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
+  color: var(--pill-fg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+}
+
+.text-btn:active {
+  transform: scale(0.95);
+}
+
+.return-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.notice {
+  justify-content: center;
+  color: var(--pill-fg);
+  font-weight: 600;
+}
+
+.temp-clear {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-weight: 700;
+  color: var(--title);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
 }
