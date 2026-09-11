@@ -559,3 +559,225 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ---- マイステージ・エディタ ---- */
+.empty {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pill-fg);
+}
+
+.stage-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.stage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pill-bg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage-row-thumbs {
+  display: flex;
+  gap: 3px;
+  flex: none;
+}
+
+.thumb {
+  --cell: calc(26px / max(var(--w, 1), var(--h, 1)));
+  --gap: 2px;
+  display: grid;
+  place-items: center;
+}
+
+.stage-row-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage-row-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--title);
+}
+
+.stage-row-meta {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--pill-fg);
+}
+
+.chip-btn {
+  flex: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.14s var(--ease), background-color 0.14s var(--ease);
+}
+
+.chip-btn:active {
+  transform: scale(0.95);
+}
+
+.chip-btn[data-selected='true'] {
+  background: var(--accent);
+  color: #fff;
+}
+
+.chip-btn-danger {
+  color: var(--ng);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field-label {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--pill-fg);
+}
+
+.field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* エディタの盤面は画面の高さに縛られない（ページごとスクロールしてよい）。 */
+.editor-grid {
+  --cell: calc((min(88vw, 400px) - var(--gap) * (var(--cols) - 1)) / var(--cols));
+  touch-action: none;
+  cursor: pointer;
+}
+
+.animal-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+
+.animal-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--title);
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stepper-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pill-fg);
+  margin-right: 2px;
+}
+
+.stepper-btn {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stepper-value {
+  min-width: 22px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--title);
+  font-variant-numeric: tabular-nums;
+}
+
+.text-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--pill-bg);
+  color: var(--title);
+  font: inherit;
+  font-size: 14px;
+}
+
+.text-input::placeholder {
+  color: #c3aca6;
+}
+
+.result {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.result p {
+  margin: 0;
+}
+
+.result-ng {
+  background: #fbe9e7;
+  color: #a2352d;
+}
+
+.result-ok {
+  background: #e9f6ea;
+  color: #2f6b33;
+}
+
+.result-hint {
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.overlay-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

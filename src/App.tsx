@@ -6,7 +6,9 @@ import { goBack, navigate, useRoute } from '@/core/router';
 import { getCustomStage } from '@/storage/custom-stages';
 import { recordClear } from '@/storage/progress';
 
+import { Editor } from './ui/Editor';
 import { Game } from './ui/Game';
+import { MyStages } from './ui/MyStages';
 import { StageSelect } from './ui/StageSelect';
 
 /**
@@ -66,9 +68,9 @@ export function App() {
     case 'game':
       return <GameRoute stageId={route.stageId} />;
     case 'my-stages':
-      return <p className="app notice">マイステージは準備中です。</p>;
+      return <MyStages />;
     case 'editor':
-      return <p className="app notice">エディタは準備中です。</p>;
+      return <Editor />;
     default:
       return <StageSelect />;
   }
