@@ -1,49 +1,26 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# 依存
 node_modules/
 
-# Expo
-.expo/
+# ビルド成果物
 dist/
-web-build/
-expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
+# ログ
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# OS
 .DS_Store
 *.pem
 
-# local env files
+# ローカルの環境変数
 .env*.local
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 
-example
-
-# generated native folders
-/ios
-/android
-
-# Claude Code session-runtime state
+# Claude Code のセッション状態
 .claude/scheduled_tasks.lock
 
-# stage generator scratch output (scripts/generate-stages.test.ts)
+# ステージ生成器の作業用出力
 scripts/generated-stages.txt
