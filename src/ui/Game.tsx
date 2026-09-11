@@ -17,7 +17,8 @@ import {
 import { sfx, isMuted, setMuted, vibrate } from '@/core/sfx';
 
 import { AnimalCards } from './AnimalCards';
-import { Board } from './Board';
+import { Board, BOUNCE_STEP } from './Board';
+import { ClearOverlay } from './ClearOverlay';
 import { anchorFromPiecePoint, cellSize, GAP } from './geometry';
 import { BackIcon, ListIcon, ResetIcon, SoundIcon } from './icons';
 import { Piece } from './Piece';
@@ -274,6 +275,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           draggingId={drag?.instanceId ?? null}
           gridRef={gridRef}
           rejectToken={rejectToken}
+          won={cleared}
           onCellPress={handleCellPress}
           onPiecePress={handlePiecePress}
           onDragStart={handleDragStart}
@@ -321,14 +323,14 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
       )}
 
       {cleared && (
-        <div className="temp-clear">
-          クリア！
-          {hasNext && (
-            <button type="button" onClick={onNext}>
-              つぎへ
-            </button>
-          )}
-        </div>
+        <ClearOverlay
+          // 駒が全部跳ね終わってから出す。
+          delay={state.placed.length * BOUNCE_STEP + 0.42}
+          hasNext={hasNext}
+          onNext={onNext}
+          onRetry={handleReset}
+          onList={onList}
+        />
       )}
     </div>
   );

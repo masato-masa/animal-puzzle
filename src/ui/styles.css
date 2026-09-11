@@ -480,12 +480,77 @@ body {
   font-weight: 600;
 }
 
-.temp-clear {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+/* ---- クリア演出 ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(246 245 239 / 0.66);
+  backdrop-filter: blur(3px);
+  z-index: 10;
+}
+
+.overlay-card {
+  background: var(--surface);
+  border-radius: 22px;
+  padding: 26px 30px 24px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgb(115 80 86 / 0.16);
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: 258px;
+}
+
+.overlay-card h2 {
+  margin: 0;
+  font-size: 24px;
   font-weight: 700;
   color: var(--title);
+}
+
+.overlay-card p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #a99089;
+}
+
+.overlay-buttons {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.overlay-btn {
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 30px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), background-color 0.15s var(--ease);
+}
+
+.overlay-btn:hover {
+  background: #8168c8;
+}
+
+.overlay-btn:active {
+  transform: scale(0.94);
+}
+
+.overlay-btn-quiet {
+  background: var(--pill-bg);
+  color: var(--pill-fg);
+}
+
+.overlay-btn-quiet:hover {
+  background: #f6e6dd;
 }
 
 @media (prefers-reduced-motion: reduce) {

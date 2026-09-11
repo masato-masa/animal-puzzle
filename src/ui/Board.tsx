@@ -8,6 +8,9 @@ import { cellFromPoint, cellSize, GAP, PAD } from './geometry';
 import { Piece } from './Piece';
 import { usePieceDrag } from './use-piece-drag';
 
+/** クリア時に駒が1つずつ跳ねる間隔（秒）。オーバーレイを出す時刻もこれで決まる。 */
+export const BOUNCE_STEP = 0.08;
+
 export type BoardProps = {
   state: GameState;
   /** 選択中の駒が置けるアンカー。posKey の集合。ここだけ光らせる。 */
@@ -20,6 +23,8 @@ export type BoardProps = {
   gridRef: RefObject<HTMLDivElement | null>;
   /** 値が変わるたびに盤を1回振る。置けない場所を押したことを伝える。 */
   rejectToken: number;
+  /** クリアした。駒を置いた順に跳ねさせる。 */
+  won: boolean;
   onCellPress: (pos: Pos) => void;
   onPiecePress: (instanceId: string) => void;
   /** つかんだ瞬間の駒の左上（画面座標）を渡す。 */
@@ -45,6 +50,7 @@ export function Board({
   draggingId,
   gridRef,
   rejectToken,
+  won,
   onCellPress,
   onPiecePress,
   onDragStart,
@@ -140,7 +146,7 @@ export function Board({
         })}
 
         <AnimatePresence initial={false}>
-          {placed.map((animal) => {
+          {placed.map((animal, order) => {
             const { w, h } = boundingBox(animal.species);
             return (
               <motion.div
@@ -153,9 +159,18 @@ export function Board({
                 // 1マスに収まる猫だが、こちらは駒が footprint ぴったりなので、
                 // 行きすぎが大きいと隣のマスにはみ出して見える。
                 initial={still ? false : { scale: 0, rotate: -12 }}
-                animate={{ scale: 1, rotate: 0 }}
+                // クリアしたら置いた順に跳ねる。placed の並びがそのまま置いた順。
+                animate={
+                  won && !still
+                    ? { scale: 1, rotate: 0, y: [0, -13, 0] }
+                    : { scale: 1, rotate: 0 }
+                }
                 exit={{ scale: 0, opacity: 0, transition: { duration: 0.12 } }}
-                transition={{ type: 'spring', stiffness: 620, damping: 26, mass: 0.7 }}>
+                transition={
+                  won && !still
+                    ? { delay: order * BOUNCE_STEP, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }
+                    : { type: 'spring', stiffness: 620, damping: 26, mass: 0.7 }
+                }>
                 <Piece
                   species={animal.species}
                   w={w}
