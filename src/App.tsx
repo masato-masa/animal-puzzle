@@ -1,74 +1,41 @@
-import { boundingBox, SPECIES, type Species } from '@/engine';
-import { speciesLabel, speciesVars } from '@/art/palette';
-import { SpeciesSilhouette } from '@/art/species';
-import { TreeIcon, WaterIcon } from '@/art/blocks';
+import { useRef } from 'react';
 
-const ALL = Object.keys(SPECIES) as Species[];
-const GAP = 6;
+import { createGameState, placeAnimal, posKey, type Stage } from '@/engine';
+import { getStage, STAGES } from '@/levels/stages';
+import { Board } from '@/ui/Board';
 
-function Chip({ species, cell }: { species: Species; cell: number }) {
-  const { w, h } = boundingBox(species);
-  return (
-    <div
-      style={
-        {
-          ...speciesVars(species),
-          width: w * cell + (w - 1) * GAP,
-          height: h * cell + (h - 1) * GAP,
-          background: 'var(--face)',
-          boxShadow: 'inset 0 -4px 0 0 var(--edge)',
-          borderRadius: 8,
-          color: 'var(--ink)',
-          display: 'grid',
-          placeItems: 'center',
-        } as React.CSSProperties
-      }>
-      <SpeciesSilhouette species={species} />
-    </div>
-  );
-}
+/** 駒を1つ置いた状態も見る（置いても盤面がずれないことの確認用）。 */
+const withOnePiece = (stage: Stage) => {
+  const empty = createGameState(stage);
+  const first = empty.tray[0];
+  if (!first) return empty;
+  for (let r = 0; r < stage.rows; r++) {
+    for (let c = 0; c < stage.cols; c++) {
+      const next = placeAnimal(empty, first.instanceId, { r, c });
+      if (next !== empty) return next;
+    }
+  }
+  return empty;
+};
 
-/** Task 4 の目視確認用。次のタスクで本物の画面に差し替える。 */
+/** Task 6 の目視確認用。次のタスクで本物の画面に差し替える。 */
 export function App() {
+  const ref = useRef<HTMLDivElement>(null);
+  const wide = getStage('stage-1')!;
+  const tall = STAGES.find((s) => s.rows > s.cols)!;
+  const square = STAGES.find((s) => s.rows === s.cols && s.rows >= 6)!;
   return (
     <div className="app">
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, justifyContent: 'center', maxWidth: 960 }}>
-        {ALL.map((sp) => (
-          <div key={sp} style={{ textAlign: 'center' }}>
-            <Chip species={sp} cell={120} />
-            <small>{speciesLabel[sp]}</small>
-          </div>
-        ))}
-      </div>
-
-      {/* 実寸の最悪ケース: 8列の盤面をモバイル幅で出したときのセル */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end', justifyContent: 'center' }}>
-        {ALL.map((sp) => (
-          <Chip key={sp} species={sp} cell={34} />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 12 }}>
-        {[
-          ['var(--water)', <WaterIcon key="w" />],
-          ['var(--tree)', <TreeIcon key="t" />],
-          ['var(--wall)', null],
-          ['var(--land)', null],
-        ].map(([bg, icon], i) => (
-          <div
-            key={i}
-            style={{
-              background: bg as string,
-              width: 64,
-              height: 64,
-              borderRadius: 8,
-              display: 'grid',
-              placeItems: 'center',
-            }}>
-            {icon as React.ReactNode}
-          </div>
-        ))}
-      </div>
+      {[wide, tall, square].map((stage) => (
+        <Board
+          key={stage.id}
+          state={withOnePiece(stage)}
+          validAnchors={new Set([posKey({ r: 1, c: 1 })])}
+          selectedId={null}
+          violatingIds={new Set()}
+          gridRef={ref}
+        />
+      ))}
     </div>
   );
 }
