@@ -1,17 +1,37 @@
-# Expo HAS CHANGED
+# 構成
 
-Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+Vite + React 19 + TypeScript。ネイティブアプリではなく Web のみ（GitHub Pages）。
+
+| 置き場所 | 役割 |
+|---|---|
+| `src/engine/` | ゲームのルール。配置・条件判定・解答器。**UI から独立していて、ここに UI の都合を持ち込まない。** |
+| `src/levels/stages.ts` | 出荷ステージ40面。生成器で作り、唯一解と章ごとの難易度を満たすことがテスト済み。 |
+| `src/lib/` | 条件の文言、難易度採点、設計チェック、Issue 投稿 URL。 |
+| `src/storage/` | localStorage。呼び出し側の形を変えないため async のまま。 |
+| `src/core/` | ハッシュルータ、WebAudio の効果音。 |
+| `src/ui/` | 画面。`geometry.ts` が盤面の座標計算の唯一の出どころ。 |
+| `src/art/` | 種の色（OKLCH で色相を11等分）と自作シルエット SVG。 |
+
+## 設計で守ること
+
+- **配置可否を UI に持たない。** `placeAnimal` / `moveAnimal` が状態を変えたかどうかだけで判断する。engine と二重管理しない。
+- **駒を grid に参加させない。** 絶対配置で重ねる。これで駒を置いても消しても盤面が 1px も動かない。
+- **盤面の矩形をキャッシュしない。** イベントのたびに `getBoundingClientRect()` を取り直す。旧実装が `measureInWindow` の非同期結果を保持していたのが「置いた駒が動かせない」の原因だった。
+- **`aspect-ratio: cols / rows` を盤面カードに掛けない。** 余白と gap の本数が縦横で違うのでセルが正方形にならない（8列2行・幅460px で 20% ずれる）。セルの一辺 `--cell` を起点に組む。
+- **`GAP` / `PAD` は `src/ui/geometry.ts` が唯一の出どころ。** CSS には書かず、インライン変数で流し込む。
 
 # Deploy
 
-After any code change is finished (tests/typecheck green), commit + redeploy without waiting to be asked:
+コードを直したら（テスト・型検査が緑になったら）、言われる前にコミットして反映する。
 
-1. Commit the change and push to `master` (this is the source of truth for the live build).
-2. `npx expo export -p web`
-3. `cp dist/+not-found.html dist/404.html` (SPA fallback so direct links like `/game/stage-1` don't 404 on reload)
-4. `touch dist/.nojekyll` — **required.** GitHub Pages runs Jekyll by default, which silently excludes any file/directory starting with `_` (all of `_expo/`, `_sitemap.html`, etc.) unless `.nojekyll` exists at the published root. Without it the JS bundle 404s and the site is dead, in a way that looks exactly like a CDN caching bug (intermittent "the file exists but still 404s") — don't misdiagnose it as caching and go bump build-marker hashes instead, that was tried on 2026-09-03 and did nothing because the file was never being served at all.
-5. Push the contents of `dist/` (including `.nojekyll`) to the `gh-pages` branch (e.g. via a throwaway `git worktree`), leaving `master`'s working tree untouched.
-6. Verify the deploy actually landed: `curl -sI` a real `_expo/...` asset URL (not just `index.html`, which Jekyll doesn't touch either way) and confirm it's 200.
+1. 変更をコミットして `master` に push する（公開ビルドの元）
+2. `npm run deploy`（= `tsc --noEmit && vite build && node scripts/deploy.mjs`）
+3. 反映されたことを確かめる: `curl -sI` で実際の `assets/*.js` を叩いて 200 を確認する
+   （`index.html` は Jekyll が触らないので、それだけでは判定にならない）
+
+`scripts/deploy.mjs` は `.nojekyll` を毎回書き出す。**これが無いと JS バンドルが
+404 になり、CDN のキャッシュ不具合とそっくりの症状に見える。**
+
+ハッシュルーティング（`#/game/stage-1`）なので、404.html のフォールバックは不要。
 
 Live URL: https://masato-masa.github.io/animal-puzzle/
-
