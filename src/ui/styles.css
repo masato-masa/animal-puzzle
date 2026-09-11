@@ -173,6 +173,24 @@ body {
   opacity: 0.4;
 }
 
+/* ドラッグ中の本体。追従表示を別に描くので隠すが、場所は空けない
+   （空けるとレイアウトが動いてしまう）。 */
+.piece[data-hidden='true'] {
+  opacity: 0;
+}
+
+.piece-slot[data-dragging='true'] {
+  opacity: 0;
+}
+
+/* 指に追従する駒。固定レイヤーなのでレイアウトに影響しない。 */
+.drag-layer {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgb(74 46 20 / 0.28));
+}
+
 .piece-slot[data-selected='true'] .piece {
   outline: 3px solid var(--accent);
   outline-offset: 2px;

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import {
   animalAt,
+  boundingBox,
   createGameState,
   isStageCleared,
   moveAnimal,
@@ -10,13 +11,19 @@ import {
   validAnchorCells,
   violatingAnimals,
   type Pos,
+  type Species,
   type Stage,
 } from '@/engine';
 import { sfx, isMuted, setMuted, vibrate } from '@/core/sfx';
 
 import { AnimalCards } from './AnimalCards';
 import { Board } from './Board';
+import { anchorFromPiecePoint, cellSize, GAP } from './geometry';
 import { BackIcon, ListIcon, ResetIcon, SoundIcon } from './icons';
+import { Piece } from './Piece';
+
+/** ドラッグ中の駒。left/top はつかんだ瞬間の駒の左上（画面座標）。 */
+type Drag = { instanceId: string; species: Species; left: number; top: number; dx: number; dy: number };
 
 export type GameProps = {
   stage: Stage;
@@ -38,6 +45,9 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rejectToken, setRejectToken] = useState(0);
   const [muted, setMutedState] = useState(isMuted);
+  const [drag, setDrag] = useState<Drag | null>(null);
+  /** 盤面の1マスの辺長。カードからつかんだ駒を盤面と同じ大きさで追従させるのに使う。 */
+  const [boardCell, setBoardCell] = useState(40);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // ステージが変わったら作り直す。同じコンポーネントが使い回されるため。
@@ -45,7 +55,19 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
     setState(createGameState(stage));
     setSelectedId(null);
     setRejectToken(0);
+    setDrag(null);
   }, [stage]);
+
+  // 盤面の実寸を測る。CSS が min() で決めるので、JS 側からは読むだけにする。
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const measure = () => setBoardCell(cellSize(el.getBoundingClientRect(), stage.cols));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [stage.cols]);
 
   const violatingIds = useMemo(
     () => new Set(violatingAnimals(state).map((a) => a.instanceId)),
@@ -119,6 +141,68 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
     sfx.select();
   };
 
+  const speciesOf = (instanceId: string): Species | undefined =>
+    stage.animals.find((a) => a.instanceId === instanceId)?.species;
+
+  const handleDragStart = (instanceId: string, left: number, top: number) => {
+    const species = speciesOf(instanceId);
+    if (!species) return;
+    setDrag({ instanceId, species, left, top, dx: 0, dy: 0 });
+    setSelectedId(instanceId);
+  };
+
+  const handleDragMove = (dx: number, dy: number) => {
+    setDrag((d) => (d ? { ...d, dx, dy } : d));
+  };
+
+  const handleDragEnd = () => {
+    const d = drag;
+    setDrag(null);
+    if (!d) return;
+
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const cell = cellSize(rect, stage.cols);
+    const { w, h } = boundingBox(d.species);
+    const left = d.left + d.dx;
+    const top = d.top + d.dy;
+    const centerX = left + (w * cell + (w - 1) * GAP) / 2;
+    const centerY = top + (h * cell + (h - 1) * GAP) / 2;
+
+    const insideBoard =
+      centerX >= rect.left &&
+      centerX <= rect.left + rect.width &&
+      centerY >= rect.top &&
+      centerY <= rect.top + rect.height;
+
+    if (insideBoard) {
+      // アンカーの算出も置けるかの判定も、既存の経路にそのまま流す。
+      const onBoard = state.placed.some((p) => p.instanceId === d.instanceId);
+      const anchor = anchorFromPiecePoint(rect, left, top, stage.cols);
+      const next = (onBoard ? moveAnimal : placeAnimal)(state, d.instanceId, anchor);
+      if (next === state) {
+        setRejectToken((t) => t + 1);
+        sfx.reject();
+        vibrate([12, 40, 12]);
+        return;
+      }
+      setState(next);
+      setSelectedId(null);
+      sfx.place();
+      vibrate(8);
+      return;
+    }
+
+    // 盤の外で離した。盤上の駒ならトレイに戻す。
+    const back = returnToTray(state, d.instanceId);
+    if (back !== state) {
+      setState(back);
+      sfx.lift();
+    }
+    setSelectedId(null);
+  };
+
   const handleReturn = () => {
     if (!selectedId) return;
     const next = returnToTray(state, selectedId);
@@ -187,20 +271,54 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           validAnchors={validAnchors}
           selectedId={selectedId}
           violatingIds={violatingIds}
+          draggingId={drag?.instanceId ?? null}
           gridRef={gridRef}
           rejectToken={rejectToken}
           onCellPress={handleCellPress}
           onPiecePress={handlePiecePress}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
         />
 
-        {selectedOnBoard && (
+        {selectedOnBoard && !drag && (
           <button type="button" className="return-btn" onClick={handleReturn}>
             この動物をもどす
           </button>
         )}
 
-        <AnimalCards state={state} selectedId={selectedId} onSelect={handleSelectFromCard} />
+        <AnimalCards
+          state={state}
+          selectedId={selectedId}
+          draggingId={drag?.instanceId ?? null}
+          onSelect={handleSelectFromCard}
+          onDragStart={handleDragStart}
+          onDragMove={handleDragMove}
+          onDragEnd={handleDragEnd}
+          boardCell={boardCell}
+        />
       </div>
+
+      {/* 指に追従する駒。画面全体を覆う固定レイヤーに描くので、
+          盤面やカードのレイアウトには一切影響しない。 */}
+      {drag && (
+        <div
+          className="drag-layer"
+          style={
+            {
+              '--cell': `${boardCell}px`,
+              '--gap': `${GAP}px`,
+              left: drag.left + drag.dx,
+              top: drag.top + drag.dy,
+            } as CSSProperties
+          }>
+          <Piece
+            species={drag.species}
+            w={boundingBox(drag.species).w}
+            h={boundingBox(drag.species).h}
+          />
+        </div>
+      )}
 
       {cleared && (
         <div className="temp-clear">

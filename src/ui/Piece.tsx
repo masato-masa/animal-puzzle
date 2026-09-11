@@ -12,19 +12,22 @@ type Props = {
   violating?: boolean;
   /** 残数 0 のカードなど、存在は見せるが主張を下げたいとき。 */
   dimmed?: boolean;
+  /** ドラッグ中。追従表示を別に描くので本体は隠すが、場所は空けない。 */
+  hidden?: boolean;
 };
 
 /**
  * 駒 1 個。盤面でもカードでも同じ見た目にすることで、つまんだ瞬間に姿が変わらない。
  * 大きさは親が持つ --cell / --gap から決まるので、ここでは px を指定しない。
  */
-export function Piece({ species, w, h, violating, dimmed }: Props) {
+export function Piece({ species, w, h, violating, dimmed, hidden }: Props) {
   return (
     <div
       className="piece"
       style={{ ...speciesVars(species), '--w': w, '--h': h } as CSSProperties}
       data-violating={violating ? 'true' : undefined}
-      data-dimmed={dimmed ? 'true' : undefined}>
+      data-dimmed={dimmed ? 'true' : undefined}
+      data-hidden={hidden ? 'true' : undefined}>
       <SpeciesSilhouette species={species} />
     </div>
   );
