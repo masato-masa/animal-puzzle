@@ -1,0 +1,50 @@
+/* 配色・寸法・余白は参考アプリ（にゃんどく）の実測値。目分量の数字は入れていない。
+   種の色は src/art/palette.ts が持ち、駒にインライン変数として流し込む。 */
+:root {
+  --bg: #f6f5ef;
+  --surface: #ffffff;
+  --title: #735056;
+  --pill-bg: #fbf1eb;
+  --pill-fg: #8a5a5a;
+  --ink: #3b2e2b;
+  --accent: #9179d1;
+
+  --cell-radius: 8px;
+  --card-radius: 16px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* 置けるマス。置けないブロックは暗いニュートラルに寄せ、種類はアイコンで
+     区別する。こうすると種の 11 色とマスの色が競合しない。 */
+  --land: #ebe4dc;
+  --land-valid: #f5efe6;
+  --wall: oklch(0.42 0.02 60);
+  --water: oklch(0.45 0.05 230);
+  --tree: oklch(0.45 0.05 145);
+
+  --ok: #3fa845;
+  --ng: #d9453c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--title);
+  font-family: 'Open Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 16px 28px;
+}

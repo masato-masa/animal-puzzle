@@ -31,7 +31,7 @@ import { CHAPTERS, STAGES } from '@/levels/stages';
 import { gradeStage, meetsChapterBar } from '@/lib/stage-difficulty';
 import { buildStageCodeSnippet } from '@/lib/stage-submission';
 import { migrateStageTerrain } from '@/storage/migrate-stage';
-import { speciesEmoji, speciesLabel } from '@/theme';
+import { speciesHue, speciesLabel } from '@/art/palette';
 
 const makeStage = (overrides: Partial<Stage> = {}): Stage => ({
   id: 'test',
@@ -1291,11 +1291,17 @@ describe('migrateStageTerrain', () => {
 describe('species roster', () => {
   const allSpecies = Object.keys(SPECIES) as Species[];
 
-  test('every species has a label and an emoji', () => {
+  test('every species has a label and a hue', () => {
     for (const sp of allSpecies) {
       expect(speciesLabel[sp]).toBeTruthy();
-      expect(speciesEmoji[sp]).toBeTruthy();
+      expect(typeof speciesHue[sp]).toBe('number');
     }
+  });
+
+  // 色は種のラベルとして働くので、2種が同じ色相を持つと盤面で見分けられなくなる。
+  test('no two species share a hue', () => {
+    const hues = allSpecies.map((sp) => speciesHue[sp]);
+    expect(new Set(hues).size).toBe(allSpecies.length);
   });
 
   test('every condition refers to a species that exists', () => {
