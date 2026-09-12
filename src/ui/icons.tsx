@@ -56,23 +56,6 @@ export function GearIcon() {
   );
 }
 
-/** フッターのツール行に置くやり直し。丸ボタンの地が白なので線だけで描く。 */
-export function ToolResetIcon() {
-  return (
-    <svg viewBox="0 0 40 40" aria-hidden="true">
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="3.4"
-        strokeLinecap="round"
-        strokeLinejoin="round">
-        <path d="M31.5 20 a11.5 11.5 0 1 1 -3.6 -8.4" />
-        <path d="M32 9.5 v7 h-7" />
-      </g>
-    </svg>
-  );
-}
-
 export function ListIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -141,3 +124,7 @@ export function StatusMark({ ok, pending }: { ok: boolean; pending?: boolean }) 
     </svg>
   );
 }
+
+// ツール行（もどす・やり直す・ヒント）のアイコンは 4 つのゲームで共通。
+// 出どころは C:\claude\shared-ui	ool-icons.mjs。
+export { HintToolIcon, ResetToolIcon, UndoToolIcon } from './shared/tool-icons';

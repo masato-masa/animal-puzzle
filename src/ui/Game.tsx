@@ -19,7 +19,7 @@ import { AnimalCards } from './AnimalCards';
 import { Board, BOUNCE_STEP, type FreePositions } from './Board';
 import { ClearOverlay } from './ClearOverlay';
 import { anchorFromPiecePoint, cellSize, GAP } from './geometry';
-import { BackIcon, GearIcon, HelpIcon, ToolResetIcon } from './icons';
+import { BackIcon, GearIcon, HelpIcon, ResetToolIcon } from './icons';
 import { Piece } from './Piece';
 import { HelpSheet, SettingsSheet } from './Sheets';
 
@@ -209,20 +209,21 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
 
           <h1 className="title">{stage.name}</h1>
 
+          {/* 並びは ? が左、設定が右。4 つのゲームで同じにしてある。 */}
           <div className="header-actions">
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={() => setSheet('settings')}
-              aria-label="設定">
-              <GearIcon />
-            </button>
             <button
               type="button"
               className="icon-btn"
               onClick={() => setSheet('help')}
               aria-label="遊びかた">
               <HelpIcon />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setSheet('settings')}
+              aria-label="設定">
+              <GearIcon />
             </button>
           </div>
         </div>
@@ -265,7 +266,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
         {/* 操作のボタンはどのゲームでも盤面の下に置く。 */}
         <footer className="footer">
           <button type="button" className="tool" onClick={handleReset} aria-label="やり直す">
-            <ToolResetIcon />
+            <ResetToolIcon />
           </button>
         </footer>
       </div>
