@@ -70,7 +70,7 @@ const levelAtMost = (level: SolverLevel, max: SolverLevel): boolean =>
 /**
  * 2026-09-04、分割3完了後にステージ生成の方針そのものを刷新した
  * （壁で1本道を作る旧方式→開けた土地+animalRulesで唯一解に絞る新方式。
- * docs/superpowers/specs/2026-09-03-rules-and-difficulty-design.md参照）。
+ * Obsidian:Projects/animal-puzzle/superpowers/specs/2026-09-03-rules-and-difficulty-design.md参照）。
  * 新方式は旧方式よりはるかに高い確率でL1〜L4いずれの面も作れるため
  * （scripts/generate-open-stages.tsで数百面規模の実測済み）、章数を
  * 4章(各章1レベルに対応)に戻せた。CHAPTER_BARSは4要素になり、
