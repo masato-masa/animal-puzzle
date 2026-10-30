@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { STAGES } from '@/levels/stages';
 import { navigate } from '@/core/router';
 import { clearProgress, unlockAllForTesting } from '@/storage/progress';
+import { isBgmOn, setBgmOn } from '@/core/sfx';
 
 /** 画面全体を覆う下地。どの画面からも同じ形で出す。 */
 export function Overlay({
@@ -91,20 +92,37 @@ interface SettingsSheetProps {
 
 /** 設定。今は音の入切だけ。増やすときもここに行を足す。 */
 export function SettingsSheet({ muted, onToggleMute, onClose }: SettingsSheetProps) {
+  const [bgm, setBgm] = useState(isBgmOn);
+  const toggleBgm = () => {
+    setBgmOn(!bgm);
+    setBgm(!bgm);
+  };
   return (
     <Overlay key="settings" onClose={onClose}>
       <Sheet>
         <h2 className="sheet-title">設定</h2>
 
         <div className="sheet-row static">
-          <span>音</span>
+          <span>効果音</span>
           <button
             type="button"
             className="switch"
             role="switch"
             aria-checked={!muted}
-            aria-label={muted ? '音を出す' : '音を消す'}
+            aria-label={muted ? '効果音を出す' : '効果音を消す'}
             onClick={onToggleMute}
+          />
+        </div>
+
+        <div className="sheet-row static">
+          <span>BGM</span>
+          <button
+            type="button"
+            className="switch"
+            role="switch"
+            aria-checked={bgm}
+            aria-label={bgm ? 'BGM を消す' : 'BGM を流す'}
+            onClick={toggleBgm}
           />
         </div>
 
