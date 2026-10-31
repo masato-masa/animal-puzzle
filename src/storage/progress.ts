@@ -25,6 +25,29 @@ export const recordClear = async (stageId: string): Promise<void> => {
 
 export const clearProgress = async (): Promise<void> => {
   removeKey(KEY);
+  removeKey(ENDLESS_KEY);
+};
+
+// --- むげん ---------------------------------------------------------------
+
+/** むげんは番号が続くだけなので、クリアした最大の番号だけを持つ。 */
+const ENDLESS_KEY = 'animal-puzzle:endless:v1';
+
+type EndlessData = { cleared: number };
+
+const loadEndless = (): EndlessData => {
+  const data = readJson<Partial<EndlessData>>(ENDLESS_KEY, {});
+  const cleared = typeof data.cleared === 'number' && Number.isFinite(data.cleared) ? Math.max(0, Math.floor(data.cleared)) : 0;
+  return { cleared };
+};
+
+/** クリアした最大の面の番号（まだなら 0）。 */
+export const loadEndlessCleared = async (): Promise<number> => loadEndless().cleared;
+
+/** n 面をクリアしたと記録する。前より小さい番号を遊び直しても戻さない。 */
+export const recordEndlessClear = async (n: number): Promise<void> => {
+  if (n <= loadEndless().cleared) return;
+  writeJson(ENDLESS_KEY, { cleared: n });
 };
 
 /**

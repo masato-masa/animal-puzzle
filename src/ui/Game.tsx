@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence } from 'motion/react';
 
 import {
@@ -47,6 +47,13 @@ export type GameProps = {
   onNext: () => void;
   onList: () => void;
   onCleared: (stageId: string) => void;
+  /** ヘッダーの題。省略時はステージ名。 */
+  title?: string;
+  /** 2 行目の先頭に足す表示（むげんの面の番号など）。数字は 1 行目に置かない決まりのため。 */
+  status?: ReactNode;
+  /** クリア画面のボタンの文言。 */
+  nextLabel?: string;
+  listLabel?: string;
 };
 
 /**
@@ -54,7 +61,7 @@ export type GameProps = {
  * 描画だけを持つ。「置けるかどうか」を UI 側で判定しない — placeAnimal /
  * moveAnimal が状態を変えたかどうかだけで判断する（engine と二重管理しない）。
  */
-export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: GameProps) {
+export function Game({ stage, hasNext, onBack, onNext, onList, onCleared, title, status, nextLabel, listLabel }: GameProps) {
   const [state, setState] = useState(() => createGameState(stage));
   const [drag, setDrag] = useState<Drag | null>(null);
   /**
@@ -251,7 +258,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
             </button>
           </div>
 
-          <h1 className="title">{stage.name}</h1>
+          <h1 className="title">{title ?? stage.name}</h1>
 
           {/* 並びは ? が左、設定が右。4 つのゲームで同じにしてある。 */}
           <div className="header-actions">
@@ -273,6 +280,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
         </div>
 
         <div className="status-bar">
+          {status}
           <span className="stat">
             <span className="stat-label">おいた</span>
             <span className="stat-num stat-now">{placedCount}</span>
@@ -356,6 +364,8 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
           onNext={onNext}
           onRetry={handleReset}
           onList={onList}
+          nextLabel={nextLabel}
+          listLabel={listLabel}
         />
       )}
     </div>

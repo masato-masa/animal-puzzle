@@ -41,7 +41,15 @@ const solvableWithinDepth = (state: GameState, depth: number): boolean => {
  */
 export const solverLevel = (stage: Stage): SolverLevel => {
   if (countGeometricPlacements(stage, 2) === 1) return 'L0';
+  return reasoningLevel(stage);
+};
 
+/**
+ * solverLevel から L0 の判定（幾何的な詰め方の数え上げ）を除いたもの。詰め方が2通り
+ * 以上あると呼び出し側が既に知っているとき（むげんの生成器）に使う。数え上げは
+ * 素朴な全探索で、駒が多い盤では判定の大半の時間を占めるため。
+ */
+export const reasoningLevel = (stage: Stage): Exclude<SolverLevel, 'L0'> => {
   const initial = createGameState(stage);
   if (solvableWithinDepth(initial, 0)) return 'L1';
   if (solvableWithinDepth(initial, 1)) return 'L2';

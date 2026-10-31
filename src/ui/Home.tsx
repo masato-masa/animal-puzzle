@@ -5,7 +5,7 @@ import { STAGES } from '@/levels/stages';
 import { navigate } from '@/core/router';
 import { isMuted, setMuted, sfx } from '@/core/sfx';
 import { speciesSprite } from '@/art/sprites';
-import { loadProgress } from '@/storage/progress';
+import { loadEndlessCleared, loadProgress } from '@/storage/progress';
 
 import { DevSheet, SettingsSheet } from './Sheets';
 import { GearIcon } from './icons';
@@ -17,10 +17,12 @@ type Sheet = 'none' | 'settings' | 'dev';
 
 export function Home() {
   const [cleared, setCleared] = useState<Set<string> | null>(null);
+  const [endless, setEndless] = useState(0);
   const [muted, setMutedState] = useState(isMuted);
   const [sheet, setSheet] = useState<Sheet>('none');
 
   const reload = useCallback(() => {
+    void loadEndlessCleared().then(setEndless);
     void loadProgress().then((p) => setCleared(new Set(p.clearedStageIds)));
   }, []);
   useEffect(reload, [reload]);
@@ -82,6 +84,14 @@ export function Home() {
             className="home-btn"
             onClick={() => navigate({ name: 'stages' })}>
             ステージを えらぶ
+          </button>
+          {/* 手作りの本編とは別に、面の番号から作る終わりのないモード。 */}
+          <button
+            type="button"
+            className="home-btn"
+            onClick={() => navigate({ name: 'endless', n: endless + 1 })}>
+            むげん
+            <span className="home-btn-sub">{endless > 0 ? `${endless + 1} めんから` : 'どこまでも つづく'}</span>
           </button>
         </div>
 

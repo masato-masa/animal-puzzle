@@ -4,7 +4,8 @@ import type { Stage } from '@/engine';
 import { getNextStage, getStage } from '@/levels/stages';
 import { goBack, navigate, useRoute } from '@/core/router';
 import { getCustomStage } from '@/storage/custom-stages';
-import { recordClear } from '@/storage/progress';
+import { getEndlessStage, prefetchEndless } from '@/levels/endless-client';
+import { recordClear, recordEndlessClear } from '@/storage/progress';
 
 import { Editor } from './ui/Editor';
 import { Game } from './ui/Game';
@@ -62,12 +63,68 @@ function GameRoute({ stageId }: { stageId: string }) {
   );
 }
 
+/**
+ * むげんの n 面。盤はワーカーで作るので、出来るまでローディングを出す。
+ * 表示したら n+1 面を裏で作らせ、「つぎへ」で待たないようにする。
+ */
+function EndlessRoute({ n }: { n: number }) {
+  const [stage, setStage] = useState<{ n: number; stage: Stage } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void getEndlessStage(n).then((s) => {
+      if (!active) return;
+      setStage({ n, stage: s });
+      prefetchEndless(n + 1);
+    });
+    return () => {
+      active = false;
+    };
+  }, [n]);
+
+  const handleCleared = useCallback(() => {
+    void recordEndlessClear(n);
+  }, [n]);
+
+  if (!stage || stage.n !== n) {
+    return (
+      <div className="app notice endless-loading" role="status" aria-live="polite">
+        <span className="endless-spinner" aria-hidden="true" />
+        <p>むげん {n} めんを つくっています…</p>
+      </div>
+    );
+  }
+
+  return (
+    <Game
+      key={`endless-${n}`}
+      stage={stage.stage}
+      title="むげん"
+      status={
+        <span className="stat stat-endless">
+          <span className="stat-num">{n}</span>
+          <span className="stat-label">めん</span>
+        </span>
+      }
+      hasNext
+      nextLabel="つぎへ"
+      listLabel="ホーム"
+      onBack={() => navigate({ name: 'home' })}
+      onNext={() => navigate({ name: 'endless', n: n + 1 })}
+      onList={() => navigate({ name: 'home' })}
+      onCleared={handleCleared}
+    />
+  );
+}
+
 export function App() {
   const route = useRoute();
 
   switch (route.name) {
     case 'game':
       return <GameRoute stageId={route.stageId} />;
+    case 'endless':
+      return <EndlessRoute n={route.n} />;
     case 'stages':
       return <StageSelect />;
     case 'my-stages':

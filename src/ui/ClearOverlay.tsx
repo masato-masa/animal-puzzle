@@ -7,9 +7,11 @@ type Props = {
   onNext: () => void;
   onRetry: () => void;
   onList: () => void;
+  nextLabel?: string;
+  listLabel?: string;
 };
 
-export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList }: Props) {
+export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList, nextLabel = 'つぎのステージ', listLabel = 'ステージ一覧' }: Props) {
   const still = useReducedMotion();
   const wait = still ? 0 : delay;
 
@@ -32,14 +34,14 @@ export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList }: Props)
           <div className="overlay-buttons">
             {hasNext && (
               <button type="button" className="sheet-btn" onClick={onNext}>
-                つぎのステージ
+                {nextLabel}
               </button>
             )}
             <button type="button" className="sheet-btn quiet" onClick={onRetry}>
               もういちど
             </button>
             <button type="button" className="sheet-btn quiet" onClick={onList}>
-              ステージ一覧
+              {listLabel}
             </button>
           </div>
         </motion.div>

@@ -9,6 +9,7 @@ export type Route =
   | { name: 'home' }
   | { name: 'stages' }
   | { name: 'game'; stageId: string }
+  | { name: 'endless'; n: number }
   | { name: 'my-stages' }
   | { name: 'editor' };
 
@@ -16,6 +17,10 @@ export const parseRoute = (hash: string): Route => {
   const path = hash.replace(/^#/, '').split('?')[0];
   const seg = path.split('/').filter(Boolean).map(decodeURIComponent);
   if (seg[0] === 'game' && seg[1]) return { name: 'game', stageId: seg[1] };
+  if (seg[0] === 'endless') {
+    const n = Number(seg[1]);
+    return { name: 'endless', n: Number.isInteger(n) && n >= 1 ? n : 1 };
+  }
   if (seg[0] === 'stages') return { name: 'stages' };
   if (seg[0] === 'my-stages') return { name: 'my-stages' };
   if (seg[0] === 'editor') return { name: 'editor' };
@@ -26,6 +31,8 @@ export const hashFor = (route: Route): string => {
   switch (route.name) {
     case 'game':
       return `#/game/${encodeURIComponent(route.stageId)}`;
+    case 'endless':
+      return `#/endless/${route.n}`;
     case 'stages':
       return '#/stages';
     case 'my-stages':
