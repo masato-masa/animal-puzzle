@@ -65,7 +65,8 @@
 .grid {
   --cell: min(
     calc((min(92vw, 460px) - var(--pad) * 2 - var(--gap) * (var(--cols) - 1)) / var(--cols)),
-    calc((52dvh - var(--gap) * (var(--rows) - 1)) / var(--rows))
+    /* --board-h は Game.tsx が、カード列とツール行を置いた残りの高さを測って入れる。 */
+    calc((var(--board-h, 52dvh) - var(--pad) * 2 - var(--gap) * (var(--rows) - 1)) / var(--rows))
   );
   position: relative;
   display: grid;
@@ -248,6 +249,36 @@
 
 .cards[data-dense='true'] {
   grid-template-columns: repeat(2, 1fr);
+}
+
+/* 縦が足りない画面（ホーム画面に追加したアプリ、小さい iPhone）では詰める。
+   Game.tsx が、盤のマスが小さくなりすぎるときだけ data-compact を付ける。
+   条件の文は消さない（遊ぶのに要る情報なので）。余白と字だけ詰める。 */
+.cards[data-compact] {
+  gap: 4px;
+}
+.cards[data-compact] .card {
+  padding: 3px 8px;
+  gap: 7px;
+}
+.cards[data-compact] .card-slot {
+  /* AnimalCards.tsx が style で入れる 1 マス 24px を 16px に縮める（2x2 の駒で 33px）。
+     style 属性の値を上書きするため !important が要る。 */
+  --cell: 16px !important;
+  --gap: 1px !important;
+  width: 33px !important;
+  height: 34px;
+}
+.cards[data-compact] .card-body {
+  gap: 0;
+}
+.cards[data-compact] .card-name {
+  font-size: 11px;
+}
+.cards[data-compact] .card-cond {
+  font-size: 10px;
+  line-height: 1.2;
+  gap: 4px;
 }
 
 .card {

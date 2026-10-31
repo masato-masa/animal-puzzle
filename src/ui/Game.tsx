@@ -36,6 +36,9 @@ type Drag = { instanceId: string; species: Species; left: number; top: number; d
  */
 const SNAP_RATIO = 0.38;
 
+/** 盤のマスがこれより小さくなるなら、カード列を詰めて盤に高さを回す。 */
+const MIN_CELL = 36;
+
 export type GameProps = {
   stage: Stage;
   /** 次のステージがあるか。クリア画面のボタンの出し分けに使う。 */
@@ -64,12 +67,53 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
   const [sheet, setSheet] = useState<'none' | 'help' | 'settings'>('none');
   const [muted, setMutedState] = useState(isMuted);
   const gridRef = useRef<HTMLDivElement>(null);
+  const playRef = useRef<HTMLDivElement>(null);
 
   // ステージが変わったら作り直す。同じコンポーネントが使い回されるため。
   useEffect(() => {
     setState(createGameState(stage));
     setFree({});
     setDrag(null);
+  }, [stage]);
+
+  // 盤面に使ってよい高さを決める。カード列とツール行を先に置き、残りを盤面に渡す。
+  // 画面の高さの割合で決め打ちすると、ホーム画面に追加したアプリ（時計の帯と
+  // 下のバーの分だけ縦が狭い）で、下のカードが画面からはみ出して触れなくなる。
+  // 残りが少なくマスが MIN_CELL を割るときは、カードを詰めた形（data-compact）にする。
+  useEffect(() => {
+    const play = playRef.current;
+    if (!play) return;
+    let observed: Element | null = null;
+    const measure = () => {
+      // カード列は後から描かれることがあるので、毎回探して見張る。
+      const cards = play.querySelector<HTMLElement>('.cards');
+      if (!cards) return;
+      if (observed !== cards) {
+        ro.observe(cards);
+        observed = cards;
+      }
+      const footer = play.querySelector<HTMLElement>('.footer');
+      const board = play.querySelector<HTMLElement>('.board');
+      const grid = play.querySelector<HTMLElement>('.grid');
+      const playGap = parseFloat(getComputedStyle(play).rowGap) || 0;
+      const pad = board ? parseFloat(getComputedStyle(board).paddingTop) || 0 : 0;
+      const gap = grid ? parseFloat(getComputedStyle(grid).rowGap) || 0 : 0;
+      const boardH = (cardsH: number) =>
+        play.clientHeight - cardsH - (footer?.offsetHeight ?? 0) - playGap * 2;
+      const cellAt = (cardsH: number) => (boardH(cardsH) - pad * 2 - gap * (stage.rows - 1)) / stage.rows;
+      const widthCell = (Math.min(window.innerWidth * 0.92, 460) - pad * 2 - gap * (stage.cols - 1)) / stage.cols;
+
+      // 詰めていない形の高さで判断する（詰めた後の高さで判断すると、切り替えが往復する）。
+      // 属性を外して測り、すぐ付け直すので、画面には出ない。
+      cards.removeAttribute('data-compact');
+      const normalH = cards.scrollHeight;
+      cards.toggleAttribute('data-compact', cellAt(normalH) < Math.min(MIN_CELL, widthCell));
+      play.style.setProperty('--board-h', `${Math.max(0, boardH(cards.scrollHeight))}px`);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(play);
+    measure();
+    return () => ro.disconnect();
   }, [stage]);
 
   // 盤面の実寸を測る。CSS が min() で決めるので、JS 側からは読むだけにする。
@@ -239,7 +283,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared }: Game
       </header>
 
       {/* 盤面とカードは、ヘッダーの下に残った高さの中央に置く。 */}
-      <div className="play">
+      <div className="play" ref={playRef}>
         <Board
           state={state}
           validAnchors={validAnchors}
