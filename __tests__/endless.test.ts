@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { countGeometricPlacements, countSolutions, validateStage, type Species } from '@/engine';
 import { hashFor, parseRoute } from '@/core/router';
 import { findDesignWarnings } from '@/lib/stage-design-checks';
-import { endlessSeed, enumerateTilings, generateEndless, mulberry32, rungsFor, targetFor } from '@/levels/endless';
+import { endlessSeed, enumerateTilings, generateEndless, milestoneAt, mulberry32, rungsFor, stepFor, targetFor } from '@/levels/endless';
 import { STAGES } from '@/levels/stages';
 import { clearProgress, loadEndlessCleared, recordEndlessClear } from '@/storage/progress';
 
@@ -29,6 +29,35 @@ describe('targetFor', () => {
       expect(t.level).toBeGreaterThanOrEqual(prev.level);
       expect(t.pieces).toBeLessThanOrEqual(8);
       prev = t;
+    }
+  });
+});
+
+describe('序盤と節目', () => {
+  test('1〜10 面の大半は L1（伝播だけで解ける）', () => {
+    const levels = Array.from({ length: 10 }, (_, i) => generateEndless(i + 1).level);
+    expect(levels.filter((l) => l === 'L1').length).toBeGreaterThanOrEqual(7);
+  });
+
+  test('節目は L2・L3・L4 に入る面に 1 回ずつ、この順に来る', () => {
+    const found: Array<[number, number]> = [];
+    for (let n = 1; n <= 400; n++) {
+      const m = milestoneAt(n);
+      if (m) found.push([n, m]);
+    }
+    expect(found.map(([, m]) => m)).toEqual([2, 3, 4]);
+    for (const [n, m] of found) {
+      expect(stepFor(n)).toBe(m);
+      expect(stepFor(n - 1)).toBe(m - 1);
+    }
+  });
+
+  test('節目の面は、その段の思考レベル以上で出る', () => {
+    for (let n = 2; n <= 80; n++) {
+      const m = milestoneAt(n);
+      if (!m) continue;
+      const level = generateEndless(n).level;
+      expect(['L1', 'L2', 'L3', 'L4', 'unsolvable'].indexOf(level) + 1).toBeGreaterThanOrEqual(m);
     }
   });
 });

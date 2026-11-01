@@ -503,6 +503,15 @@
   font-weight: 600;
 }
 
+/* ---- むげん: 段が上がった面の一言（2 行目に収める） ---- */
+.stat-milestone {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent);
+  white-space: nowrap;
+}
+
 /* ---- むげん: 盤を作っている間 ---- */
 .endless-loading {
   gap: 14px;

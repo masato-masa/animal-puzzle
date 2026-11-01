@@ -104,10 +104,28 @@ export type EndlessTarget = {
  */
 export const targetFor = (n: number): EndlessTarget => {
   const k = Math.max(0, n - 1);
-  const pieces = 3 + 5 * (1 - Math.exp(-k / 35));
-  const level = 1 + 3 * (1 - Math.exp(-k / 45));
+  const pieces = 3 + 5 * (1 - Math.exp(-Math.pow(k / 30, 1.3)));
+  // 序盤は L1 に長く留まり、20 面あたりから上がり始める S 字（崖を作らない）。
+  const level = 4 - 3 * Math.exp(-Math.pow(k / 40, 1.6));
   const rules = 1.5 + 3 * (1 - Math.exp(-k / 40));
   return { pieces, level, rules };
+};
+
+/**
+ * 序盤の手当ての強さ。1 面目で 1、10 面目で約 0.61、30 面目で約 0.2。
+ * 盤の広さ・ルールの選び方・ルールを消す基準を、これで滑らかに切り替える。
+ */
+export const easeFor = (n: number): number => Math.exp(-Math.max(0, n - 1) / 18);
+
+
+/**
+ * その面が節目なら、入る思考レベル（2〜4）を返す。節目でなければ null。
+ * 目標値の曲線から決まるので、生成器を回さずに分かる。
+ */
+export const milestoneAt = (n: number): number | null => {
+  if (n < 2) return null;
+  const step = stepFor(n);
+  return step > stepFor(n - 1) ? step : null;
 };
 
 /** 採点の重み。思考レベルの差を最も重く見る（遊んだ手応えに直結するため）。 */
@@ -338,12 +356,21 @@ export type RungParams = {
 
 type Candidate = { stage: Stage; level: SolverLevel; rules: number; score: number };
 
-const scoreOf = (target: EndlessTarget, pieces: number, level: SolverLevel, rules: number): number =>
-  WEIGHTS.level * Math.abs(levelIndex(level) - target.level) +
+/**
+ * 思考レベルを測る目標は「段」（目標を四捨五入した整数）。段は節目（milestoneAt）でだけ
+ * 上がるので、「ここから むずかしく」と出した面から実際に難しくなる。面ごとの揺らぎは
+ * 駒とルールの数が受け持つ。
+ */
+export const stepFor = (n: number): number => Math.round(targetFor(n).level);
+
+/** 序盤（ease が大きい面）ほど思考レベルの差を重く見る。駒やルールの数が多少ずれても、序盤は L1 を優先する。 */
+const scoreOf = (target: EndlessTarget, pieces: number, level: SolverLevel, rules: number, ease: number): number =>
+  (WEIGHTS.level + 8 * ease) * Math.abs(levelIndex(level) - Math.round(target.level)) +
   WEIGHTS.pieces * Math.abs(pieces - target.pieces) +
   WEIGHTS.rules * Math.abs(rules - target.rules);
 
 const attempt = (t: Tools, n: number, params: RungParams, target: EndlessTarget): Candidate | null => {
+  const ease = easeFor(n);
   const span = params.maxPieces - params.minPieces + 1;
   const pieces = params.minPieces + t.rand(span);
   const roster = pickRoster(t, pieces);
@@ -353,7 +380,7 @@ const attempt = (t: Tools, n: number, params: RungParams, target: EndlessTarget)
   for (let r = 2; r <= MAX_ROWS; r++)
     for (let c = 2; c <= MAX_COLS; c++) {
       const area = r * c;
-      if (area >= Math.max(cells + 1, 6) && area <= cells * 1.6 + 2) sizes.push({ rows: r, cols: c });
+      if (area >= Math.max(cells + 1, 6) && area <= cells * (1.6 - 0.4 * ease) + 2) sizes.push({ rows: r, cols: c });
     }
   if (sizes.length === 0) return null;
   const { rows, cols } = t.choice(sizes);
@@ -408,14 +435,18 @@ const attempt = (t: Tools, n: number, params: RungParams, target: EndlessTarget)
       if (cuts.length >= RULE_SAMPLE) break;
     }
     if (cuts.length === 0) continue;
-    // 弱く絞るルールほど選ばれやすくする。強いルール1つで決まる面は、ルールが少なく単調になる。
-    const pick = t.weighted(cuts, (x) => x.left.length);
+    // 重みは「残る詰め方の数」の (1 - 2*ease) 乗。後半は弱く絞るルールほど選ばれやすく
+    // （強いルール1つで決まる面は単調）、序盤は逆に強い手がかりほど選ばれやすい（1 手ずつ決まる）。
+    const power = 1 - 2 * ease;
+    const pick = t.weighted(cuts, (x) => Math.pow(x.left.length, power));
     rules[sp] = pick.rule;
     alive = pick.left;
   }
   if (alive.length !== 1) return null;
 
   // 外しても唯一解のままのルールは、何の役にも立っていないので消す。
+  // （外すと推論が難しくなるルールを序盤だけ残す案も試したが、L1 の数は変わらず
+  //  生成が 5 倍遅くなったのでやめた。2026-11-01 AP-6）
   const survivors = (rs: Partial<Record<Species, SpeciesCondition>>) =>
     tilings.filter((s) => (Object.keys(rs) as Species[]).every((sp) => isSpeciesConditionSatisfied(s, sp, rs[sp]!)));
   for (const sp of t.shuffle(Object.keys(rules) as Species[])) {
@@ -434,13 +465,17 @@ const attempt = (t: Tools, n: number, params: RungParams, target: EndlessTarget)
 
   const level = reasoningLevel(stage);
   const ruleCount = Object.keys(stage.animalRules ?? {}).length;
-  return { stage, level, rules: ruleCount, score: scoreOf(target, pieces, level, ruleCount) };
+  return { stage, level, rules: ruleCount, score: scoreOf(target, pieces, level, ruleCount, ease) };
 };
 
 // --- 梯子 ---------------------------------------------------------------------
 
-/** 候補がこれだけ集まったら、その中の最良で打ち切る。 */
-const ENOUGH_CANDIDATES = 6;
+/**
+ * 候補がこれだけ集まったら、その中の最良で打ち切る。序盤は L1 になる候補が少ない
+ * （伝播は置いた駒からしか絞れず、最初の1手を盤の形か水・木が決める必要がある）ので、
+ * 盤が小さく1候補が数 ms で済む序盤ほど多く見比べる。1 面目で 30、30 面目で約 11。
+ */
+const enoughCandidates = (n: number): number => 6 + Math.round(24 * easeFor(n));
 /** これ以下の点なら目標に十分近いので、その場で採る。 */
 const GOOD_SCORE = 0.9;
 
@@ -493,7 +528,7 @@ export const generateEndless = (n: number, opts: EndlessOptions = {}): EndlessRe
       if (!cand) continue;
       found++;
       if (!best || cand.score < best.score) best = cand;
-      if (best.score <= GOOD_SCORE || found >= ENOUGH_CANDIDATES) break;
+      if (best.score <= GOOD_SCORE || found >= enoughCandidates(n)) break;
     }
     if (best) return { stage: best.stage, rung: i, level: best.level, rules: best.rules, attempts: used };
   }

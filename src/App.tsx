@@ -4,6 +4,7 @@ import type { Stage } from '@/engine';
 import { getNextStage, getStage } from '@/levels/stages';
 import { goBack, navigate, useRoute } from '@/core/router';
 import { getCustomStage } from '@/storage/custom-stages';
+import { milestoneAt } from '@/levels/endless';
 import { getEndlessStage, prefetchEndless } from '@/levels/endless-client';
 import { recordClear, recordEndlessClear } from '@/storage/progress';
 
@@ -67,7 +68,15 @@ function GameRoute({ stageId }: { stageId: string }) {
  * むげんの n 面。盤はワーカーで作るので、出来るまでローディングを出す。
  * 表示したら n+1 面を裏で作らせ、「つぎへ」で待たないようにする。
  */
+/** 思考レベルの段が上がる面（節目）でだけ出す一言。それ以外の面では何も足さない。 */
+const MILESTONE_TEXT: Record<number, string> = {
+  2: 'ここから すこし むずかしく',
+  3: 'ここから もっと むずかしく',
+  4: 'ここから いちばん むずかしく',
+};
+
 function EndlessRoute({ n }: { n: number }) {
+  const milestone = milestoneAt(n);
   const [stage, setStage] = useState<{ n: number; stage: Stage } | null>(null);
 
   useEffect(() => {
@@ -101,10 +110,13 @@ function EndlessRoute({ n }: { n: number }) {
       stage={stage.stage}
       title="むげん"
       status={
-        <span className="stat stat-endless">
-          <span className="stat-num">{n}</span>
-          <span className="stat-label">めん</span>
-        </span>
+        <>
+          <span className="stat stat-endless">
+            <span className="stat-num">{n}</span>
+            <span className="stat-label">めん</span>
+          </span>
+          {milestone && <span className="stat stat-milestone">{MILESTONE_TEXT[milestone]}</span>}
+        </>
       }
       hasNext
       nextLabel="つぎへ"

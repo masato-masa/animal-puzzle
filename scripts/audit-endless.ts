@@ -10,9 +10,16 @@ import { countSolutions } from '@/engine';
 import { findDesignWarnings } from '@/lib/stage-design-checks';
 import { generateEndless, rungsFor, targetFor } from '@/levels/endless';
 
-const from = Number(process.argv[2] ?? 1);
-const to = Number(process.argv[3] ?? 200);
-const budgetScale = Number(process.argv[4] ?? 1);
+const positional = process.argv.slice(2).filter((a) => !a.startsWith('--'));
+const flag = (name: string, fallback: number) => {
+  const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
+  return hit ? Number(hit.split('=')[1]) : fallback;
+};
+const from = Number(positional[0] ?? 1);
+const to = Number(positional[1] ?? 200);
+const budgetScale = Number(positional[2] ?? 1);
+/** 分布表の 1 行に入れる面の数（--band=10 など）。 */
+const band = flag('band', 20);
 
 type Row = { n: number; ms: number; rung: number; level: string; pieces: number; rules: number; size: string; attempts: number };
 const rows: Row[] = [];
@@ -50,7 +57,7 @@ const rungCounts = Array.from({ length: finalRung + 1 }, (_, i) => rows.filter((
 console.log(`出た段: ${rungCounts.map((c, i) => `${i === finalRung ? '最終(手作り)' : `段${i}`}=${c}`).join(' ')}`);
 
 const bands: Array<[number, number]> = [];
-for (let s = from; s <= to; s += 20) bands.push([s, Math.min(to, s + 19)]);
+for (let s = from; s <= to; s += band) bands.push([s, Math.min(to, s + band - 1)]);
 console.log('\n| 面 | 目標(駒/L/ルール) | 平均駒 | 平均ルール | L1 | L2 | L3 | L4 | L5+ | 平均ms | 最大ms |');
 console.log('|---|---|---|---|---|---|---|---|---|---|---|');
 for (const [a, b] of bands) {
