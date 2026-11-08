@@ -1256,6 +1256,21 @@ describe('shipped stage content', () => {
     }
   }, 120_000);
 
+  test('stages 1-8 introduce exactly one new rule concept each, in a fixed order (AP-8)', () => {
+    // 入門で学ぶルールの種類の順。1 面に新しい種類は 1 つだけ（上下・左右は同じ概念の対）。
+    const concept = (r: { kind: string }): string =>
+      r.kind === 'blockAdjacentRequired' ? 'water' : r.kind === 'above' || r.kind === 'below' ? 'vertical' : r.kind === 'leftOf' || r.kind === 'rightOf' ? 'horizontal' : r.kind;
+    const order = ['water', 'adjacentForbidden', 'vertical', 'horizontal', 'sameRow', 'diagonalForbidden', 'minDistance', 'exactDistance'];
+    const seen = new Set<string>();
+    order.forEach((expected, i) => {
+      const stage = STAGES[i];
+      const used = new Set(Object.values(stage.animalRules ?? {}).map((r) => concept(r!)));
+      const fresh = [...used].filter((k) => !seen.has(k));
+      expect(fresh, `${stage.id} の新しい種類`).toEqual([expected]);
+      for (const k of used) seen.add(k);
+    });
+  });
+
   test('no two stages are the same puzzle up to a left-right/up-down mirror', () => {
     // 動物の形はすべて左右・上下対称なので、地形を反転しただけの盤面に同じ種構成を
     // 割り当てると「見た目が違うだけの同じパズル」になる(分割3のTask 4完了後の
