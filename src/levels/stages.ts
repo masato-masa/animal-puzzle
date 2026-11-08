@@ -21,6 +21,8 @@ const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split
  * チェックされる）。壁で通り道を1本に絞る旧方式とは異なり、幾何学的な置き方は多数
  * 存在し、唯一解への絞り込みはanimalRules(動物1種につきルール1つ)だけで行っている。
  * 1章の最初の3面(stage-1〜3)は駒数2〜3体の入門用、それ以降は駒数4〜8体。
+ * 2026-11-08（AP-7）: 外しても唯一解・思考レベルが変わらない「飾りのルール」を全面から
+ * 取り除いた（220 → 126 個）。ルールの無い種は「とくに条件なし」で、どこに置いてもよい。
  * 手動で編集した場合は、その保証が失われる点に注意。
  */
 export const STAGES: Stage[] = [
@@ -34,7 +36,6 @@ export const STAGES: Stage[] = [
     animals: animals([['oxpecker', 1], ['crocodile', 1], ['squirrel', 1]]),
     animalRules: {
       crocodile: { kind: 'blockAdjacentRequired', block: 'water' },
-      squirrel: { kind: 'rightOf', with: 'oxpecker' },
       oxpecker: { kind: 'exactDistance', with: 'crocodile', distance: 1 },
     },
   },
@@ -46,9 +47,7 @@ export const STAGES: Stage[] = [
     terrain: terrain(['...', '##.']),
     animals: animals([['oxpecker', 1], ['leopard', 1], ['squirrel', 1]]),
     animalRules: {
-      leopard: { kind: 'differentCol', with: 'oxpecker' },
       oxpecker: { kind: 'diagonalForbidden', with: 'leopard' },
-      squirrel: { kind: 'sameRow', with: 'oxpecker' },
     },
   },
   {
@@ -59,8 +58,6 @@ export const STAGES: Stage[] = [
     terrain: terrain(['.#', '..', '#.', '..']),
     animals: animals([['zebra', 1], ['giraffe', 1], ['leopard', 1]]),
     animalRules: {
-      leopard: { kind: 'above', with: 'zebra' },
-      zebra: { kind: 'differentRow', with: 'giraffe' },
       giraffe: { kind: 'diagonalForbidden', with: 'zebra' },
     },
   },
@@ -75,9 +72,7 @@ export const STAGES: Stage[] = [
       squirrel: { kind: 'blockAdjacentRequired', block: 'water' },
       zebra: { kind: 'below', with: 'squirrel' },
       oxpecker: { kind: 'minDistance', from: 'zebra', distance: 3 },
-      monkey: { kind: 'differentRow', with: 'squirrel' },
       crocodile: { kind: 'adjacentForbidden', with: 'squirrel' },
-      lion: { kind: 'differentCol', with: 'squirrel' },
     },
   },
   {
@@ -90,7 +85,6 @@ export const STAGES: Stage[] = [
     animalRules: {
       giraffe: { kind: 'blockAdjacentRequired', block: 'water' },
       crocodile: { kind: 'diagonalForbidden', with: 'giraffe' },
-      squirrel: { kind: 'differentCol', with: 'monkey' },
       monkey: { kind: 'adjacentForbidden', with: 'giraffe' },
     },
   },
@@ -105,9 +99,7 @@ export const STAGES: Stage[] = [
       oxpecker: { kind: 'below', with: 'lion' },
       rhino: { kind: 'adjacentForbidden', with: 'monkey' },
       zebra: { kind: 'minDistance', from: 'rhino', distance: 2 },
-      monkey: { kind: 'minDistance', from: 'oxpecker', distance: 3 },
       lion: { kind: 'minDistance', from: 'leopard', distance: 3 },
-      leopard: { kind: 'differentRow', with: 'lion' },
     },
   },
   {
@@ -118,12 +110,8 @@ export const STAGES: Stage[] = [
     terrain: terrain(['..##.', '#....', '#..##', '##..#']),
     animals: animals([['squirrel', 1], ['elephant', 1], ['giraffe', 1], ['oxpecker', 1], ['monkey', 1], ['zebra', 1]]),
     animalRules: {
-      elephant: { kind: 'below', with: 'squirrel' },
       oxpecker: { kind: 'rightOf', with: 'squirrel' },
-      zebra: { kind: 'surroundForbidden', with: 'squirrel' },
-      giraffe: { kind: 'rightOf', with: 'zebra' },
       squirrel: { kind: 'exactDistance', with: 'giraffe', distance: 2 },
-      monkey: { kind: 'minDistance', from: 'giraffe', distance: 3 },
     },
   },
   {
@@ -135,11 +123,7 @@ export const STAGES: Stage[] = [
     animals: animals([['monkey', 1], ['leopard', 1], ['lion', 1], ['oxpecker', 1], ['zebra', 1], ['elephant', 1]]),
     animalRules: {
       elephant: { kind: 'sameRow', with: 'leopard' },
-      monkey: { kind: 'sameCol', with: 'zebra' },
       zebra: { kind: 'exactDistance', with: 'monkey', distance: 1 },
-      lion: { kind: 'surroundForbidden', with: 'elephant' },
-      oxpecker: { kind: 'surroundForbidden', with: 'elephant' },
-      leopard: { kind: 'adjacentForbidden', with: 'monkey' },
     },
   },
   {
@@ -152,8 +136,6 @@ export const STAGES: Stage[] = [
     animalRules: {
       crocodile: { kind: 'above', with: 'gorilla' },
       lion: { kind: 'exactDistance', with: 'leopard', distance: 1 },
-      oxpecker: { kind: 'differentCol', with: 'gorilla' },
-      squirrel: { kind: 'below', with: 'leopard' },
       leopard: { kind: 'minDistance', from: 'crocodile', distance: 2 },
       gorilla: { kind: 'adjacentForbidden', with: 'oxpecker' },
     },
@@ -170,9 +152,7 @@ export const STAGES: Stage[] = [
       zebra: { kind: 'exactDistance', with: 'squirrel', distance: 1 },
       leopard: { kind: 'above', with: 'squirrel' },
       oxpecker: { kind: 'minDistance', from: 'zebra', distance: 2 },
-      monkey: { kind: 'sameCol', with: 'squirrel' },
       lion: { kind: 'sameRow', with: 'monkey' },
-      squirrel: { kind: 'adjacentRequired', with: 'monkey' },
     },
   },
   {
@@ -184,8 +164,6 @@ export const STAGES: Stage[] = [
     animals: animals([['crocodile', 1], ['squirrel', 1], ['giraffe', 1], ['monkey', 1], ['oxpecker', 1]]),
     animalRules: {
       squirrel: { kind: 'blockAdjacentRequired', block: 'water' },
-      crocodile: { kind: 'minDistance', from: 'giraffe', distance: 2 },
-      oxpecker: { kind: 'minDistance', from: 'giraffe', distance: 3 },
       monkey: { kind: 'sameCol', with: 'squirrel' },
       giraffe: { kind: 'adjacentForbidden', with: 'squirrel' },
     },
@@ -198,7 +176,6 @@ export const STAGES: Stage[] = [
     terrain: terrain(['..', '.#', '.#', '.#', '..']),
     animals: animals([['squirrel', 1], ['monkey', 1], ['giraffe', 1], ['leopard', 1], ['oxpecker', 1]]),
     animalRules: {
-      squirrel: { kind: 'differentCol', with: 'oxpecker' },
       monkey: { kind: 'minDistance', from: 'giraffe', distance: 3 },
       leopard: { kind: 'adjacentForbidden', with: 'giraffe' },
       giraffe: { kind: 'differentCol', with: 'squirrel' },
@@ -213,12 +190,9 @@ export const STAGES: Stage[] = [
     terrain: terrain(['.....', '.###.', '####.', '###~.', '####.']),
     animals: animals([['oxpecker', 1], ['lion', 1], ['monkey', 1], ['zebra', 1], ['leopard', 1], ['crocodile', 1]]),
     animalRules: {
-      zebra: { kind: 'rightOf', with: 'monkey' },
-      leopard: { kind: 'below', with: 'crocodile' },
       crocodile: { kind: 'exactDistance', with: 'oxpecker', distance: 2 },
       lion: { kind: 'exactDistance', with: 'monkey', distance: 3 },
       monkey: { kind: 'surroundForbidden', with: 'zebra' },
-      oxpecker: { kind: 'rightOf', with: 'crocodile' },
     },
   },
   {
@@ -231,8 +205,6 @@ export const STAGES: Stage[] = [
     animalRules: {
       zebra: { kind: 'diagonalForbidden', with: 'lion' },
       lion: { kind: 'sameRow', with: 'crocodile' },
-      monkey: { kind: 'below', with: 'crocodile' },
-      crocodile: { kind: 'adjacentForbidden', with: 'zebra' },
       squirrel: { kind: 'adjacentForbidden', with: 'lion' },
     },
   },
@@ -253,13 +225,9 @@ export const STAGES: Stage[] = [
       ['monkey', 1],
     ]),
     animalRules: {
-      monkey: { kind: 'adjacentForbidden', with: 'oxpecker' },
       squirrel: { kind: 'sameCol', with: 'gorilla' },
-      lion: { kind: 'below', with: 'crocodile' },
       oxpecker: { kind: 'surroundForbidden', with: 'lion' },
-      giraffe: { kind: 'adjacentForbidden', with: 'crocodile' },
       gorilla: { kind: 'adjacentForbidden', with: 'oxpecker' },
-      zebra: { kind: 'leftOf', with: 'giraffe' },
       crocodile: { kind: 'minDistance', from: 'gorilla', distance: 3 },
     },
   },
@@ -281,13 +249,9 @@ export const STAGES: Stage[] = [
     ]),
     animalRules: {
       giraffe: { kind: 'exactDistance', with: 'leopard', distance: 3 },
-      zebra: { kind: 'diagonalForbidden', with: 'squirrel' },
       leopard: { kind: 'sameCol', with: 'zebra' },
-      squirrel: { kind: 'leftOf', with: 'leopard' },
       lion: { kind: 'differentRow', with: 'squirrel' },
       oxpecker: { kind: 'minDistance', from: 'gorilla', distance: 3 },
-      gorilla: { kind: 'differentCol', with: 'oxpecker' },
-      monkey: { kind: 'minDistance', from: 'squirrel', distance: 2 },
     },
   },
   {
@@ -298,10 +262,8 @@ export const STAGES: Stage[] = [
     terrain: terrain(['..##', '#...', '#~#.', '##..']),
     animals: animals([['squirrel', 1], ['crocodile', 1], ['zebra', 1], ['giraffe', 1], ['oxpecker', 1]]),
     animalRules: {
-      oxpecker: { kind: 'exactDistance', with: 'zebra', distance: 1 },
       zebra: { kind: 'minDistance', from: 'crocodile', distance: 2 },
       giraffe: { kind: 'surroundForbidden', with: 'crocodile' },
-      crocodile: { kind: 'differentCol', with: 'zebra' },
       squirrel: { kind: 'sameRow', with: 'zebra' },
     },
   },
@@ -314,10 +276,8 @@ export const STAGES: Stage[] = [
     animals: animals([['leopard', 1], ['monkey', 1], ['crocodile', 1], ['lion', 1], ['squirrel', 1]]),
     animalRules: {
       lion: { kind: 'diagonalForbidden', with: 'leopard' },
-      squirrel: { kind: 'differentCol', with: 'leopard' },
       leopard: { kind: 'diagonalForbidden', with: 'monkey' },
       crocodile: { kind: 'surroundForbidden', with: 'lion' },
-      monkey: { kind: 'rightOf', with: 'lion' },
     },
   },
   {
@@ -329,7 +289,6 @@ export const STAGES: Stage[] = [
     animals: animals([['squirrel', 1], ['leopard', 1], ['giraffe', 1]]),
     animalRules: {
       giraffe: { kind: 'above', with: 'squirrel' },
-      squirrel: { kind: 'adjacentRequired', with: 'giraffe' },
       leopard: { kind: 'exactDistance', with: 'giraffe', distance: 1 },
     },
   },
@@ -343,11 +302,8 @@ export const STAGES: Stage[] = [
     animals: animals([['zebra', 1], ['giraffe', 1], ['leopard', 1], ['lion', 1], ['oxpecker', 1], ['squirrel', 1]]),
     animalRules: {
       leopard: { kind: 'exactDistance', with: 'squirrel', distance: 1 },
-      oxpecker: { kind: 'exactDistance', with: 'zebra', distance: 2 },
       giraffe: { kind: 'above', with: 'squirrel' },
-      lion: { kind: 'diagonalForbidden', with: 'giraffe' },
       zebra: { kind: 'leftOf', with: 'squirrel' },
-      squirrel: { kind: 'diagonalForbidden', with: 'lion' },
     },
   },
   {
@@ -361,9 +317,7 @@ export const STAGES: Stage[] = [
       elephant: { kind: 'surroundForbidden', with: 'crocodile' },
       oxpecker: { kind: 'adjacentRequired', with: 'squirrel' },
       monkey: { kind: 'above', with: 'elephant' },
-      crocodile: { kind: 'above', with: 'elephant' },
       squirrel: { kind: 'exactDistance', with: 'elephant', distance: 1 },
-      leopard: { kind: 'surroundForbidden', with: 'oxpecker' },
     },
   },
   {
@@ -375,11 +329,7 @@ export const STAGES: Stage[] = [
     animals: animals([['squirrel', 1], ['elephant', 1], ['oxpecker', 1], ['rhino', 1], ['crocodile', 1], ['monkey', 1]]),
     animalRules: {
       squirrel: { kind: 'below', with: 'rhino' },
-      crocodile: { kind: 'minDistance', from: 'monkey', distance: 3 },
-      monkey: { kind: 'diagonalForbidden', with: 'crocodile' },
-      oxpecker: { kind: 'adjacentRequired', with: 'crocodile' },
       rhino: { kind: 'minDistance', from: 'monkey', distance: 3 },
-      elephant: { kind: 'below', with: 'oxpecker' },
     },
   },
   {
@@ -391,11 +341,7 @@ export const STAGES: Stage[] = [
     animals: animals([['monkey', 1], ['squirrel', 1], ['lion', 1], ['elephant', 1], ['leopard', 1], ['crocodile', 1]]),
     animalRules: {
       squirrel: { kind: 'adjacentForbidden', with: 'elephant' },
-      monkey: { kind: 'adjacentRequired', with: 'lion' },
-      leopard: { kind: 'minDistance', from: 'monkey', distance: 3 },
       lion: { kind: 'rightOf', with: 'elephant' },
-      crocodile: { kind: 'adjacentRequired', with: 'lion' },
-      elephant: { kind: 'leftOf', with: 'monkey' },
     },
   },
   {
@@ -410,7 +356,6 @@ export const STAGES: Stage[] = [
       giraffe: { kind: 'leftOf', with: 'squirrel' },
       squirrel: { kind: 'sameRow', with: 'lion' },
       lion: { kind: 'diagonalForbidden', with: 'monkey' },
-      monkey: { kind: 'diagonalForbidden', with: 'oxpecker' },
     },
   },
   {
@@ -430,12 +375,8 @@ export const STAGES: Stage[] = [
       ['rhino', 1],
     ]),
     animalRules: {
-      leopard: { kind: 'rightOf', with: 'gorilla' },
       gorilla: { kind: 'minDistance', from: 'zebra', distance: 3 },
       rhino: { kind: 'blockAdjacentRequired', block: 'tree' },
-      zebra: { kind: 'differentRow', with: 'gorilla' },
-      crocodile: { kind: 'above', with: 'leopard' },
-      oxpecker: { kind: 'rightOf', with: 'gorilla' },
       monkey: { kind: 'exactDistance', with: 'zebra', distance: 1 },
       giraffe: { kind: 'differentRow', with: 'gorilla' },
     },
@@ -457,12 +398,8 @@ export const STAGES: Stage[] = [
       ['monkey', 1],
     ]),
     animalRules: {
-      crocodile: { kind: 'minDistance', from: 'monkey', distance: 2 },
       zebra: { kind: 'diagonalForbidden', with: 'lion' },
       giraffe: { kind: 'minDistance', from: 'zebra', distance: 3 },
-      lion: { kind: 'minDistance', from: 'monkey', distance: 3 },
-      oxpecker: { kind: 'adjacentRequired', with: 'elephant' },
-      elephant: { kind: 'exactDistance', with: 'lion', distance: 1 },
       squirrel: { kind: 'rightOf', with: 'giraffe' },
       monkey: { kind: 'diagonalForbidden', with: 'elephant' },
     },
@@ -479,8 +416,6 @@ export const STAGES: Stage[] = [
       crocodile: { kind: 'exactDistance', with: 'giraffe', distance: 1 },
       lion: { kind: 'diagonalForbidden', with: 'crocodile' },
       monkey: { kind: 'above', with: 'oxpecker' },
-      giraffe: { kind: 'surroundForbidden', with: 'leopard' },
-      oxpecker: { kind: 'diagonalForbidden', with: 'monkey' },
     },
   },
   {
@@ -494,8 +429,6 @@ export const STAGES: Stage[] = [
       giraffe: { kind: 'minDistance', from: 'squirrel', distance: 3 },
       monkey: { kind: 'above', with: 'zebra' },
       oxpecker: { kind: 'diagonalForbidden', with: 'zebra' },
-      zebra: { kind: 'below', with: 'monkey' },
-      squirrel: { kind: 'adjacentRequired', with: 'zebra' },
     },
   },
   {
@@ -506,9 +439,7 @@ export const STAGES: Stage[] = [
     terrain: terrain(['#.', '#.', '..', '.#', '.#']),
     animals: animals([['lion', 1], ['oxpecker', 1], ['squirrel', 1], ['giraffe', 1]]),
     animalRules: {
-      giraffe: { kind: 'differentCol', with: 'oxpecker' },
       oxpecker: { kind: 'sameRow', with: 'giraffe' },
-      squirrel: { kind: 'sameCol', with: 'giraffe' },
       lion: { kind: 'above', with: 'squirrel' },
     },
   },
@@ -521,7 +452,6 @@ export const STAGES: Stage[] = [
     animals: animals([['squirrel', 1], ['oxpecker', 1], ['leopard', 1], ['monkey', 1]]),
     animalRules: {
       squirrel: { kind: 'adjacentForbidden', with: 'leopard' },
-      leopard: { kind: 'adjacentRequired', with: 'monkey' },
       oxpecker: { kind: 'rightOf', with: 'monkey' },
       monkey: { kind: 'diagonalForbidden', with: 'oxpecker' },
     },
@@ -537,8 +467,6 @@ export const STAGES: Stage[] = [
     animalRules: {
       leopard: { kind: 'sameCol', with: 'giraffe' },
       zebra: { kind: 'sameRow', with: 'giraffe' },
-      giraffe: { kind: 'rightOf', with: 'oxpecker' },
-      lion: { kind: 'above', with: 'leopard' },
       oxpecker: { kind: 'exactDistance', with: 'lion', distance: 1 },
       monkey: { kind: 'rightOf', with: 'zebra' },
     },
@@ -552,7 +480,6 @@ export const STAGES: Stage[] = [
     animals: animals([['oxpecker', 1], ['giraffe', 1], ['squirrel', 1], ['zebra', 1], ['monkey', 1], ['lion', 1]]),
     animalRules: {
       zebra: { kind: 'differentRow', with: 'monkey' },
-      squirrel: { kind: 'differentCol', with: 'oxpecker' },
       monkey: { kind: 'minDistance', from: 'lion', distance: 3 },
       giraffe: { kind: 'rightOf', with: 'lion' },
       oxpecker: { kind: 'below', with: 'squirrel' },
@@ -568,9 +495,6 @@ export const STAGES: Stage[] = [
     animals: animals([['lion', 1], ['monkey', 1], ['zebra', 1], ['crocodile', 1], ['leopard', 1]]),
     animalRules: {
       lion: { kind: 'minDistance', from: 'crocodile', distance: 3 },
-      leopard: { kind: 'differentCol', with: 'lion' },
-      zebra: { kind: 'differentCol', with: 'leopard' },
-      crocodile: { kind: 'minDistance', from: 'lion', distance: 2 },
       monkey: { kind: 'above', with: 'leopard' },
     },
   },
@@ -585,7 +509,6 @@ export const STAGES: Stage[] = [
       monkey: { kind: 'above', with: 'zebra' },
       zebra: { kind: 'minDistance', from: 'monkey', distance: 3 },
       leopard: { kind: 'adjacentRequired', with: 'crocodile' },
-      crocodile: { kind: 'differentRow', with: 'monkey' },
       oxpecker: { kind: 'differentCol', with: 'zebra' },
     },
   },
@@ -597,12 +520,10 @@ export const STAGES: Stage[] = [
     terrain: terrain(['##..#', '##.##', '.....', '##~#.', '####.']),
     animals: animals([['leopard', 1], ['giraffe', 1], ['monkey', 1], ['zebra', 1], ['crocodile', 1], ['oxpecker', 1]]),
     animalRules: {
-      giraffe: { kind: 'differentCol', with: 'crocodile' },
       oxpecker: { kind: 'minDistance', from: 'leopard', distance: 2 },
       zebra: { kind: 'rightOf', with: 'monkey' },
       crocodile: { kind: 'adjacentForbidden', with: 'zebra' },
       monkey: { kind: 'minDistance', from: 'oxpecker', distance: 2 },
-      leopard: { kind: 'surroundForbidden', with: 'giraffe' },
     },
   },
   {
@@ -615,9 +536,7 @@ export const STAGES: Stage[] = [
     animalRules: {
       zebra: { kind: 'below', with: 'monkey' },
       leopard: { kind: 'minDistance', from: 'squirrel', distance: 2 },
-      squirrel: { kind: 'minDistance', from: 'leopard', distance: 2 },
       giraffe: { kind: 'above', with: 'lion' },
-      lion: { kind: 'diagonalForbidden', with: 'squirrel' },
       monkey: { kind: 'adjacentForbidden', with: 'squirrel' },
     },
   },
@@ -639,12 +558,7 @@ export const STAGES: Stage[] = [
     ]),
     animalRules: {
       gorilla: { kind: 'leftOf', with: 'rhino' },
-      leopard: { kind: 'adjacentForbidden', with: 'zebra' },
-      rhino: { kind: 'surroundForbidden', with: 'lion' },
-      squirrel: { kind: 'minDistance', from: 'gorilla', distance: 2 },
       lion: { kind: 'sameRow', with: 'squirrel' },
-      zebra: { kind: 'minDistance', from: 'leopard', distance: 3 },
-      oxpecker: { kind: 'differentCol', with: 'zebra' },
       crocodile: { kind: 'adjacentRequired', with: 'gorilla' },
     },
   },
@@ -656,11 +570,9 @@ export const STAGES: Stage[] = [
     terrain: terrain(['...', '.~#', '...']),
     animals: animals([['monkey', 1], ['oxpecker', 1], ['zebra', 1], ['squirrel', 1], ['crocodile', 1]]),
     animalRules: {
-      zebra: { kind: 'exactDistance', with: 'crocodile', distance: 1 },
       crocodile: { kind: 'exactDistance', with: 'squirrel', distance: 1 },
       monkey: { kind: 'adjacentRequired', with: 'zebra' },
       squirrel: { kind: 'above', with: 'crocodile' },
-      oxpecker: { kind: 'differentCol', with: 'crocodile' },
     },
   },
   {
@@ -674,7 +586,6 @@ export const STAGES: Stage[] = [
       squirrel: { kind: 'leftOf', with: 'oxpecker' },
       giraffe: { kind: 'adjacentRequired', with: 'crocodile' },
       crocodile: { kind: 'rightOf', with: 'giraffe' },
-      oxpecker: { kind: 'adjacentForbidden', with: 'giraffe' },
     },
   },
   {
@@ -686,11 +597,8 @@ export const STAGES: Stage[] = [
     animals: animals([['elephant', 1], ['monkey', 1], ['oxpecker', 1], ['crocodile', 1], ['giraffe', 1], ['lion', 1]]),
     animalRules: {
       lion: { kind: 'adjacentRequired', with: 'oxpecker' },
-      oxpecker: { kind: 'differentRow', with: 'monkey' },
       crocodile: { kind: 'rightOf', with: 'monkey' },
-      elephant: { kind: 'differentRow', with: 'monkey' },
       monkey: { kind: 'below', with: 'oxpecker' },
-      giraffe: { kind: 'surroundForbidden', with: 'crocodile' },
     },
   },
 ];

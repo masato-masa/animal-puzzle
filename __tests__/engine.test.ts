@@ -1243,6 +1243,19 @@ describe('shipped stage content', () => {
     expect(meetsChapterBar(grade, chapterNumber, stage)).toEqual([]);
   });
 
+  test.each(STAGES)('$id ($name) has no decorative rule (each rule is load-bearing)', (stage) => {
+    // 外しても唯一解のまま・難易度も変わらないルールは、読む手間だけ増やす飾り（AP-7）。
+    // 1 つずつ外して、唯一性か思考レベルのどちらかが変わることを確かめる。
+    const baseLevel = solverLevel(stage);
+    for (const species of Object.keys(stage.animalRules ?? {})) {
+      const rest = { ...stage.animalRules } as NonNullable<typeof stage.animalRules>;
+      delete rest[species as keyof typeof rest];
+      const t = { ...stage, animalRules: rest };
+      const same = countSolutions(t, 2) === 1 && solverLevel(t) === baseLevel;
+      expect(same, `${stage.id}: ${species} は飾り`).toBe(false);
+    }
+  }, 120_000);
+
   test('no two stages are the same puzzle up to a left-right/up-down mirror', () => {
     // 動物の形はすべて左右・上下対称なので、地形を反転しただけの盤面に同じ種構成を
     // 割り当てると「見た目が違うだけの同じパズル」になる(分割3のTask 4完了後の
