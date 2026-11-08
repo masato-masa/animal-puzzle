@@ -31,6 +31,22 @@
 
 .play {
   gap: 12px;
+  position: relative;
+}
+
+/* 1 面目だけ、盤の上の余白に出す一言。絶対配置なので出入りで盤は 1px も動かない。 */
+.drag-hint {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--title);
+  opacity: 0.8;
+  pointer-events: none;
 }
 
 .silhouette {

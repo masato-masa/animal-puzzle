@@ -28,6 +28,9 @@ const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split
  * 導入するルールはその面の唯一解を支える（テストで保証）。
  * 2026-11-08（AP-9）: 9〜14 面も同じ考え方で作り直した（同じ列→ちがう行/列→となりが必要→まわり8マス→木のそば→なかまと並ぶ。
  * 駒 6,6,7,7,7,7 / ルール 2,3,3,3,3,3）。
+
+ * 2026-11-08（AP-10）: 17〜19 面を作り直した（前は 8 駒→5→5→3 と急な下り坂）。17 面「水から離れる」・18 面「木から離れる」を 1 面 1 つ導入。
+ * 駒 8,7,7 / ルール 4,4,4。
  * 手動で編集した場合は、その保証が失われる点に注意。
  */
 export const STAGES: Stage[] = [
@@ -248,40 +251,44 @@ export const STAGES: Stage[] = [
   },
   {
     id: 'stage-17',
-    name: '17. 水辺のシマウマとキリン',
-    rows: 4,
+    name: '17. 水からはなれたいシマウマ',
+    rows: 5,
     cols: 4,
-    terrain: terrain(['..##', '#...', '#~#.', '##..']),
-    animals: animals([['squirrel', 1], ['crocodile', 1], ['zebra', 1], ['giraffe', 1], ['oxpecker', 1]]),
+    terrain: terrain(['.~..', '....', '....', '....', '.##.']),
+    animals: animals([['crocodile', 1], ['elephant', 1], ['oxpecker', 1], ['zebra', 1], ['leopard', 1], ['squirrel', 1], ['gorilla', 1], ['monkey', 1]]),
     animalRules: {
-      zebra: { kind: 'minDistance', from: 'crocodile', distance: 2 },
-      giraffe: { kind: 'surroundForbidden', with: 'crocodile' },
-      squirrel: { kind: 'sameRow', with: 'zebra' },
+      gorilla: { kind: 'minDistance', from: 'elephant', distance: 3 },
+      squirrel: { kind: 'exactDistance', with: 'gorilla', distance: 1 },
+      elephant: { kind: 'below', with: 'oxpecker' },
+      zebra: { kind: 'blockAdjacentForbidden', block: 'water' },
     },
   },
   {
     id: 'stage-18',
-    name: '18. ライオンとサル',
+    name: '18. 木からはなれたいライオン',
     rows: 5,
-    cols: 3,
-    terrain: terrain(['.##', '...', '#.#', '..~', '.##']),
-    animals: animals([['leopard', 1], ['monkey', 1], ['crocodile', 1], ['lion', 1], ['squirrel', 1]]),
+    cols: 5,
+    terrain: terrain(['T....', '#.#..', '###.#', '##...', '#..##']),
+    animals: animals([['oxpecker', 1], ['gorilla', 1], ['lion', 1], ['giraffe', 1], ['squirrel', 1], ['leopard', 1], ['monkey', 1]]),
     animalRules: {
-      lion: { kind: 'diagonalForbidden', with: 'leopard' },
-      leopard: { kind: 'diagonalForbidden', with: 'monkey' },
-      crocodile: { kind: 'surroundForbidden', with: 'lion' },
+      leopard: { kind: 'minDistance', from: 'lion', distance: 3 },
+      lion: { kind: 'blockAdjacentForbidden', block: 'tree' },
+      oxpecker: { kind: 'surroundForbidden', with: 'giraffe' },
+      monkey: { kind: 'exactDistance', with: 'giraffe', distance: 2 },
     },
   },
   {
     id: 'stage-19',
-    name: '19. 3びきのちえくらべ',
+    name: '19. 7ひきのちえくらべ',
     rows: 5,
-    cols: 1,
-    terrain: terrain(['.', '.', '.', '.', '.']),
-    animals: animals([['squirrel', 1], ['leopard', 1], ['giraffe', 1]]),
+    cols: 4,
+    terrain: terrain(['...#', '.###', '.##.', '....', '...#']),
+    animals: animals([['crocodile', 1], ['oxpecker', 1], ['elephant', 1], ['leopard', 1], ['squirrel', 1], ['monkey', 1], ['zebra', 1]]),
     animalRules: {
-      giraffe: { kind: 'above', with: 'squirrel' },
-      leopard: { kind: 'exactDistance', with: 'giraffe', distance: 1 },
+      oxpecker: { kind: 'below', with: 'crocodile' },
+      squirrel: { kind: 'minDistance', from: 'leopard', distance: 3 },
+      elephant: { kind: 'adjacentForbidden', with: 'leopard' },
+      crocodile: { kind: 'rightOf', with: 'elephant' },
     },
   },
   // ==== 3章 ====

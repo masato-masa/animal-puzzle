@@ -292,6 +292,11 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared, title,
 
       {/* 盤面とカードは、ヘッダーの下に残った高さの中央に置く。 */}
       <div className="play" ref={playRef}>
+        {/* 初見の迷い対策（AP-10）: 操作がドラッグだけだと画面のどこにも書いていないので、
+            1 面だけ、最初の 1 匹を置くまで一言出す。絶対配置なので消えても盤は動かない。 */}
+        {stage.id === 'stage-1' && placedCount === 0 && !drag && (
+          <p className="drag-hint">カードを盤の上へ ドラッグして置こう</p>
+        )}
         <Board
           state={state}
           validAnchors={validAnchors}

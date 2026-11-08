@@ -1256,35 +1256,40 @@ describe('shipped stage content', () => {
     }
   }, 120_000);
 
-  test('stages 1-14 introduce exactly one new rule concept each, in a fixed order (AP-8, AP-9)', () => {
+  test('stages 1-18 introduce exactly one new rule concept each, in a fixed order (AP-8, AP-9, AP-10)', () => {
     // 入門で学ぶルールの種類の順。1 面に新しい種類は 1 つだけ（上下・左右・ちがう行/列は同じ概念の対）。
     const concept = (r: { kind: string; block?: string }): string =>
       r.kind === 'blockAdjacentRequired' ? (r.block === 'tree' ? 'tree' : 'water')
+        : r.kind === 'blockAdjacentForbidden' ? (r.block === 'tree' ? 'noTree' : 'noWater')
         : r.kind === 'above' || r.kind === 'below' ? 'vertical'
           : r.kind === 'leftOf' || r.kind === 'rightOf' ? 'horizontal'
             : r.kind === 'differentRow' || r.kind === 'differentCol' ? 'different'
               : r.kind;
-    const order = [
+    const order: Array<string | null> = [
       'water', 'adjacentForbidden', 'vertical', 'horizontal', 'sameRow', 'diagonalForbidden', 'minDistance', 'exactDistance',
       'sameCol', 'different', 'adjacentRequired', 'surroundForbidden', 'tree', 'flockRequired',
+      null, null, // 15・16 面は新しい種類なし（8 駒・4 ルールで慣らす）
+      'noWater', 'noTree',
     ];
     const seen = new Set<string>();
     order.forEach((expected, i) => {
       const stage = STAGES[i];
       const used = new Set(Object.values(stage.animalRules ?? {}).map((r) => concept(r!)));
       const fresh = [...used].filter((k) => !seen.has(k));
-      expect(fresh, `${stage.id} の新しい種類`).toEqual([expected]);
+      expect(fresh, `${stage.id} の新しい種類`).toEqual(expected ? [expected] : []);
       for (const k of used) seen.add(k);
     });
   });
 
-  test('piece and rule counts ramp up gently over stages 8-16 (AP-9)', () => {
+  test('piece and rule counts ramp up gently over stages 8-19 (AP-9, AP-10)', () => {
     // 駒の数・ルール数は 1 面で 2 以上増えない（8 面 5 駒→9 面 6 駒 など、段差を作らない）。
-    for (let i = 8; i < 16; i++) {
+    for (let i = 8; i < 19; i++) {
       const prev = STAGES[i - 1];
       const cur = STAGES[i];
       const rules = (s: (typeof STAGES)[number]) => Object.keys(s.animalRules ?? {}).length;
       expect(cur.animals.length - prev.animals.length, `${cur.id} の駒の増え方`).toBeLessThanOrEqual(1);
+      // 17〜19 面で 8→5→5→3 駒のような下り坂を作らない（AP-10）。
+      if (i >= 16) expect(prev.animals.length - cur.animals.length, `${cur.id} の駒の減り方`).toBeLessThanOrEqual(1);
       expect(rules(cur) - rules(prev), `${cur.id} のルールの増え方`).toBeLessThanOrEqual(1);
     }
   });
