@@ -1256,11 +1256,18 @@ describe('shipped stage content', () => {
     }
   }, 120_000);
 
-  test('stages 1-8 introduce exactly one new rule concept each, in a fixed order (AP-8)', () => {
-    // 入門で学ぶルールの種類の順。1 面に新しい種類は 1 つだけ（上下・左右は同じ概念の対）。
-    const concept = (r: { kind: string }): string =>
-      r.kind === 'blockAdjacentRequired' ? 'water' : r.kind === 'above' || r.kind === 'below' ? 'vertical' : r.kind === 'leftOf' || r.kind === 'rightOf' ? 'horizontal' : r.kind;
-    const order = ['water', 'adjacentForbidden', 'vertical', 'horizontal', 'sameRow', 'diagonalForbidden', 'minDistance', 'exactDistance'];
+  test('stages 1-14 introduce exactly one new rule concept each, in a fixed order (AP-8, AP-9)', () => {
+    // 入門で学ぶルールの種類の順。1 面に新しい種類は 1 つだけ（上下・左右・ちがう行/列は同じ概念の対）。
+    const concept = (r: { kind: string; block?: string }): string =>
+      r.kind === 'blockAdjacentRequired' ? (r.block === 'tree' ? 'tree' : 'water')
+        : r.kind === 'above' || r.kind === 'below' ? 'vertical'
+          : r.kind === 'leftOf' || r.kind === 'rightOf' ? 'horizontal'
+            : r.kind === 'differentRow' || r.kind === 'differentCol' ? 'different'
+              : r.kind;
+    const order = [
+      'water', 'adjacentForbidden', 'vertical', 'horizontal', 'sameRow', 'diagonalForbidden', 'minDistance', 'exactDistance',
+      'sameCol', 'different', 'adjacentRequired', 'surroundForbidden', 'tree', 'flockRequired',
+    ];
     const seen = new Set<string>();
     order.forEach((expected, i) => {
       const stage = STAGES[i];
@@ -1269,6 +1276,17 @@ describe('shipped stage content', () => {
       expect(fresh, `${stage.id} の新しい種類`).toEqual([expected]);
       for (const k of used) seen.add(k);
     });
+  });
+
+  test('piece and rule counts ramp up gently over stages 8-16 (AP-9)', () => {
+    // 駒の数・ルール数は 1 面で 2 以上増えない（8 面 5 駒→9 面 6 駒 など、段差を作らない）。
+    for (let i = 8; i < 16; i++) {
+      const prev = STAGES[i - 1];
+      const cur = STAGES[i];
+      const rules = (s: (typeof STAGES)[number]) => Object.keys(s.animalRules ?? {}).length;
+      expect(cur.animals.length - prev.animals.length, `${cur.id} の駒の増え方`).toBeLessThanOrEqual(1);
+      expect(rules(cur) - rules(prev), `${cur.id} のルールの増え方`).toBeLessThanOrEqual(1);
+    }
   });
 
   test('no two stages are the same puzzle up to a left-right/up-down mirror', () => {
