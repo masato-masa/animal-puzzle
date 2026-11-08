@@ -591,6 +591,13 @@
   justify-items: center;
 }
 
+/* クリア画面の 3 つのボタンは 29px の高さだった。押せる範囲を 44px 以上にする（AP-10）。
+   .sheet-btn は shared 側の生成物なので、ここ（このゲームの CSS）だけで上書きする。 */
+.overlay-buttons .sheet-btn {
+  min-height: 44px;
+  min-width: 120px;
+}
+
 /* ---- マイステージ・エディタ ---- */
 .empty {
   margin: 8px 0 0;
