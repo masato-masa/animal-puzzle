@@ -43,15 +43,21 @@ describe('progress', () => {
     expect((await loadProgress()).clearedStageIds).toEqual([]);
   });
 
-  test('AP-13 以前の保存（order なし）は 20〜40 面を新番号へ一度だけ直す', async () => {
+  test('番号の入れ替え（AP-13・AP-16）の前の保存は、20〜40 面を新番号へ一度だけ直す', async () => {
     localStorage.setItem('animal-puzzle:progress:v2', JSON.stringify({ clearedStageIds: ['stage-1', 'stage-19', 'stage-20', 'stage-29', 'stage-40'] }));
-    // 旧 20→新 25、旧 29→新 20、旧 40→新 40
-    expect((await loadProgress()).clearedStageIds.sort()).toEqual(['stage-1', 'stage-19', 'stage-20', 'stage-25', 'stage-40'].sort());
+    // 旧 20 →(AP-13) 25 →(AP-16) 23、旧 29 →(AP-13) 20 →(AP-16) 21
+    const expected = ['stage-1', 'stage-19', 'stage-23', 'stage-21', 'stage-40'];
+    expect((await loadProgress()).clearedStageIds.sort()).toEqual([...expected].sort());
     // 二度目に読んでも動かない
-    expect((await loadProgress()).clearedStageIds.sort()).toEqual(['stage-1', 'stage-19', 'stage-20', 'stage-25', 'stage-40'].sort());
+    expect((await loadProgress()).clearedStageIds.sort()).toEqual([...expected].sort());
     await recordClear('stage-30');
     expect(await hasClearedStage('stage-30')).toBe(true);
-    expect((await loadProgress()).clearedStageIds).toContain('stage-25');
+    expect((await loadProgress()).clearedStageIds).toContain('stage-23');
+  });
+
+  test('AP-13 の並びで保存された分（order: ap13）は AP-16 の表だけ通す', async () => {
+    localStorage.setItem('animal-puzzle:progress:v2', JSON.stringify({ clearedStageIds: ['stage-25', 'stage-31'], order: 'ap13' }));
+    expect((await loadProgress()).clearedStageIds.sort()).toEqual(['stage-23', 'stage-31'].sort());
   });
 
   test('壊れた JSON が入っていても落ちない', async () => {

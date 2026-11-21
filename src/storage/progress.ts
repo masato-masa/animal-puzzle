@@ -7,44 +7,54 @@ const KEY = 'animal-puzzle:progress:v2';
 type ProgressData = { clearedStageIds: string[] };
 
 /**
- * AP-13（2026-11-22）で 20〜39 面を章の中で並べ替えた。旧番号 → 新番号の対応。
- * 保存データに order マーカーが無いものは旧番号なので、読むときに一度だけ新番号へ直して書き戻す。
+ * 出荷ステージの番号が入れ替わったとき（AP-13・AP-16）の移行。保存データの order に、どこまで移行したかを残す。
+ * order が無い = AP-13 より前、'ap13' = AP-13 の並び、'ap16' = 今の並び。読むときに一度だけ新しい番号へ直して書き戻す。
+ * 各表は「新しい番号 → その番号に入った（前の並びでの）番号」。
  */
-const AP13_ORDER = 'ap13';
-const OLD_TO_NEW: Record<number, number> = (() => {
-  const o3 = [29, 30, 22, 23, 28, 20, 24, 21, 27, 25, 26]; // 新 20〜30 に入った旧番号
-  const o4 = [39, 38, 33, 34, 32, 37, 31, 35, 36, 40]; // 新 31〜40
+const ORDER_NOW = 'ap16';
+const toMap = (o3: number[], o4: number[]): Record<number, number> => {
   const m: Record<number, number> = {};
-  o3.forEach((old, k) => {
-    m[old] = 20 + k;
+  o3.forEach((prev, k) => {
+    m[prev] = 20 + k;
   });
-  o4.forEach((old, k) => {
-    m[old] = 31 + k;
+  o4.forEach((prev, k) => {
+    m[prev] = 31 + k;
   });
   return m;
-})();
+};
+/** AP-13 より前 → AP-13 の並び */
+const MAP_AP13 = toMap([29, 30, 22, 23, 28, 20, 24, 21, 27, 25, 26], [39, 38, 33, 34, 32, 37, 31, 35, 36, 40]);
+/** AP-13 の並び → AP-16 の並び */
+const MAP_AP16 = toMap([21, 20, 26, 25, 24, 22, 23, 28, 27, 30, 29], [31, 32, 34, 33, 38, 39, 37, 35, 36, 40]);
 
-export const migrateClearedIds = (ids: string[]): string[] =>
+const remap = (ids: string[], map: Record<number, number>): string[] =>
   Array.from(
     new Set(
       ids.map((id) => {
         const m = /^stage-(\d+)$/.exec(id);
-        const to = m ? OLD_TO_NEW[Number(m[1])] : undefined;
+        const to = m ? map[Number(m[1])] : undefined;
         return to ? `stage-${to}` : id;
       })
     )
   );
 
+/** order に応じて、今の並びの番号に直す。 */
+export const migrateClearedIds = (ids: string[], order?: string): string[] => {
+  if (order === ORDER_NOW) return ids;
+  if (order === 'ap13') return remap(ids, MAP_AP16);
+  return remap(remap(ids, MAP_AP13), MAP_AP16);
+};
+
 const write = (ids: string[]): void => {
-  writeJson(KEY, { clearedStageIds: ids, order: AP13_ORDER });
+  writeJson(KEY, { clearedStageIds: ids, order: ORDER_NOW });
 };
 
 /** localStorage は同期だが、呼び出し側の形を変えないため async のまま保つ。 */
 const load = async (): Promise<ProgressData> => {
   const data = readJson<Partial<ProgressData> & { order?: string }>(KEY, {});
   let ids = Array.isArray(data.clearedStageIds) ? data.clearedStageIds : [];
-  if (ids.length > 0 && data.order !== AP13_ORDER) {
-    ids = migrateClearedIds(ids);
+  if (ids.length > 0 && data.order !== ORDER_NOW) {
+    ids = migrateClearedIds(ids, data.order);
     write(ids);
   }
   return { clearedStageIds: ids };
