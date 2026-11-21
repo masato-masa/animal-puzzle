@@ -24,3 +24,5 @@ yarn-error.*
 
 # ステージ生成器の作業用出力
 scripts/generated-stages.txt
+
+.playwright-cli/
