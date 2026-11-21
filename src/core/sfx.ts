@@ -13,6 +13,8 @@ const forceMute = typeof location !== 'undefined' && new URLSearchParams(locatio
 
 let ctx: AudioContext | null = null;
 let bgmBus: GainNode | null = null;
+/** 効果音の出口。コンプレッサで重なったときの音割れと、急な大音量を抑える。 */
+let sfxBus: AudioNode | null = null;
 let muted = forceMute;
 let bgmOn = !forceMute;
 try {
@@ -56,6 +58,14 @@ const context = (): AudioContext | null => {
     } catch {
       return null;
     }
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -14;
+    comp.knee.value = 12;
+    comp.ratio.value = 4;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.15;
+    comp.connect(ctx.destination);
+    sfxBus = comp;
     bgmBus = ctx.createGain();
     bgmBus.gain.value = BGM_GAIN;
     bgmBus.connect(ctx.destination);
@@ -94,17 +104,23 @@ function loadSamples(ac: AudioContext): void {
 }
 
 /** 録音を鳴らす。音程 ±5%・音量 ±10% ずらして、続けて鳴っても機械的にしない。鳴らせたら true。 */
+const lastAt = new Map<SampleName, number>();
+const MIN_GAP_MS = 45;
 const sample = (name: SampleName): boolean => {
   const ac = audio();
   const buf = buffers.get(name);
-  if (!ac || !buf) return false;
+  if (!ac || !buf || !sfxBus) return false;
+  // 連打で同じ音が数十 ms の間に重なると太く濁るので、間引く（鳴らしたことにして合成音へ落とさない）。
+  const nowMs = performance.now();
+  if (nowMs - (lastAt.get(name) ?? -1e9) < MIN_GAP_MS) return true;
+  lastAt.set(name, nowMs);
   const jitter = name !== 'clear';
   const src = ac.createBufferSource();
   src.buffer = buf;
   src.playbackRate.value = jitter ? 1 + (Math.random() * 2 - 1) * 0.05 : 1;
   const g = ac.createGain();
   g.gain.value = SAMPLE_GAIN[name] * (jitter ? 1 + (Math.random() * 2 - 1) * 0.1 : 1);
-  src.connect(g).connect(ac.destination);
+  src.connect(g).connect(sfxBus);
   src.start();
   return true;
 };
@@ -136,7 +152,7 @@ const play = (tones: Tone[]): void => {
     amp.gain.setValueAtTime(0.0001, at);
     amp.gain.exponentialRampToValueAtTime(t.gain ?? 0.16, at + 0.008);
     amp.gain.exponentialRampToValueAtTime(0.0001, at + t.dur);
-    osc.connect(amp).connect(ac.destination);
+    osc.connect(amp).connect(sfxBus ?? ac.destination);
     osc.start(at);
     osc.stop(at + t.dur + 0.02);
   }
@@ -152,8 +168,12 @@ export const sfx = {
   /** マスにはまらずその場に置いた、またはリストに戻した。置くより軽い音。 */
   lift: () => sample('lift') || play([{ freq: 420, to: 300, dur: 0.09, type: 'sine', gain: 0.1 }]),
   /** クリア。 */
-  clear: () =>
-    sample('clear') ||
+  clear: () => {
+    // 録音のクリア音に、上へ抜ける高い 3 音のきらめきを薄く重ねる（合成）。録音が無ければ合成だけ。
+    if (sample('clear')) {
+      play([1318.5, 1568, 2093].map((freq, i) => ({ freq, dur: 0.22, type: 'sine' as OscillatorType, gain: 0.05, delay: 0.25 + i * 0.08 })));
+      return;
+    }
     play(
       [523.25, 659.25, 783.99, 1046.5].map((freq, i) => ({
         freq,
@@ -162,7 +182,8 @@ export const sfx = {
         gain: 0.14,
         delay: i * 0.09,
       }))
-    ),
+    );
+  },
 };
 
 /** モバイルでの手応え。対応していない環境では何も起きない。 */
