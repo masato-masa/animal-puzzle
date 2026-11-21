@@ -29,6 +29,22 @@
   overflow: hidden;
 }
 
+.app-list {
+  /* 一覧は、ヘッダーを画面に留めて、章の並びだけを中でスクロールさせる。
+     ページごと動くと、iOS のバウンスやアドレスバーの伸び縮みで、押そうとしたタイルが逃げる。 */
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 .play {
   gap: 12px;
   position: relative;

@@ -6,10 +6,48 @@ const KEY = 'animal-puzzle:progress:v2';
 
 type ProgressData = { clearedStageIds: string[] };
 
+/**
+ * AP-13（2026-11-22）で 20〜39 面を章の中で並べ替えた。旧番号 → 新番号の対応。
+ * 保存データに order マーカーが無いものは旧番号なので、読むときに一度だけ新番号へ直して書き戻す。
+ */
+const AP13_ORDER = 'ap13';
+const OLD_TO_NEW: Record<number, number> = (() => {
+  const o3 = [29, 30, 22, 23, 28, 20, 24, 21, 27, 25, 26]; // 新 20〜30 に入った旧番号
+  const o4 = [39, 38, 33, 34, 32, 37, 31, 35, 36, 40]; // 新 31〜40
+  const m: Record<number, number> = {};
+  o3.forEach((old, k) => {
+    m[old] = 20 + k;
+  });
+  o4.forEach((old, k) => {
+    m[old] = 31 + k;
+  });
+  return m;
+})();
+
+export const migrateClearedIds = (ids: string[]): string[] =>
+  Array.from(
+    new Set(
+      ids.map((id) => {
+        const m = /^stage-(\d+)$/.exec(id);
+        const to = m ? OLD_TO_NEW[Number(m[1])] : undefined;
+        return to ? `stage-${to}` : id;
+      })
+    )
+  );
+
+const write = (ids: string[]): void => {
+  writeJson(KEY, { clearedStageIds: ids, order: AP13_ORDER });
+};
+
 /** localStorage は同期だが、呼び出し側の形を変えないため async のまま保つ。 */
 const load = async (): Promise<ProgressData> => {
-  const data = readJson<Partial<ProgressData>>(KEY, {});
-  return { clearedStageIds: Array.isArray(data.clearedStageIds) ? data.clearedStageIds : [] };
+  const data = readJson<Partial<ProgressData> & { order?: string }>(KEY, {});
+  let ids = Array.isArray(data.clearedStageIds) ? data.clearedStageIds : [];
+  if (ids.length > 0 && data.order !== AP13_ORDER) {
+    ids = migrateClearedIds(ids);
+    write(ids);
+  }
+  return { clearedStageIds: ids };
 };
 
 export const loadProgress = load;
@@ -20,7 +58,7 @@ export const hasClearedStage = async (stageId: string): Promise<boolean> =>
 export const recordClear = async (stageId: string): Promise<void> => {
   const data = await load();
   if (data.clearedStageIds.includes(stageId)) return;
-  writeJson(KEY, { clearedStageIds: [...data.clearedStageIds, stageId] });
+  write([...data.clearedStageIds, stageId]);
 };
 
 export const clearProgress = async (): Promise<void> => {
@@ -56,5 +94,5 @@ export const recordEndlessClear = async (n: number): Promise<void> => {
  */
 export const unlockAllForTesting = async (): Promise<void> => {
   const { STAGES } = await import('@/levels/stages');
-  writeJson(KEY, { clearedStageIds: STAGES.map((s) => s.id) });
+  write(STAGES.map((s) => s.id));
 };

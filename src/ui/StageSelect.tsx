@@ -23,7 +23,7 @@ export function StageSelect() {
   const clearedCount = STAGES.filter((s) => cleared.has(s.id)).length;
 
   return (
-    <div className="app">
+    <div className="app app-list">
       <header className="header">
         <div className="header-row">
           <div className="header-left">
@@ -45,7 +45,7 @@ export function StageSelect() {
         </div>
       </header>
 
-      <div className="panel">
+      <div className="panel panel-scroll">
         {CHAPTERS.map((chapter) => {
           const done = chapter.stageIds.filter((id) => cleared.has(id)).length;
           return (

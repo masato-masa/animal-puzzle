@@ -43,6 +43,17 @@ describe('progress', () => {
     expect((await loadProgress()).clearedStageIds).toEqual([]);
   });
 
+  test('AP-13 以前の保存（order なし）は 20〜40 面を新番号へ一度だけ直す', async () => {
+    localStorage.setItem('animal-puzzle:progress:v2', JSON.stringify({ clearedStageIds: ['stage-1', 'stage-19', 'stage-20', 'stage-29', 'stage-40'] }));
+    // 旧 20→新 25、旧 29→新 20、旧 40→新 40
+    expect((await loadProgress()).clearedStageIds.sort()).toEqual(['stage-1', 'stage-19', 'stage-20', 'stage-25', 'stage-40'].sort());
+    // 二度目に読んでも動かない
+    expect((await loadProgress()).clearedStageIds.sort()).toEqual(['stage-1', 'stage-19', 'stage-20', 'stage-25', 'stage-40'].sort());
+    await recordClear('stage-30');
+    expect(await hasClearedStage('stage-30')).toBe(true);
+    expect((await loadProgress()).clearedStageIds).toContain('stage-25');
+  });
+
   test('壊れた JSON が入っていても落ちない', async () => {
     localStorage.setItem('animal-puzzle:progress:v2', '{ではない');
     expect(await loadProgress()).toEqual({ clearedStageIds: [] });
