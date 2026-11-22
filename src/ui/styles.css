@@ -909,3 +909,16 @@
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
+
+/* とても小さい画面（高さ 600px 以下）: 余白を詰めて、盤面に縦を回す */
+@media (max-height: 600px) {
+  .play {
+    gap: 6px;
+  }
+  .app-game {
+    gap: 4px;
+  }
+  .cards[data-compact] .card {
+    padding: 2px 8px;
+  }
+}
