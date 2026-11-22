@@ -34,6 +34,8 @@ const terrain = (rows: string[]): CellTerrain[][] => rows.map((row) => row.split
  * 2026-11-22（AP-13）: 新しい種類のルールは 14 面までに出尽くしている（15 面以降は組み合わせ）。
  * 20〜30 面・31〜39 面は章の中で「駒数＋手数×1.5＋効いている条件」の小さい順に並べ替えた（前は章の終わりが 4 駒で最も易しかった）。40 面は最終面で動かさない。
  * 2026-11-22（AP-16）: 20〜30 面・31〜39 面を、「探索の節点数（分岐）の対数＋手数×0.5」の小さい順に並べ直した（節点数は素朴な全探索で置けた手の数。20 面 84 … 29 面 63,952）。40 面は最終面で固定。
+ * 2026-11-22（AP-17）: 40 面のあと（むげんの前）に 5 章（41〜45 面）を足した。むげんの生成器（endless.ts）で 80〜200 面を作り、
+ * 唯一解・L4・警告なしのものから、駒 7〜8 体・ルール手数 2・使うルールの組が重ならない 5 面を選んで固定した（駒 7,7,8,8,8、効いている条件 4,4,4,5,5）。
  * 手動で編集した場合は、その保証が失われる点に注意。
  */
 export const STAGES: Stage[] = [
@@ -603,6 +605,52 @@ export const STAGES: Stage[] = [
       monkey: { kind: 'below', with: 'oxpecker' },
     },
   },
+  // ==== 5章 ====
+  {
+    id: 'stage-41',
+    name: '41. かくれんぼのしま',
+    rows: 4,
+    cols: 5,
+    terrain: terrain(['....#', '.....', '.....', '..##.']),
+    animals: animals([['elephant', 2], ['monkey', 2], ['squirrel', 1], ['gorilla', 1], ['zebra', 1]]),
+    animalRules: {"zebra":{"kind":"below","with":"gorilla"},"gorilla":{"kind":"surroundForbidden","with":"squirrel"},"elephant":{"kind":"flockRequired"},"monkey":{"kind":"surroundForbidden","with":"squirrel"}},
+  },
+  {
+    id: 'stage-42',
+    name: '42. ならんだ足あと',
+    rows: 3,
+    cols: 6,
+    terrain: terrain(['..#...', '......', '.#.#..']),
+    animals: animals([['giraffe', 1], ['lion', 1], ['gorilla', 1], ['squirrel', 1], ['zebra', 1], ['leopard', 2]]),
+    animalRules: {"zebra":{"kind":"differentRow","with":"giraffe"},"giraffe":{"kind":"adjacentRequired","with":"zebra"},"squirrel":{"kind":"below","with":"giraffe"},"lion":{"kind":"adjacentForbidden","with":"leopard"}},
+  },
+  {
+    id: 'stage-43',
+    name: '43. みはらしのだい',
+    rows: 4,
+    cols: 6,
+    terrain: terrain(['......', '#.....', '...#..', '......']),
+    animals: animals([['oxpecker', 1], ['elephant', 2], ['giraffe', 1], ['squirrel', 1], ['rhino', 2], ['crocodile', 1]]),
+    animalRules: {"giraffe":{"kind":"surroundForbidden","with":"squirrel"},"elephant":{"kind":"adjacentRequired","with":"rhino"},"squirrel":{"kind":"adjacentRequired","with":"rhino"},"rhino":{"kind":"rightOf","with":"crocodile"}},
+  },
+  {
+    id: 'stage-44',
+    name: '44. いりくんだ小道',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['.#...', '.....', '##.##', '#....', '.....']),
+    animals: animals([['monkey', 2], ['giraffe', 1], ['elephant', 2], ['zebra', 1], ['gorilla', 1], ['oxpecker', 1]]),
+    animalRules: {"oxpecker":{"kind":"adjacentForbidden","with":"gorilla"},"zebra":{"kind":"above","with":"gorilla"},"elephant":{"kind":"surroundForbidden","with":"zebra"},"giraffe":{"kind":"leftOf","with":"elephant"},"monkey":{"kind":"surroundForbidden","with":"giraffe"}},
+  },
+  {
+    id: 'stage-45',
+    name: '45. ゆうやけのけっちゃく',
+    rows: 5,
+    cols: 5,
+    terrain: terrain(['...##', '.....', '#....', '...#.', '..#..']),
+    animals: animals([['leopard', 2], ['oxpecker', 1], ['elephant', 1], ['monkey', 1], ['rhino', 2], ['lion', 1]]),
+    animalRules: {"oxpecker":{"kind":"minDistance","from":"lion","distance":2},"leopard":{"kind":"differentCol","with":"rhino"},"rhino":{"kind":"surroundForbidden","with":"elephant"},"lion":{"kind":"below","with":"elephant"},"elephant":{"kind":"adjacentForbidden","with":"lion"}},
+  },
 ];
 
 const stageIdsFrom = (fromId: string, toId: string): string[] => {
@@ -616,6 +664,7 @@ export const CHAPTERS: { id: string; name: string; stageIds: string[] }[] = [
   { id: 'savanna-thinking', name: '2章 かんがえるサバンナ', stageIds: stageIdsFrom('stage-10', 'stage-19') },
   { id: 'wisdom-challenge', name: '3章 ちえくらべ', stageIds: stageIdsFrom('stage-20', 'stage-30') },
   { id: 'final-challenge', name: '4章 さいごのちょうせん', stageIds: stageIdsFrom('stage-31', 'stage-40') },
+  { id: 'afterglow', name: '5章 ゆうやけのたび', stageIds: stageIdsFrom('stage-41', 'stage-45') },
 ];
 
 export const getStage = (id: string): Stage | undefined => STAGES.find((s) => s.id === id);
