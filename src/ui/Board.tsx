@@ -12,7 +12,7 @@ import { usePieceDrag } from './use-piece-drag';
 export type FreePositions = Record<string, { x: number; y: number }>;
 
 /** クリア時に駒が1つずつ跳ねる間隔（秒）。オーバーレイを出す時刻もこれで決まる。 */
-export const BOUNCE_STEP = 0.08;
+export const BOUNCE_STEP = 0.05;
 
 export type BoardProps = {
   state: GameState;
@@ -159,7 +159,7 @@ export function Board({
                 exit={{ scale: 0, opacity: 0, transition: { duration: 0.12 } }}
                 transition={
                   won && !still
-                    ? { delay: order * BOUNCE_STEP, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }
+                    ? { delay: order * BOUNCE_STEP, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }
                     : { type: 'spring', stiffness: 620, damping: 26, mass: 0.7 }
                 }>
                 <Piece

@@ -364,7 +364,7 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared, title,
       {cleared && (
         <ClearOverlay
           // 駒が全部跳ね終わってから出す。
-          delay={state.placed.length * BOUNCE_STEP + 0.42}
+          delay={state.placed.length * BOUNCE_STEP + 0.3}
           hasNext={hasNext}
           onNext={onNext}
           onRetry={handleReset}
