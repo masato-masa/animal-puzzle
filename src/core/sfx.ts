@@ -87,7 +87,7 @@ const sampleUrls = import.meta.glob('../assets/sfx/*.wav', {
 }) as Record<string, string>;
 const buffers = new Map<SampleName, AudioBuffer>();
 /** 録音はピーク 0.9 にそろえてあるので、役割に合わせて下げる。 */
-const SAMPLE_GAIN: Record<SampleName, number> = { select: 0.4, place: 0.6, lift: 0.9, clear: 0.7 };
+const SAMPLE_GAIN: Record<SampleName, number> = { select: 0.17, place: 0.26, lift: 0.39, clear: 0.3 };
 
 function loadSamples(ac: AudioContext): void {
   for (const [path, url] of Object.entries(sampleUrls)) {
