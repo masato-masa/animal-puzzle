@@ -11,7 +11,7 @@ type Props = {
   listLabel?: string;
 };
 
-export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList, nextLabel = 'つぎのステージ', listLabel = 'ステージ一覧' }: Props) {
+export function ClearOverlay({ delay, hasNext, onNext, onRetry, onList, nextLabel = 'つぎへ', listLabel = 'ステージせんたく' }: Props) {
   const still = useReducedMotion();
   const wait = still ? 0 : delay;
 
