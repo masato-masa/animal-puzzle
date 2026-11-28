@@ -43,6 +43,8 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
 
 .play {
@@ -63,6 +65,10 @@
   color: var(--title);
   opacity: 0.8;
   pointer-events: none;
+}
+
+.play[data-tight] .drag-hint {
+  display: none;
 }
 
 .silhouette {
@@ -478,8 +484,8 @@
   place-items: center;
   border: 0;
   border-radius: 12px;
-  background: var(--pill-bg);
-  box-shadow: var(--shadow-xs);
+  /* 白い一覧の上に白いタイルでは境目が影だけになる。ひと段下の色で平らに置く。 */
+  background: var(--surface-2);
   color: var(--pill-fg);
   font: inherit;
   font-size: 16px;

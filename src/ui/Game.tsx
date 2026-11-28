@@ -123,6 +123,25 @@ export function Game({ stage, hasNext, onBack, onNext, onList, onCleared, title,
     return () => ro.disconnect();
   }, [stage]);
 
+  // 1 面目の一言（.drag-hint）は盤の上の余白に出す。縦が足りない画面では余白が無く盤に重なるので、
+  // 盤の上の余白が 32px 未満のときは隠す（data-tight）。
+  useEffect(() => {
+    const play = playRef.current;
+    if (!play) return;
+    const check = () => {
+      const board = play.querySelector<HTMLElement>('.board');
+      if (!board) return;
+      const slack = board.getBoundingClientRect().top - play.getBoundingClientRect().top;
+      play.toggleAttribute('data-tight', slack < 32);
+    };
+    const ro = new ResizeObserver(check);
+    ro.observe(play);
+    const board = play.querySelector('.board');
+    if (board) ro.observe(board);
+    check();
+    return () => ro.disconnect();
+  }, [stage]);
+
   // 盤面の実寸を測る。CSS が min() で決めるので、JS 側からは読むだけにする。
   useEffect(() => {
     const el = gridRef.current;
