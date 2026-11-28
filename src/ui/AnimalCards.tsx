@@ -150,9 +150,8 @@ function AnimalCard({
       <span className="card-body">
         <span className="card-name">{speciesLabel[species]}</span>
 
-        {conditions.length === 0 ? (
-          <span className="card-cond">とくに条件なし</span>
-        ) : (
+        {/* 条件が無い種は何も書かない（「とくに条件なし」は無い情報の説明で、画面のノイズ） */}
+        {conditions.length === 0 ? null : (
           conditions.map((c, i) => {
             const ok = isSpeciesConditionSatisfied(state, species, c);
             return (
